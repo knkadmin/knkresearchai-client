@@ -12,6 +12,7 @@ import 'package:fa_ai_agent/agent_service.dart';
 import 'package:fa_ai_agent/gradient_text.dart';
 import 'package:fa_ai_agent/result_advanced.dart';
 import 'package:fa_ai_agent/config.dart';
+import 'package:fa_ai_agent/widgets/welcome_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -79,6 +80,12 @@ class MyApp extends StatelessWidget {
         routes: [
           GoRoute(
             path: '/',
+            pageBuilder: (context, state) => NoTransitionPage<void>(
+              child: const WelcomeScreen(),
+            ),
+          ),
+          GoRoute(
+            path: '/home',
             pageBuilder: (context, state) => NoTransitionPage<void>(
               child: const MyHomePage(title: 'KNK Research'),
             ),
