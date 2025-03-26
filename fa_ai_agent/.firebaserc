@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "fa-ai-agent-app"
+  },
+  "targets": {
+    "fa-ai-agent-app": {
+      "hosting": {
+        "fa-ai-agent-app": [
+          "fa-ai-agent-app"
+        ],
+        "fa-ai-agent-app-preview": [
+          "fa-ai-agent-app-preview"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

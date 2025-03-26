@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "754540534666",
+    "project_id": "fa-ai-agent-app",
+    "storage_bucket": "fa-ai-agent-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:754540534666:android:60c07fb04046acb8b38673",
+        "android_client_info": {
+          "package_name": "com.example.fa_ai_agent"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCbIB9yPtWBTGas7klNpluTm6P8ODHRTM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
