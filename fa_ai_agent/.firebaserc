@@ -1,15 +1,12 @@
 {
   "projects": {
-    "default": "fa-ai-agent-app"
+    "default": "knkresearchai"
   },
   "targets": {
-    "fa-ai-agent-app": {
+    "knkresearchai": {
       "hosting": {
-        "fa-ai-agent-app": [
-          "fa-ai-agent-app"
-        ],
-        "fa-ai-agent-app-preview": [
-          "fa-ai-agent-app-preview"
+        "knkresearchai": [
+          "knkresearchai"
         ]
       }
     }
