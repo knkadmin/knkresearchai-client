@@ -11,6 +11,11 @@ class DashboardPage extends StatelessWidget {
     final userName = user?.displayName ?? user?.email?.split('@')[0] ?? 'User';
     final userEmail = user?.email ?? '';
 
+    // Debug logging
+    print('User photo URL: ${user?.photoURL}');
+    print('User display name: ${user?.displayName}');
+    print('User email: ${user?.email}');
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -91,23 +96,64 @@ class DashboardPage extends StatelessWidget {
                           enabled: false,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 12),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: Row(
                             children: [
-                              Text(
-                                userName,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                              if (user?.photoURL != null)
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(20),
+                                  child: Image.network(
+                                    user!.photoURL!,
+                                    width: 40,
+                                    height: 40,
+                                    fit: BoxFit.cover,
+                                    loadingBuilder:
+                                        (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return const Icon(
+                                        Icons.person_outline,
+                                        size: 40,
+                                        color: Color(0xFF1E293B),
+                                      );
+                                    },
+                                    errorBuilder: (context, error, stackTrace) {
+                                      print(
+                                          'Error loading dropdown profile image: $error');
+                                      return const Icon(
+                                        Icons.person_outline,
+                                        size: 40,
+                                        color: Color(0xFF1E293B),
+                                      );
+                                    },
+                                  ),
+                                )
+                              else
+                                const Icon(
+                                  Icons.person_outline,
+                                  size: 40,
                                   color: Color(0xFF1E293B),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                userEmail,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF64748B),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      userName,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      userEmail,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF64748B),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
