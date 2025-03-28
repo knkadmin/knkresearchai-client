@@ -1,9 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../auth_service.dart';
+import 'watchlist_page.dart';
+import 'membership_page.dart';
+import 'resources_page.dart';
 
-class DashboardPage extends StatelessWidget {
+class DashboardPage extends StatefulWidget {
   const DashboardPage({Key? key}) : super(key: key);
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  String _selectedPage = 'watchlist';
+
+  Widget _buildPage() {
+    switch (_selectedPage) {
+      case 'watchlist':
+        return const WatchlistPage();
+      case 'membership':
+        return const MembershipPage();
+      case 'resources':
+        return const ResourcesPage();
+      default:
+        return Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Welcome to your Dashboard',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Your personalized financial analysis hub',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +84,7 @@ class DashboardPage extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Left: Title
+                  // Left: Title and Navigation Items
                   Row(
                     children: [
                       Container(
@@ -58,12 +106,36 @@ class DashboardPage extends StatelessWidget {
                       ),
                       const SizedBox(width: 12),
                       const Text(
-                        'Dashboard',
+                        'KNK Research',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1E293B),
                         ),
+                      ),
+                      const SizedBox(width: 32),
+                      _NavItem(
+                        label: 'Watchlist',
+                        icon: Icons.list_alt_outlined,
+                        isSelected: _selectedPage == 'watchlist',
+                        onTap: () =>
+                            setState(() => _selectedPage = 'watchlist'),
+                      ),
+                      const SizedBox(width: 24),
+                      _NavItem(
+                        label: 'Membership',
+                        icon: Icons.card_membership_outlined,
+                        isSelected: _selectedPage == 'membership',
+                        onTap: () =>
+                            setState(() => _selectedPage = 'membership'),
+                      ),
+                      const SizedBox(width: 24),
+                      _NavItem(
+                        label: 'Resources',
+                        icon: Icons.library_books_outlined,
+                        isSelected: _selectedPage == 'resources',
+                        onTap: () =>
+                            setState(() => _selectedPage = 'resources'),
                       ),
                     ],
                   ),
@@ -197,34 +269,77 @@ class DashboardPage extends StatelessWidget {
             ),
             // Main Content
             Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24.0),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Text(
-                        'Welcome to your Dashboard',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1E293B),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const Text(
-                        'Your personalized financial analysis hub',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              child: _buildPage(),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _NavItem({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  State<_NavItem> createState() => _NavItemState();
+}
+
+class _NavItemState extends State<_NavItem> {
+  bool isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => isHovered = true),
+      onExit: (_) => setState(() => isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            color: widget.isSelected || isHovered
+                ? const Color(0xFF2563EB).withOpacity(0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                widget.icon,
+                size: 18,
+                color: widget.isSelected || isHovered
+                    ? const Color(0xFF2563EB)
+                    : const Color(0xFF64748B),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: widget.isSelected || isHovered
+                      ? const Color(0xFF2563EB)
+                      : const Color(0xFF64748B),
+                  fontWeight: widget.isSelected || isHovered
+                      ? FontWeight.w500
+                      : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
