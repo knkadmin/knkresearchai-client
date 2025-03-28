@@ -7,6 +7,10 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = AuthService().currentUser;
+    final userName = user?.displayName ?? user?.email?.split('@')[0] ?? 'User';
+    final userEmail = user?.email ?? '';
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -58,31 +62,88 @@ class DashboardPage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  // Right: Sign Out Button
-                  SizedBox(
+                  // Right: Profile Button
+                  Container(
                     height: 40,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        await AuthService().signOut();
-                        if (context.mounted) {
-                          context.go('/');
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8F9FA),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Colors.black.withOpacity(0.05),
+                        width: 1,
+                      ),
+                    ),
+                    child: PopupMenuButton<String>(
+                      icon: const Icon(
+                        Icons.person_outline,
+                        color: Color(0xFF1E293B),
+                        size: 20,
+                      ),
+                      position: PopupMenuPosition.under,
+                      offset: const Offset(0, 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 4,
+                      color: Colors.white,
+                      itemBuilder: (BuildContext context) => [
+                        PopupMenuItem<String>(
+                          enabled: false,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                userName,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                userEmail,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'signout',
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          child: const Row(
+                            children: [
+                              Icon(
+                                Icons.logout,
+                                size: 20,
+                                color: Color(0xFF1E293B),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                'Sign Out',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF1E293B),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      onSelected: (String value) async {
+                        if (value == 'signout') {
+                          await AuthService().signOut();
+                          if (context.mounted) {
+                            context.go('/');
+                          }
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E2C3D),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: const Text(
-                        'Sign Out',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
                     ),
                   ),
                 ],
