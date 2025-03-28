@@ -84,7 +84,9 @@ class _DashboardPageState extends State<DashboardPage> {
                     itemBuilder: (context, index) {
                       final name = searchResults[index]["name"] ?? "";
                       final symbol = searchResults[index]["symbol"] ?? "";
-                      return InkWell(
+                      return SearchResultItem(
+                        name: name,
+                        symbol: symbol,
                         onTap: () {
                           print("Tapped on $symbol");
                           final encodedTicker = Uri.encodeComponent(symbol);
@@ -99,31 +101,6 @@ class _DashboardPageState extends State<DashboardPage> {
                           // Navigate
                           context.go('/report/$encodedTicker');
                         },
-                        child: ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
-                          title: Text(
-                            name,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                          subtitle: Text(
-                            symbol,
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2E4B6F),
-                            ),
-                          ),
-                          trailing: const Icon(
-                            Icons.chevron_right,
-                            color: Color(0xFF2E4B6F),
-                            size: 20,
-                          ),
-                        ),
                       );
                     },
                   ),
@@ -157,7 +134,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
     _debounce = Timer(const Duration(milliseconds: 250), () {
       if (query.isNotEmpty) {
-        fetchStockData(query);
+        fetchCompanyReport(query);
       } else {
         setState(() {
           searchResults = [];
@@ -167,7 +144,7 @@ class _DashboardPageState extends State<DashboardPage> {
     });
   }
 
-  void fetchStockData(String query) async {
+  void fetchCompanyReport(String query) async {
     if (query.isEmpty) return;
 
     setState(() {
@@ -677,6 +654,68 @@ class _NavItemState extends State<_NavItem> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SearchResultItem extends StatefulWidget {
+  final String name;
+  final String symbol;
+  final VoidCallback onTap;
+
+  const SearchResultItem({
+    super.key,
+    required this.name,
+    required this.symbol,
+    required this.onTap,
+  });
+
+  @override
+  State<SearchResultItem> createState() => _SearchResultItemState();
+}
+
+class _SearchResultItemState extends State<SearchResultItem> {
+  bool isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => isHovered = true),
+      onExit: (_) => setState(() => isHovered = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: Container(
+          color: isHovered
+              ? const Color(0xFF2563EB).withOpacity(0.1)
+              : Colors.transparent,
+          child: ListTile(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            title: Text(
+              widget.name,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+            subtitle: Text(
+              widget.symbol,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF2E4B6F),
+              ),
+            ),
+            trailing: const Icon(
+              Icons.chevron_right,
+              color: Color(0xFF2E4B6F),
+              size: 20,
+            ),
           ),
         ),
       ),
