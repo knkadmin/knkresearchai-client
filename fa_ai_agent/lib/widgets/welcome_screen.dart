@@ -1,9 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../gradient_text.dart';
+import '../auth_service.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  final AuthService _authService = AuthService();
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Check if user is already signed in
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final currentUser = _authService.currentUser;
+      if (currentUser != null) {
+        print(
+            'User already signed in: ${currentUser.displayName ?? currentUser.email}');
+        // Navigate to home page
+        GoRouter.of(context).go('/home');
+      } else {
+        print('No user is currently signed in');
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +131,7 @@ class WelcomeScreen extends StatelessWidget {
                         height: 40,
                         child: ElevatedButton(
                           onPressed: () {
-                            // TODO: Show sign in form
+                            context.go('/signin');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1E2C3D),

@@ -185,6 +185,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.5.10+10"
+  firebase_auth:
+    dependency: "direct main"
+    description:
+      name: firebase_auth
+      sha256: "91587615d7d9165c65a030426e3cf40bbec37c486f52ff654af17aba5be3d208"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.5.1"
+  firebase_auth_platform_interface:
+    dependency: transitive
+    description:
+      name: firebase_auth_platform_interface
+      sha256: "1dcf1dbdd90fe97fa37ab3631b561bf584adb88f6be0b0dd915fff799ad53192"
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.6.1"
+  firebase_auth_web:
+    dependency: transitive
+    description:
+      name: firebase_auth_web
+      sha256: "3774cb13547e28b180fed2a5e696b4b36f97f4b1fadc7b04a0200e5009344d98"
+      url: "https://pub.dev"
+    source: hosted
+    version: "5.14.1"
   firebase_core:
     dependency: "direct main"
     description:
@@ -312,6 +336,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.16.0"
+  font_awesome_flutter:
+    dependency: transitive
+    description:
+      name: font_awesome_flutter
+      sha256: d3a89184101baec7f4600d58840a764d2ef760fe1c5a20ef9e6b0e9b24a07a3a
+      url: "https://pub.dev"
+    source: hosted
+    version: "10.8.0"
   fwfh_cached_network_image:
     dependency: transitive
     description:
@@ -752,6 +784,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.0"
+  sign_in_button:
+    dependency: "direct main"
+    description:
+      name: sign_in_button
+      sha256: "977b9b0415d2f3909e642275dfabba7919ba8e111324641b76cae6d1acbd183e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.0"
   sky_engine:
     dependency: transitive
     description: flutter

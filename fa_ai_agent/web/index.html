@@ -33,6 +33,11 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png" />
 
+  <!-- Google Sign-in meta tag -->
+  <!-- Get the correct client ID from Google Cloud Console > APIs & Services > Credentials -->
+  <meta name="google-signin-client_id"
+    content="1067859590559-g0bkn4p225706kk5iu9pit16s9n6sl00.apps.googleusercontent.com">
+
   <title>KNK Research</title>
   <link rel="manifest" href="manifest.json">
 
@@ -60,22 +65,29 @@
       });
     });
   </script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+  <!-- Firebase Core -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <!-- Firebase Auth with explicit compat mode -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <!-- Other Firebase services -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-analytics-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
   <script>
+    // Your web app's Firebase configuration
     const firebaseConfig = {
-      apiKey: "AIzaSyB36U-Oo5X8X2otxd9d3v0rZxmxr37hgtU",
-      authDomain: "knkresearchai.web.app",
+      apiKey: "AIzaSyCfP_7S5823KOdftkK2z_UyZ6aRvr8kZZU",
+      authDomain: "knkresearchai.firebaseapp.com",
       projectId: "knkresearchai",
-      storageBucket: "knkresearchai.appspot.com",
-      messagingSenderId: "879148659273",
-      appId: "1:879148659273:web:your_web_app_id",
-      measurementId: "G-your_measurement_id"
+      storageBucket: "knkresearchai.firebaseapp.com",
+      messagingSenderId: "1067859590559",
+      appId: "1:1067859590559:web:0c9ae04b3b08b215338598",
+      measurementId: "G-T9CGSRZCR2"
     };
+
+    // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
+    console.log("Firebase initialized");
   </script>
 </body>
 

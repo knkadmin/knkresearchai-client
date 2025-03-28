@@ -27,7 +27,10 @@ class DefaultFirebaseOptions {
       case TargetPlatform.macOS:
         return macos;
       case TargetPlatform.windows:
-        return windows;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for windows - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -40,49 +43,42 @@ class DefaultFirebaseOptions {
     }
   }
 
+  /// Web Firebase options, must match the configuration in index.html
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyB36U-Oo5X8X2otxd9d3v0rZxmxr37hgtU',
-    appId: '1:754540534666:web:b64ab809db245190b38673',
-    messagingSenderId: '754540534666',
-    projectId: 'fa-ai-agent-app',
-    authDomain: 'fa-ai-agent-app.firebaseapp.com',
-    storageBucket: 'fa-ai-agent-app.firebasestorage.app',
-    measurementId: 'G-WEXEKDRYHW',
+    apiKey: 'AIzaSyCfP_7S5823KOdftkK2z_UyZ6aRvr8kZZU',
+    appId: '1:1067859590559:web:0c9ae04b3b08b215338598',
+    messagingSenderId: '1067859590559',
+    projectId: 'knkresearchai',
+    authDomain: 'knkresearchai.firebaseapp.com',
+    storageBucket: 'knkresearchai.firebaseapp.com',
+    measurementId: 'G-T9CGSRZCR2',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDCbIB9yPtWBTGas7klNpluTm6P8ODHRTM',
-    appId: '1:754540534666:android:60c07fb04046acb8b38673',
-    messagingSenderId: '754540534666',
-    projectId: 'fa-ai-agent-app',
-    storageBucket: 'fa-ai-agent-app.firebasestorage.app',
+    apiKey: 'YOUR_ANDROID_API_KEY',
+    appId: 'YOUR_ANDROID_APP_ID',
+    messagingSenderId: '1067859590559',
+    projectId: 'knkresearchai',
+    storageBucket: 'knkresearchai.firebaseapp.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyCYVfsdFnFE158pNp0CKtX9zvORpquKvNI',
-    appId: '1:754540534666:ios:eb57c6187429520db38673',
-    messagingSenderId: '754540534666',
-    projectId: 'fa-ai-agent-app',
-    storageBucket: 'fa-ai-agent-app.firebasestorage.app',
-    iosBundleId: 'com.example.faAiAgent',
+    apiKey: 'YOUR_IOS_API_KEY',
+    appId: 'YOUR_IOS_APP_ID',
+    messagingSenderId: '1067859590559',
+    projectId: 'knkresearchai',
+    storageBucket: 'knkresearchai.firebaseapp.com',
+    iosClientId: 'YOUR_IOS_CLIENT_ID',
+    iosBundleId: 'YOUR_IOS_BUNDLE_ID',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyCYVfsdFnFE158pNp0CKtX9zvORpquKvNI',
-    appId: '1:754540534666:ios:eb57c6187429520db38673',
-    messagingSenderId: '754540534666',
-    projectId: 'fa-ai-agent-app',
-    storageBucket: 'fa-ai-agent-app.firebasestorage.app',
-    iosBundleId: 'com.example.faAiAgent',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyB36U-Oo5X8X2otxd9d3v0rZxmxr37hgtU',
-    appId: '1:754540534666:web:8b3a9081389f7160b38673',
-    messagingSenderId: '754540534666',
-    projectId: 'fa-ai-agent-app',
-    authDomain: 'fa-ai-agent-app.firebaseapp.com',
-    storageBucket: 'fa-ai-agent-app.firebasestorage.app',
-    measurementId: 'G-CHYLNWXC2N',
+    apiKey: 'YOUR_MACOS_API_KEY',
+    appId: 'YOUR_MACOS_APP_ID',
+    messagingSenderId: '1067859590559',
+    projectId: 'knkresearchai',
+    storageBucket: 'knkresearchai.firebaseapp.com',
+    iosClientId: 'YOUR_MACOS_CLIENT_ID',
+    iosBundleId: 'YOUR_MACOS_BUNDLE_ID',
   );
 }
