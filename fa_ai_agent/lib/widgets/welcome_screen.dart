@@ -23,8 +23,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       if (currentUser != null) {
         print(
             'User already signed in: ${currentUser.displayName ?? currentUser.email}');
-        // Navigate to home page
-        GoRouter.of(context).go('/home');
+        // Navigate to dashboard page
+        GoRouter.of(context).go('/dashboard');
       } else {
         print('No user is currently signed in');
       }

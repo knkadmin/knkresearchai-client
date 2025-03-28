@@ -14,6 +14,7 @@ import 'package:fa_ai_agent/result_advanced.dart';
 import 'package:fa_ai_agent/config.dart';
 import 'package:fa_ai_agent/widgets/welcome_screen.dart';
 import 'package:fa_ai_agent/pages/sign_in_page.dart';
+import 'package:fa_ai_agent/pages/dashboard_page.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -23,6 +24,7 @@ import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/widgets/loading_spinner.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:fa_ai_agent/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'firebase_options.dart';
 
@@ -31,30 +33,46 @@ void main() async {
   setPathUrlStrategy();
   await Hive.initFlutter(); // Initialize Hive
   await Hive.openBox('settings'); // Open a box (like a database table)
-  await Firebase.initializeApp(
-    options: const FirebaseOptions(
-        apiKey: "AIzaSyCfP_7S5823KOdftkK2z_UyZ6aRvr8kZZU",
-        authDomain: "knkresearchai.firebaseapp.com",
-        projectId: "knkresearchai",
-        storageBucket: "knkresearchai.firebaseapp.com",
-        messagingSenderId: "1067859590559",
-        appId: "1:1067859590559:web:0c9ae04b3b08b215338598",
-        measurementId: "G-T9CGSRZCR2"),
-  );
 
-  // Check for redirect result on web platform
-  if (kIsWeb) {
-    try {
-      print("Checking for sign-in redirect result...");
-      final authService = AuthService();
-      final result = await authService.getRedirectResult();
-      if (result != null) {
-        print(
-            "Successfully signed in after redirect: ${result.user?.displayName}");
+  try {
+    // Initialize Firebase first
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+          apiKey: "AIzaSyCfP_7S5823KOdftkK2z_UyZ6aRvr8kZZU",
+          authDomain: "knkresearchai.firebaseapp.com",
+          projectId: "knkresearchai",
+          storageBucket: "knkresearchai.firebaseapp.com",
+          messagingSenderId: "1067859590559",
+          appId: "1:1067859590559:web:0c9ae04b3b08b215338598",
+          measurementId: "G-T9CGSRZCR2"),
+    );
+
+    // Set persistence after Firebase is initialized
+    if (kIsWeb) {
+      try {
+        await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
+        print('Firebase Auth persistence set to LOCAL');
+      } catch (e) {
+        print('Error setting persistence: $e');
       }
-    } catch (e) {
-      print("Error handling redirect result: $e");
     }
+
+    // Check for redirect result on web platform
+    if (kIsWeb) {
+      try {
+        print("Checking for sign-in redirect result...");
+        final authService = AuthService();
+        final result = await authService.getRedirectResult();
+        if (result != null) {
+          print(
+              "Successfully signed in after redirect: ${result.user?.displayName}");
+        }
+      } catch (e) {
+        print("Error handling redirect result: $e");
+      }
+    }
+  } catch (e) {
+    print('Error initializing Firebase: $e');
   }
 
   runApp(const MyApp());
@@ -117,9 +135,9 @@ class MyApp extends StatelessWidget {
             ),
           ),
           GoRoute(
-            path: '/home',
+            path: '/dashboard',
             pageBuilder: (context, state) => NoTransitionPage<void>(
-              child: const MyHomePage(title: 'KNK Research'),
+              child: const DashboardPage(),
             ),
           ),
           GoRoute(

@@ -26,10 +26,10 @@ class _SignInPageState extends State<SignInPage> {
       print(
           "Already signed in as: ${currentUser.displayName ?? currentUser.email}");
 
-      // Navigate to home page if already signed in
+      // Navigate to dashboard if already signed in
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          context.go('/home');
+          context.go('/dashboard');
         }
       });
     } else {
@@ -59,7 +59,7 @@ class _SignInPageState extends State<SignInPage> {
         _passwordController.text,
       );
       if (mounted) {
-        context.go('/home');
+        context.go('/dashboard');
       }
     } catch (e) {
       if (mounted) {
@@ -79,7 +79,7 @@ class _SignInPageState extends State<SignInPage> {
     try {
       await _authService.signInWithGoogle();
       if (mounted) {
-        context.go('/home');
+        context.go('/dashboard');
       }
     } catch (e) {
       if (mounted) {
