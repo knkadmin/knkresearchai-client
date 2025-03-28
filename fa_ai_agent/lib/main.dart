@@ -14,6 +14,7 @@ import 'package:fa_ai_agent/result_advanced.dart';
 import 'package:fa_ai_agent/config.dart';
 import 'package:fa_ai_agent/widgets/welcome_screen.dart';
 import 'package:fa_ai_agent/pages/sign_in_page.dart';
+import 'package:fa_ai_agent/pages/sign_up_page.dart';
 import 'package:fa_ai_agent/pages/dashboard_page.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -153,6 +154,12 @@ class MyApp extends StatelessWidget {
             path: '/signin',
             pageBuilder: (context, state) => NoTransitionPage<void>(
               child: const SignInPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/signup',
+            pageBuilder: (context, state) => NoTransitionPage<void>(
+              child: const SignUpPage(),
             ),
           ),
           GoRoute(

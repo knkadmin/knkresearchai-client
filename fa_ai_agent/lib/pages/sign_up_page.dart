@@ -1,64 +1,56 @@
-import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sign_in_button/sign_in_button.dart';
 import '../auth_service.dart';
+import '../services/firestore_service.dart';
 
-class SignInPage extends StatefulWidget {
-  const SignInPage({super.key});
+class SignUpPage extends StatefulWidget {
+  const SignUpPage({super.key});
 
   @override
-  State<SignInPage> createState() => _SignInPageState();
+  State<SignUpPage> createState() => _SignUpPageState();
 }
 
-class _SignInPageState extends State<SignInPage> {
+class _SignUpPageState extends State<SignUpPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-
-    // Check current user on initialization
-    final currentUser = _authService.currentUser;
-    if (currentUser != null) {
-      print(
-          "Already signed in as: ${currentUser.displayName ?? currentUser.email}");
-
-      // Navigate to dashboard if already signed in
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.go('/dashboard');
-        }
-      });
-    } else {
-      print("No user is currently signed in");
-    }
-  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
-  Future<void> _handleEmailSignIn() async {
-    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+  Future<void> _handleEmailSignUp() async {
+    if (_emailController.text.isEmpty ||
+        _passwordController.text.isEmpty ||
+        _confirmPasswordController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please fill in all fields')),
       );
       return;
     }
 
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match')),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithEmailAndPassword(
+      await _authService.registerWithEmailAndPassword(
         _emailController.text,
         _passwordController.text,
       );
+
+      final firestoreService = FirestoreService();
+      await firestoreService.createOrUpdateUserProfile();
 
       if (mounted) {
         context.go('/dashboard');
@@ -66,9 +58,7 @@ class _SignInPageState extends State<SignInPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Incorrect email or password. Please try again.'),
-          ),
+          SnackBar(content: Text(e.toString())),
         );
       }
     } finally {
@@ -82,8 +72,11 @@ class _SignInPageState extends State<SignInPage> {
     setState(() => _isLoading = true);
     try {
       await _authService.signInWithGoogle();
+
+      // Create user profile in Firestore
       final firestoreService = FirestoreService();
       await firestoreService.createOrUpdateUserProfile();
+
       if (mounted) {
         context.go('/dashboard');
       }
@@ -114,7 +107,7 @@ class _SignInPageState extends State<SignInPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Text(
-                  'Sign in',
+                  'Create an account',
                   style: TextStyle(
                     color: Color(0xFF1E293B),
                     fontSize: 24,
@@ -171,7 +164,43 @@ class _SignInPageState extends State<SignInPage> {
                   obscureText: true,
                   style: const TextStyle(color: Color(0xFF1E293B)),
                   decoration: InputDecoration(
-                    hintText: 'Your password',
+                    hintText: 'Create a password',
+                    hintStyle: TextStyle(color: Colors.grey[400]),
+                    filled: true,
+                    fillColor: const Color(0xFFF8FAFC),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: const BorderSide(color: Color(0xFF2563EB)),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Confirm Password',
+                  style: TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _confirmPasswordController,
+                  obscureText: true,
+                  style: const TextStyle(color: Color(0xFF1E293B)),
+                  decoration: InputDecoration(
+                    hintText: 'Confirm your password',
                     hintStyle: TextStyle(color: Colors.grey[400]),
                     filled: true,
                     fillColor: const Color(0xFFF8FAFC),
@@ -204,7 +233,7 @@ class _SignInPageState extends State<SignInPage> {
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
-                      onTap: _isLoading ? null : _handleEmailSignIn,
+                      onTap: _isLoading ? null : _handleEmailSignUp,
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -221,7 +250,7 @@ class _SignInPageState extends State<SignInPage> {
                                     ),
                                   )
                                 : const Text(
-                                    'Continue',
+                                    'Create Account',
                                     style: TextStyle(
                                       color: Colors.white,
                                       fontSize: 16,
@@ -295,13 +324,13 @@ class _SignInPageState extends State<SignInPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Don't have an account? ",
+                      "Already have an account? ",
                       style: TextStyle(color: Colors.grey[600]),
                     ),
                     TextButton(
-                      onPressed: () => context.go('/signup'),
+                      onPressed: () => context.go('/signin'),
                       child: const Text(
-                        'Sign up',
+                        'Sign in',
                         style: TextStyle(
                           color: Color(0xFF2563EB),
                           fontWeight: FontWeight.bold,
