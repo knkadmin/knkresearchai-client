@@ -91,6 +91,7 @@ flutter:
     - assets/kepler.jpg
     - assets/kd.jpg
     - assets/charts-demo.jpeg
+    - assets/google-sign-in.jpg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

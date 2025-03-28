@@ -565,9 +565,21 @@ class _DashboardPageState extends State<DashboardPage> {
                           ],
                           onSelected: (String value) async {
                             if (value == 'signout') {
-                              await AuthService().signOut();
-                              if (context.mounted) {
-                                context.go('/');
+                              try {
+                                await AuthService().signOut();
+                                if (context.mounted) {
+                                  // Navigate to welcome page and clear the navigation stack
+                                  context.go('/');
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Error signing out: $e'),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
                               }
                             }
                           },
