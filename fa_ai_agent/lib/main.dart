@@ -18,13 +18,15 @@ import 'package:fa_ai_agent/pages/dashboard_page.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/widgets/loading_spinner.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:fa_ai_agent/auth_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fa_ai_agent/services/firestore_service.dart';
 
 import 'firebase_options.dart';
 
@@ -47,6 +49,18 @@ void main() async {
           measurementId: "G-T9CGSRZCR2"),
     );
 
+    print('Firebase initialized successfully');
+
+    // Configure Firestore settings
+    if (kIsWeb) {
+      FirebaseFirestore.instance.settings = const Settings(
+        persistenceEnabled: true,
+        cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
+        sslEnabled: true,
+      );
+      print('Firestore settings configured for web');
+    }
+
     // Set persistence after Firebase is initialized
     if (kIsWeb) {
       try {
@@ -66,6 +80,13 @@ void main() async {
         if (result != null) {
           print(
               "Successfully signed in after redirect: ${result.user?.displayName}");
+
+          // Wait for auth state to be ready
+          await Future.delayed(const Duration(milliseconds: 500));
+
+          // Create or update user profile in Firestore
+          final firestoreService = FirestoreService();
+          await firestoreService.createOrUpdateUserProfile();
         }
       } catch (e) {
         print("Error handling redirect result: $e");
