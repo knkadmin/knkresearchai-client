@@ -22,7 +22,6 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  String _selectedPage = 'watchlist';
   final TextEditingController searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchFocused = false;
@@ -234,23 +233,7 @@ class _DashboardPageState extends State<DashboardPage> {
           );
         },
       );
-      _selectedPage = 'report';
     });
-  }
-
-  Widget _buildPage() {
-    switch (_selectedPage) {
-      case 'watchlist':
-        return const WatchlistPage();
-      case 'membership':
-        return const MembershipPage();
-      case 'resources':
-        return const ResourcesPage();
-      case 'report':
-        return _reportPage ?? const SizedBox.shrink();
-      default:
-        return const WatchlistPage();
-    }
   }
 
   @override
@@ -259,22 +242,28 @@ class _DashboardPageState extends State<DashboardPage> {
     final userName = user?.displayName ?? user?.email?.split('@')[0] ?? 'User';
     final userEmail = user?.email ?? '';
 
-    // Debug logging
-    print('User photo URL: ${user?.photoURL}');
-    print('User display name: ${user?.displayName}');
-    print('User email: ${user?.email}');
-
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Column(
+      body: Row(
         children: [
-          SafeArea(
+          // Side Menu
+          Container(
+            width: 280,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                right: BorderSide(
+                  color: Colors.black.withOpacity(0.05),
+                  width: 1,
+                ),
+              ),
+            ),
             child: Column(
               children: [
-                // Top Navigation Bar
+                // Side Menu Header
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  height: 65,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     border: Border(
@@ -285,322 +274,73 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Left: Title and Navigation Items
-                      Row(
-                        children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.black.withOpacity(0.05),
-                                width: 1,
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.dashboard,
-                              size: 24,
-                              color: Color(0xFF2563EB),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'KNK Research',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E293B),
-                            ),
-                          ),
-                          const SizedBox(width: 32),
-                          _NavItem(
-                            label: 'Watchlist',
-                            icon: Icons.list_alt_outlined,
-                            isSelected: _selectedPage == 'watchlist',
-                            onTap: () =>
-                                setState(() => _selectedPage = 'watchlist'),
-                          ),
-                          const SizedBox(width: 24),
-                          _NavItem(
-                            label: 'Membership',
-                            icon: Icons.card_membership_outlined,
-                            isSelected: _selectedPage == 'membership',
-                            onTap: () =>
-                                setState(() => _selectedPage = 'membership'),
-                          ),
-                          const SizedBox(width: 24),
-                          _NavItem(
-                            label: 'Resources',
-                            icon: Icons.library_books_outlined,
-                            isSelected: _selectedPage == 'resources',
-                            onTap: () =>
-                                setState(() => _selectedPage = 'resources'),
-                          ),
-                        ],
+                      const Icon(
+                        Icons.history,
+                        size: 20,
+                        color: Color(0xFF1E293B),
                       ),
-                      // Search Bar
-                      Expanded(
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 24),
-                          child: TextField(
-                            key: _searchKey,
-                            controller: searchController,
-                            focusNode: _searchFocusNode,
-                            onChanged: _onSearchChanged,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF1E293B),
-                            ),
-                            decoration: InputDecoration(
-                              hintText: 'Search company or ticker...',
-                              hintStyle: TextStyle(
-                                color: Colors.grey[400],
-                                fontSize: 14,
-                              ),
-                              filled: true,
-                              fillColor: Colors.grey[100],
-                              suffixIcon: searchController.text.isNotEmpty
-                                  ? IconButton(
-                                      icon: Icon(Icons.clear,
-                                          color: Colors.grey[600]),
-                                      onPressed: () {
-                                        searchController.clear();
-                                        setState(() {
-                                          searchResults = [];
-                                        });
-                                        _hideSearchResults();
-                                      },
-                                    )
-                                  : Icon(Icons.search, color: Colors.grey[600]),
-                              contentPadding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              border: OutlineInputBorder(
-                                borderSide: BorderSide.none,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderSide:
-                                    BorderSide(color: Colors.grey[300]!),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Search Results Popup
-                      if (searchResults.isNotEmpty)
-                        PopupMenuButton<String>(
-                          position: PopupMenuPosition.under,
-                          offset: const Offset(0, 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 4,
-                          color: Colors.white,
-                          itemBuilder: (BuildContext context) => searchResults
-                              .map((result) => PopupMenuItem<String>(
-                                    value: result["symbol"] ?? "",
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 12),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                result["name"] ?? "",
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.w500,
-                                                  color: Color(0xFF1E293B),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Text(
-                                                result["symbol"] ?? "",
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color(0xFF2E4B6F),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const Icon(
-                                          Icons.chevron_right,
-                                          color: Color(0xFF2E4B6F),
-                                          size: 20,
-                                        ),
-                                      ],
-                                    ),
-                                  ))
-                              .toList(),
-                          onSelected: (String symbol) {
-                            print("Selected symbol: $symbol");
-                            final encodedTicker = Uri.encodeComponent(symbol);
-                            print("Navigating to /report/$encodedTicker");
-
-                            // Reset search
-                            setState(() {
-                              searchResults = [];
-                              searchController.text = "";
-                            });
-
-                            // Navigate
-                            _navigateToReport(symbol, symbol);
-                          },
-                          child: const SizedBox
-                              .shrink(), // Empty widget since we don't need a trigger
-                        ),
-                      // Right: Profile Button
-                      Container(
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8F9FA),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.black.withOpacity(0.05),
-                            width: 1,
-                          ),
-                        ),
-                        child: PopupMenuButton<String>(
-                          icon: const Icon(
-                            Icons.person_outline,
-                            color: Color(0xFF1E293B),
-                            size: 20,
-                          ),
-                          position: PopupMenuPosition.under,
-                          offset: const Offset(0, 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 4,
-                          color: Colors.white,
-                          itemBuilder: (BuildContext context) => [
-                            PopupMenuItem<String>(
-                              enabled: false,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                              child: Row(
-                                children: [
-                                  if (user?.photoURL != null)
-                                    ClipRRect(
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: Image.network(
-                                        user!.photoURL!,
-                                        width: 40,
-                                        height: 40,
-                                        fit: BoxFit.cover,
-                                        loadingBuilder:
-                                            (context, child, loadingProgress) {
-                                          if (loadingProgress == null)
-                                            return child;
-                                          return const Icon(
-                                            Icons.person_outline,
-                                            size: 40,
-                                            color: Color(0xFF1E293B),
-                                          );
-                                        },
-                                        errorBuilder:
-                                            (context, error, stackTrace) {
-                                          print(
-                                              'Error loading dropdown profile image: $error');
-                                          return const Icon(
-                                            Icons.person_outline,
-                                            size: 40,
-                                            color: Color(0xFF1E293B),
-                                          );
-                                        },
-                                      ),
-                                    )
-                                  else
-                                    const Icon(
-                                      Icons.person_outline,
-                                      size: 40,
-                                      color: Color(0xFF1E293B),
-                                    ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          userName,
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF1E293B),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          userEmail,
-                                          style: const TextStyle(
-                                            fontSize: 14,
-                                            color: Color(0xFF64748B),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'signout',
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                              child: const Row(
-                                children: [
-                                  Icon(
-                                    Icons.logout,
-                                    size: 20,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                  SizedBox(width: 8),
-                                  Text(
-                                    'Sign Out',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF1E293B),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          onSelected: (String value) async {
-                            if (value == 'signout') {
-                              try {
-                                await AuthService().signOut();
-                                if (context.mounted) {
-                                  // Navigate to welcome page and clear the navigation stack
-                                  context.go('/');
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Error signing out: $e'),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
-                                }
-                              }
-                            }
-                          },
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Report History',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF1E293B),
                         ),
                       ),
                     ],
+                  ),
+                ),
+                // Report History List
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: 0, // TODO: Replace with actual report history
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 8),
+                        leading: Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8F9FA),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.analytics,
+                            size: 20,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        title: const Text(
+                          'Company Name',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        subtitle: Text(
+                          'TICKER',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        trailing: Text(
+                          '2h ago',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                        onTap: () {
+                          // TODO: Handle report history item tap
+                        },
+                      );
+                    },
                   ),
                 ),
               ],
@@ -608,9 +348,421 @@ class _DashboardPageState extends State<DashboardPage> {
           ),
           // Main Content
           Expanded(
-            child: Stack(
+            child: Column(
               children: [
-                _buildPage(),
+                SafeArea(
+                  child: Column(
+                    children: [
+                      // Top Navigation Bar
+                      Container(
+                        height: 65,
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.black.withOpacity(0.05),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            // Left: Title
+                            Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFF8F9FA),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.black.withOpacity(0.05),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.dashboard,
+                                    size: 24,
+                                    color: Color(0xFF2563EB),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const Text(
+                                  'KNK Research',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            // Search Bar
+                            Container(
+                              width: 500,
+                              margin: const EdgeInsets.only(left: 24),
+                              child: TextField(
+                                key: _searchKey,
+                                controller: searchController,
+                                focusNode: _searchFocusNode,
+                                onChanged: _onSearchChanged,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xFF1E293B),
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Search company or ticker...',
+                                  hintStyle: TextStyle(
+                                    color: Colors.grey[400],
+                                    fontSize: 16,
+                                  ),
+                                  filled: true,
+                                  fillColor: Colors.grey[100],
+                                  suffixIcon: searchController.text.isNotEmpty
+                                      ? IconButton(
+                                          icon: Icon(Icons.clear,
+                                              color: Colors.grey[600]),
+                                          onPressed: () {
+                                            searchController.clear();
+                                            setState(() {
+                                              searchResults = [];
+                                            });
+                                            _hideSearchResults();
+                                          },
+                                        )
+                                      : Icon(Icons.search,
+                                          color: Colors.grey[600]),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16),
+                                  border: OutlineInputBorder(
+                                    borderSide: BorderSide.none,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderSide:
+                                        BorderSide(color: Colors.grey[300]!),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Spacer to push profile button to the right
+                            const Spacer(),
+                            // Right: Profile Button
+                            Container(
+                              height: 40,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8F9FA),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.black.withOpacity(0.05),
+                                  width: 1,
+                                ),
+                              ),
+                              child: PopupMenuButton<String>(
+                                icon: const Icon(
+                                  Icons.person_outline,
+                                  color: Color(0xFF1E293B),
+                                  size: 20,
+                                ),
+                                position: PopupMenuPosition.under,
+                                offset: const Offset(0, 8),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                elevation: 4,
+                                color: Colors.white,
+                                itemBuilder: (BuildContext context) => [
+                                  PopupMenuItem<String>(
+                                    enabled: false,
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      children: [
+                                        if (user?.photoURL != null)
+                                          ClipRRect(
+                                            borderRadius:
+                                                BorderRadius.circular(20),
+                                            child: Image.network(
+                                              user!.photoURL!,
+                                              width: 40,
+                                              height: 40,
+                                              fit: BoxFit.cover,
+                                              loadingBuilder: (context, child,
+                                                  loadingProgress) {
+                                                if (loadingProgress == null)
+                                                  return child;
+                                                return const Icon(
+                                                  Icons.person_outline,
+                                                  size: 40,
+                                                  color: Color(0xFF1E293B),
+                                                );
+                                              },
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                print(
+                                                    'Error loading dropdown profile image: $error');
+                                                return const Icon(
+                                                  Icons.person_outline,
+                                                  size: 40,
+                                                  color: Color(0xFF1E293B),
+                                                );
+                                              },
+                                            ),
+                                          )
+                                        else
+                                          const Icon(
+                                            Icons.person_outline,
+                                            size: 40,
+                                            color: Color(0xFF1E293B),
+                                          ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                userName,
+                                                style: const TextStyle(
+                                                  fontSize: 16,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFF1E293B),
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                userEmail,
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Color(0xFF64748B),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
+                                    value: 'signout',
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 12),
+                                    child: const Row(
+                                      children: [
+                                        Icon(
+                                          Icons.logout,
+                                          size: 20,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Sign Out',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                onSelected: (String value) async {
+                                  if (value == 'signout') {
+                                    try {
+                                      await AuthService().signOut();
+                                      if (context.mounted) {
+                                        context.go('/');
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content:
+                                                Text('Error signing out: $e'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  }
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Main Content
+                Expanded(
+                  child: Stack(
+                    children: [
+                      if (_reportPage != null)
+                        _reportPage!
+                      else
+                        Column(
+                          children: [
+                            const Spacer(flex: 2),
+                            Center(
+                              child: Container(
+                                width: 600,
+                                padding: const EdgeInsets.all(32),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.search,
+                                      size: 48,
+                                      color: Color(0xFF2563EB),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    const Text(
+                                      'Search for a US-listed Company',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Enter a company name or ticker symbol to get started',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    const SizedBox(height: 32),
+                                    TextField(
+                                      key: _searchKey,
+                                      controller: searchController,
+                                      focusNode: _searchFocusNode,
+                                      onChanged: _onSearchChanged,
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'Search company or ticker...',
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 16,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.grey[100],
+                                        suffixIcon: searchController
+                                                .text.isNotEmpty
+                                            ? IconButton(
+                                                icon: Icon(Icons.clear,
+                                                    color: Colors.grey[600]),
+                                                onPressed: () {
+                                                  searchController.clear();
+                                                  setState(() {
+                                                    searchResults = [];
+                                                  });
+                                                  _hideSearchResults();
+                                                },
+                                              )
+                                            : Icon(Icons.search,
+                                                color: Colors.grey[600]),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 16),
+                                        border: OutlineInputBorder(
+                                          borderSide: BorderSide.none,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: Colors.grey[300]!),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 32),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Divider(
+                                            color: Colors.grey[300],
+                                            thickness: 1,
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 16),
+                                          child: Text(
+                                            'or',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Divider(
+                                            color: Colors.grey[300],
+                                            thickness: 1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 32),
+                                    const Text(
+                                      'Quick Start with Mega 7 Companies',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    Wrap(
+                                      spacing: 12,
+                                      runSpacing: 12,
+                                      alignment: WrapAlignment.center,
+                                      children: [
+                                        _buildCompanyButton(
+                                            'Alphabet', 'GOOGL'),
+                                        _buildCompanyButton('Amazon', 'AMZN'),
+                                        _buildCompanyButton('Apple', 'AAPL'),
+                                        _buildCompanyButton('Meta', 'META'),
+                                        _buildCompanyButton(
+                                            'Microsoft', 'MSFT'),
+                                        _buildCompanyButton('Nvidia', 'NVDA'),
+                                        _buildCompanyButton('Tesla', 'TSLA'),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const Spacer(flex: 3),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -618,66 +770,55 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
     );
   }
-}
 
-class _NavItem extends StatefulWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _NavItem({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  State<_NavItem> createState() => _NavItemState();
-}
-
-class _NavItemState extends State<_NavItem> {
-  bool isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => isHovered = true),
-      onExit: (_) => setState(() => isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+  Widget _buildCompanyButton(String name, String symbol) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => _navigateToReport(symbol, name),
+        borderRadius: BorderRadius.circular(25),
+        hoverColor: const Color(0xFF2E4B6F).withOpacity(0.1),
+        child: Container(
           decoration: BoxDecoration(
-            color: widget.isSelected || isHovered
-                ? const Color(0xFF2563EB).withOpacity(0.1)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF2E4B6F),
+              width: 1.5,
+            ),
+            borderRadius: BorderRadius.circular(25),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 12,
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                widget.icon,
-                size: 18,
-                color: widget.isSelected || isHovered
-                    ? const Color(0xFF2563EB)
-                    : const Color(0xFF64748B),
-              ),
-              const SizedBox(width: 8),
               Text(
-                widget.label,
+                symbol,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2E4B6F),
+                ),
+              ),
+              Container(
+                height: 20,
+                width: 1,
+                margin: const EdgeInsets.symmetric(horizontal: 12),
+                color: const Color(0xFF2E4B6F).withOpacity(0.3),
+              ),
+              Text(
+                name,
                 style: TextStyle(
-                  fontSize: 15,
-                  color: widget.isSelected || isHovered
-                      ? const Color(0xFF2563EB)
-                      : const Color(0xFF64748B),
-                  fontWeight: widget.isSelected || isHovered
-                      ? FontWeight.w500
-                      : FontWeight.normal,
+                  fontSize: 14,
+                  color: Colors.grey[800],
                 ),
               ),
             ],
