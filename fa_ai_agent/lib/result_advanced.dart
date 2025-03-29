@@ -295,27 +295,180 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   Widget _buildNavigationList() {
     return Container(
       width: 240,
-      padding: const EdgeInsets.only(top: 24, bottom: 16),
+      padding: const EdgeInsets.only(top: 16, bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.only(left: 16, bottom: 16),
-            child: Text(
-              'Content',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1E3A8A),
-                letterSpacing: 0.8,
-                shadows: [
-                  Shadow(
-                    color: Colors.blue.shade50,
-                    offset: const Offset(0, 1),
-                    blurRadius: 2,
-                  ),
-                ],
-              ),
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ValueListenableBuilder<bool>(
+                  valueListenable: _showCompanyNameInTitle,
+                  builder: (context, showCompanyName, child) {
+                    return SizedBox(
+                      height: 120,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (showCompanyName)
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    Colors.blue.shade900,
+                                    Colors.blue.shade800,
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
+                                    child: Text(
+                                      widget.companyName,
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
+                                    child: StreamBuilder(
+                                      stream: widget.cacheTimeSubject.stream,
+                                      builder: (context, snapshot) {
+                                        if (snapshot.hasData) {
+                                          return Text(
+                                            'Report Generated: ${DateFormat('dd MMM yyyy').format(snapshot.data)}',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color:
+                                                  Colors.white.withOpacity(0.8),
+                                            ),
+                                          );
+                                        }
+                                        return const SizedBox.shrink();
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          const SizedBox(height: 12),
+                          if (showCompanyName)
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      // TODO: Implement bookmark functionality
+                                    },
+                                    icon: const Icon(Icons.bookmark_border,
+                                        size: 18),
+                                    label: const Text('Bookmark'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF1E3A8A),
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        side: const BorderSide(
+                                            color: Color(0xFF1E3A8A)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: _handleRefresh,
+                                    icon: const Icon(Icons.refresh, size: 18),
+                                    label: const Text('Refresh'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF1E3A8A),
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        side: const BorderSide(
+                                            color: Color(0xFF1E3A8A)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            )
+                          else
+                            Column(
+                              children: [
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      // TODO: Implement bookmark functionality
+                                    },
+                                    icon: const Icon(Icons.bookmark_border,
+                                        size: 18),
+                                    label: const Text('Bookmark'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF1E3A8A),
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        side: const BorderSide(
+                                            color: Color(0xFF1E3A8A)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: _handleRefresh,
+                                    icon: const Icon(Icons.refresh, size: 18),
+                                    label: const Text('Refresh'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.white,
+                                      foregroundColor: const Color(0xFF1E3A8A),
+                                      elevation: 0,
+                                      padding: const EdgeInsets.symmetric(
+                                          vertical: 8),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        side: const BorderSide(
+                                            color: Color(0xFF1E3A8A)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
           Expanded(
@@ -471,24 +624,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.home),
-          onPressed: () => context.go('/'),
-          tooltip: 'Home',
-        ),
-        titleSpacing: 4,
-        title: DynamicAppBarTitle(
-          showCompanyName: _showCompanyNameInTitle,
-          companyName: widget.companyName,
-        ),
-        centerTitle: false,
-        actionsPadding: const EdgeInsets.only(right: 24),
-        foregroundColor: Colors.black87,
-        actions: _buildActions(),
-      ),
       body: Stack(
         children: [
           SingleChildScrollView(
@@ -594,13 +729,9 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          height: MediaQuery.of(context).size.height -
-                              kToolbarHeight,
+                          height: MediaQuery.of(context).size.height,
                           padding: const EdgeInsets.only(right: 24),
-                          child: Container(
-                            margin: const EdgeInsets.only(top: 24),
-                            child: _buildNavigationList(),
-                          ),
+                          child: _buildNavigationList(),
                         ),
                         const Expanded(child: SizedBox()),
                       ],
