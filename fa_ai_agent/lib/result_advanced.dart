@@ -5,6 +5,8 @@ import 'package:fa_ai_agent/models/section.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:rxdart/subjects.dart';
 import 'package:go_router/go_router.dart';
@@ -333,8 +335,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                   Padding(
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 16),
-                                    child: Text(
-                                      widget.companyName,
+                                    child: MarqueeText(
+                                      text: widget.companyName,
                                       style: const TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.bold,
@@ -371,45 +373,84 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      // TODO: Implement bookmark functionality
+                                  child: StatefulBuilder(
+                                    builder: (context, setState) {
+                                      bool isHovered = false;
+                                      return MouseRegion(
+                                        cursor: SystemMouseCursors.click,
+                                        onEnter: (_) =>
+                                            setState(() => isHovered = true),
+                                        onExit: (_) =>
+                                            setState(() => isHovered = false),
+                                        child: ElevatedButton.icon(
+                                          onPressed: () {
+                                            // TODO: Implement bookmark functionality
+                                          },
+                                          icon: Icon(
+                                            isHovered
+                                                ? Icons.bookmark
+                                                : Icons.bookmark_border,
+                                            size: 16,
+                                            color: isHovered
+                                                ? Colors.white
+                                                : const Color(0xFF1E3A8A),
+                                          ),
+                                          label: Text(
+                                            'Bookmark',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                              color: isHovered
+                                                  ? Colors.white
+                                                  : const Color(0xFF1E3A8A),
+                                            ),
+                                          ),
+                                          style: isHovered
+                                              ? _getHoverButtonStyle()
+                                              : _getButtonStyle(),
+                                        ),
+                                      );
                                     },
-                                    icon: const Icon(Icons.bookmark_border,
-                                        size: 18),
-                                    label: const Text('Bookmark'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: const Color(0xFF1E3A8A),
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        side: const BorderSide(
-                                            color: Color(0xFF1E3A8A)),
-                                      ),
-                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: ElevatedButton.icon(
-                                    onPressed: _handleRefresh,
-                                    icon: const Icon(Icons.refresh, size: 18),
-                                    label: const Text('Refresh'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: const Color(0xFF1E3A8A),
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        side: const BorderSide(
-                                            color: Color(0xFF1E3A8A)),
-                                      ),
-                                    ),
+                                  child: StatefulBuilder(
+                                    builder: (context, setState) {
+                                      bool isHovered = false;
+                                      return MouseRegion(
+                                        cursor: SystemMouseCursors.click,
+                                        onEnter: (_) =>
+                                            setState(() => isHovered = true),
+                                        onExit: (_) =>
+                                            setState(() => isHovered = false),
+                                        child: ElevatedButton.icon(
+                                          onPressed: _handleRefresh,
+                                          icon: Icon(
+                                            isHovered
+                                                ? Icons.refresh
+                                                : Icons.refresh,
+                                            size: 16,
+                                            color: isHovered
+                                                ? Colors.white
+                                                : const Color(0xFF1E3A8A),
+                                          ),
+                                          label: Text(
+                                            'Refresh',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                              color: isHovered
+                                                  ? Colors.white
+                                                  : const Color(0xFF1E3A8A),
+                                            ),
+                                          ),
+                                          style: isHovered
+                                              ? _getHoverButtonStyle()
+                                              : _getButtonStyle(),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
@@ -419,46 +460,85 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                               children: [
                                 SizedBox(
                                   width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    onPressed: () {
-                                      // TODO: Implement bookmark functionality
+                                  child: StatefulBuilder(
+                                    builder: (context, setState) {
+                                      bool isHovered = false;
+                                      return MouseRegion(
+                                        cursor: SystemMouseCursors.click,
+                                        onEnter: (_) =>
+                                            setState(() => isHovered = true),
+                                        onExit: (_) =>
+                                            setState(() => isHovered = false),
+                                        child: ElevatedButton.icon(
+                                          onPressed: () {
+                                            // TODO: Implement bookmark functionality
+                                          },
+                                          icon: Icon(
+                                            isHovered
+                                                ? Icons.bookmark
+                                                : Icons.bookmark_border,
+                                            size: 16,
+                                            color: isHovered
+                                                ? Colors.white
+                                                : const Color(0xFF1E3A8A),
+                                          ),
+                                          label: Text(
+                                            'Bookmark',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                              color: isHovered
+                                                  ? Colors.white
+                                                  : const Color(0xFF1E3A8A),
+                                            ),
+                                          ),
+                                          style: isHovered
+                                              ? _getHoverButtonStyle()
+                                              : _getButtonStyle(),
+                                        ),
+                                      );
                                     },
-                                    icon: const Icon(Icons.bookmark_border,
-                                        size: 18),
-                                    label: const Text('Bookmark'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: const Color(0xFF1E3A8A),
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        side: const BorderSide(
-                                            color: Color(0xFF1E3A8A)),
-                                      ),
-                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
                                 SizedBox(
                                   width: double.infinity,
-                                  child: ElevatedButton.icon(
-                                    onPressed: _handleRefresh,
-                                    icon: const Icon(Icons.refresh, size: 18),
-                                    label: const Text('Refresh'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: const Color(0xFF1E3A8A),
-                                      elevation: 0,
-                                      padding: const EdgeInsets.symmetric(
-                                          vertical: 8),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                        side: const BorderSide(
-                                            color: Color(0xFF1E3A8A)),
-                                      ),
-                                    ),
+                                  child: StatefulBuilder(
+                                    builder: (context, setState) {
+                                      bool isHovered = false;
+                                      return MouseRegion(
+                                        cursor: SystemMouseCursors.click,
+                                        onEnter: (_) =>
+                                            setState(() => isHovered = true),
+                                        onExit: (_) =>
+                                            setState(() => isHovered = false),
+                                        child: ElevatedButton.icon(
+                                          onPressed: _handleRefresh,
+                                          icon: Icon(
+                                            isHovered
+                                                ? Icons.refresh
+                                                : Icons.refresh,
+                                            size: 16,
+                                            color: isHovered
+                                                ? Colors.white
+                                                : const Color(0xFF1E3A8A),
+                                          ),
+                                          label: Text(
+                                            'Refresh',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w500,
+                                              color: isHovered
+                                                  ? Colors.white
+                                                  : const Color(0xFF1E3A8A),
+                                            ),
+                                          ),
+                                          style: isHovered
+                                              ? _getHoverButtonStyle()
+                                              : _getButtonStyle(),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ),
                               ],
@@ -1174,6 +1254,145 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       onCacheTimeUpdate: (DateTime cacheTime) {
         widget.cacheTimeSubject.add(cacheTime);
       },
+    );
+  }
+
+  ButtonStyle _getButtonStyle() {
+    return ElevatedButton.styleFrom(
+      backgroundColor: Colors.white,
+      foregroundColor: const Color(0xFF1E3A8A),
+      elevation: 0,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: const Color(0xFF1E3A8A).withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+    );
+  }
+
+  ButtonStyle _getHoverButtonStyle() {
+    return ElevatedButton.styleFrom(
+      backgroundColor: const Color(0xFF1E3A8A),
+      foregroundColor: Colors.white,
+      elevation: 2,
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: const BorderSide(
+          color: Color(0xFF1E3A8A),
+          width: 1,
+        ),
+      ),
+    );
+  }
+}
+
+class MarqueeText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+  final Duration duration;
+
+  const MarqueeText({
+    super.key,
+    required this.text,
+    required this.style,
+    this.duration = const Duration(seconds: 15),
+  });
+
+  @override
+  State<MarqueeText> createState() => _MarqueeTextState();
+}
+
+class _MarqueeTextState extends State<MarqueeText> {
+  late ScrollController _scrollController;
+  bool _isOverflowing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController = ScrollController();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkOverflow();
+    });
+  }
+
+  void _checkOverflow() {
+    final textStyle = widget.style;
+    final text = widget.text;
+    final fontSize = textStyle.fontSize ?? 18.0;
+    final fontFamily = textStyle.fontFamily;
+    final fontWeight = textStyle.fontWeight ?? FontWeight.normal;
+
+    // Approximate text width based on character count and font size
+    final approximateWidth = text.length * fontSize * 0.6;
+
+    if (approximateWidth > 200) {
+      // Check against container width
+      setState(() {
+        _isOverflowing = true;
+      });
+      // Add a small delay before starting the animation
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) {
+          _startMarquee();
+        }
+      });
+    }
+  }
+
+  void _startMarquee() {
+    if (!_scrollController.hasClients) return;
+
+    _scrollController
+        .animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: widget.duration,
+      curve: Curves.linear,
+    )
+        .then((_) {
+      if (mounted) {
+        _scrollController.jumpTo(0);
+        _startMarquee();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isOverflowing) {
+      return Text(
+        widget.text,
+        style: widget.style,
+        overflow: TextOverflow.ellipsis,
+        maxLines: 1,
+      );
+    }
+
+    return SingleChildScrollView(
+      controller: _scrollController,
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          Text(
+            widget.text,
+            style: widget.style,
+          ),
+          const SizedBox(width: 20), // Add some space between repetitions
+          Text(
+            widget.text,
+            style: widget.style,
+          ),
+        ],
+      ),
     );
   }
 }

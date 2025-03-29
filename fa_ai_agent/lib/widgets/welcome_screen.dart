@@ -104,7 +104,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         height: 40,
                         child: OutlinedButton(
                           onPressed: () {
-                            context.go('/home');
+                            // Empty action for demo button
                           },
                           style: OutlinedButton.styleFrom(
                             foregroundColor: const Color(0xFF1E2C3D),

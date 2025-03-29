@@ -37,6 +37,18 @@ class _DashboardPageState extends State<DashboardPage> {
   void initState() {
     super.initState();
     _searchFocusNode.addListener(_onSearchFocusChange);
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    final user = AuthService().currentUser;
+    if (user == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.go('/');
+        }
+      });
+    }
   }
 
   @override
