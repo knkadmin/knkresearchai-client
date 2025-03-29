@@ -13,6 +13,7 @@ import 'package:fa_ai_agent/widgets/chart_builder.dart';
 import 'package:fa_ai_agent/widgets/thinking_animation.dart';
 import 'package:fa_ai_agent/widgets/tick_animation.dart';
 import 'package:fa_ai_agent/widgets/trading_view_chart.dart';
+import 'package:fa_ai_agent/widgets/alert_report_builder.dart';
 
 class ResultAdvancedPage extends StatefulWidget {
   ResultAdvancedPage({
@@ -53,6 +54,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     'Overview': 'business-overview',
     'Combined Charts': 'combined-charts',
     'Financial Performance': 'financial-performance',
+    'Accounting Red Flags': 'accounting-redflags',
     'Cash Flow': 'cash-flow-chart',
     'Recent News': 'recent-news',
     'Competitors': 'competitor-landscape',
@@ -1031,12 +1033,16 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   }
 
   Widget getAccountingRedFlags(String ticker, String language) {
-    return getReport(
-        _getCachedFuture(
-            'accountingRedFlags',
-            () => widget.service
-                .getAccountingRedFlags(ticker, language, forceRefresh)),
-        "Accounting Red Flags",
-        "accountingRedflags");
+    return AlertReportBuilder(
+      future: _getCachedFuture(
+          'accountingRedFlags',
+          () => widget.service
+              .getAccountingRedFlags(ticker, language, forceRefresh)),
+      title: "Accounting Red Flags",
+      reportKey: "accountingRedflags",
+      onCacheTimeUpdate: (DateTime cacheTime) {
+        widget.cacheTimeSubject.add(cacheTime);
+      },
+    );
   }
 }

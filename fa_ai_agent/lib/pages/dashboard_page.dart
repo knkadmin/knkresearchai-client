@@ -6,9 +6,16 @@ import '../agent_service.dart';
 import 'watchlist_page.dart';
 import 'membership_page.dart';
 import 'resources_page.dart';
+import 'package:fa_ai_agent/agent_service.dart';
+import 'package:fa_ai_agent/main.dart';
+import 'package:fa_ai_agent/pages/watchlist_page.dart';
+import 'package:fa_ai_agent/pages/membership_page.dart';
+import 'package:fa_ai_agent/pages/resources_page.dart';
+import 'package:fa_ai_agent/result_advanced.dart';
+import 'package:fa_ai_agent/widgets/thinking_animation.dart';
 
 class DashboardPage extends StatefulWidget {
-  const DashboardPage({Key? key}) : super(key: key);
+  const DashboardPage({super.key});
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
@@ -16,15 +23,15 @@ class DashboardPage extends StatefulWidget {
 
 class _DashboardPageState extends State<DashboardPage> {
   String _selectedPage = 'watchlist';
-  final searchController = TextEditingController();
-  List<Map<String, dynamic>> searchResults = [];
-  bool isLoading = false;
-  Timer? _debounce;
-  final AgentService service = AgentService();
-  final GlobalKey _searchKey = GlobalKey();
+  final TextEditingController searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchFocused = false;
+  List<Map<String, dynamic>> searchResults = [];
+  Timer? _debounce;
   OverlayEntry? _overlayEntry;
+  final AgentService service = AgentService();
+  final GlobalKey _searchKey = GlobalKey();
+  Widget? _reportPage;
 
   @override
   void initState() {
@@ -34,11 +41,10 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   void dispose() {
-    searchController.dispose();
-    _debounce?.cancel();
     _searchFocusNode.removeListener(_onSearchFocusChange);
-    _searchFocusNode.dispose();
+    _debounce?.cancel();
     _overlayEntry?.remove();
+    searchController.dispose();
     super.dispose();
   }
 
@@ -99,7 +105,7 @@ class _DashboardPageState extends State<DashboardPage> {
                           });
 
                           // Navigate
-                          context.go('/report/$encodedTicker');
+                          _navigateToReport(symbol, name);
                         },
                       );
                     },
@@ -170,34 +176,54 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
-  void _fetchReport(String ticker, String companyName) {
-    print("Navigating to report for ticker: $ticker, company: $companyName");
-    final encodedTicker = Uri.encodeComponent(ticker);
-    print("Encoded ticker: $encodedTicker");
-    try {
-      if (context.mounted) {
-        print("Context is mounted, navigating to /report/$encodedTicker");
-        context.go('/report/$encodedTicker');
-      } else {
-        print("Context is not mounted");
-      }
-    } catch (e) {
-      print("Navigation error: $e");
-    }
-  }
-
   void _navigateToReport(String symbol, String name) {
-    final encodedTicker = Uri.encodeComponent(symbol);
-    print("Direct navigation to /report/$encodedTicker");
-
-    // Hide results and reset search
+    // Clear search results and hide dropdown
     setState(() {
       searchResults = [];
       searchController.text = "";
+      _isSearchFocused = false;
     });
+    _hideSearchResults();
 
-    // Navigate
-    context.go('/report/$encodedTicker');
+    // Set the report page
+    setState(() {
+      _reportPage = FutureBuilder(
+        future: service.searchTickerSymbol(symbol),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(
+                child: ThinkingAnimation(
+                  size: 24,
+                  color: Color(0xFF1E3A8A),
+                ),
+              ),
+            );
+          }
+
+          if (snapshot.hasData) {
+            final data = snapshot.data as Map<String, dynamic>;
+            if (data["quotes"] != null && (data["quotes"] as List).isNotEmpty) {
+              final quote = (data["quotes"] as List).first;
+              final companyName = quote["shortname"] ?? symbol;
+              return ResultAdvancedPage(
+                tickerCode: symbol.toUpperCase(),
+                companyName: companyName,
+                language: Language.english,
+              );
+            }
+          }
+
+          // Fallback to using symbol as company name if lookup fails
+          return ResultAdvancedPage(
+            tickerCode: symbol.toUpperCase(),
+            companyName: symbol.toUpperCase(),
+            language: Language.english,
+          );
+        },
+      );
+      _selectedPage = 'report';
+    });
   }
 
   Widget _buildPage() {
@@ -208,33 +234,10 @@ class _DashboardPageState extends State<DashboardPage> {
         return const MembershipPage();
       case 'resources':
         return const ResourcesPage();
+      case 'report':
+        return _reportPage ?? const SizedBox.shrink();
       default:
-        return Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'Welcome to your Dashboard',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF1E293B),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Your personalized financial analysis hub',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Color(0xFF64748B),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+        return const WatchlistPage();
     }
   }
 
@@ -440,7 +443,7 @@ class _DashboardPageState extends State<DashboardPage> {
                             });
 
                             // Navigate
-                            context.go('/report/$encodedTicker');
+                            _navigateToReport(symbol, symbol);
                           },
                           child: const SizedBox
                               .shrink(), // Empty widget since we don't need a trigger

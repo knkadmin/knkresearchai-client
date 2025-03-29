@@ -168,45 +168,6 @@ class MyApp extends StatelessWidget {
               child: const DashboardPage(),
             ),
           ),
-          GoRoute(
-            path: '/report/:ticker',
-            pageBuilder: (context, state) {
-              final ticker = state.pathParameters['ticker']!;
-              return NoTransitionPage<void>(
-                child: FutureBuilder(
-                  future: AgentService().searchTickerSymbol(ticker),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Scaffold(
-                        body: StockLoadingSpinner(),
-                      );
-                    }
-
-                    if (snapshot.hasData) {
-                      final data = snapshot.data as Map<String, dynamic>;
-                      if (data["quotes"] != null &&
-                          (data["quotes"] as List).isNotEmpty) {
-                        final quote = (data["quotes"] as List).first;
-                        final companyName = quote["shortname"] ?? ticker;
-                        return ResultAdvancedPage(
-                          tickerCode: ticker.toUpperCase(),
-                          companyName: companyName,
-                          language: Language.english,
-                        );
-                      }
-                    }
-
-                    // Fallback to using ticker as company name if lookup fails
-                    return ResultAdvancedPage(
-                      tickerCode: ticker.toUpperCase(),
-                      companyName: ticker.toUpperCase(),
-                      language: Language.english,
-                    );
-                  },
-                ),
-              );
-            },
-          ),
         ],
       ),
     );

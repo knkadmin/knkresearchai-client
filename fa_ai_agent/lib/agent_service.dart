@@ -57,6 +57,7 @@ class AgentService {
 
   Future<Map<String, dynamic>> getAccountingRedFlags(
       String ticker, String language, bool forceRefresh) {
+    _log.info("Requesting accounting red flags for $ticker");
     return getOutput("/report-advanced/accounting-redflags", ticker, language,
         forceRefresh, "accounting-redflags");
   }
@@ -165,6 +166,7 @@ class AgentService {
       final response = await http.get(url);
       final jsonResponse =
           convert.jsonDecode(response.body) as Map<String, dynamic>;
+      _log.info("API Response for $endpoint: $jsonResponse");
       final output = jsonResponse['output'];
       output["cachedAt"] = DateTime.now().microsecondsSinceEpoch;
       box.put(cacheReportKey, convert.jsonEncode(output));
