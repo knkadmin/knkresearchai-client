@@ -25,6 +25,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final TextEditingController searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
   bool _isSearchFocused = false;
+  bool _isMenuCollapsed = false;
   List<Map<String, dynamic>> searchResults = [];
   Timer? _debounce;
   OverlayEntry? _overlayEntry;
@@ -247,10 +248,11 @@ class _DashboardPageState extends State<DashboardPage> {
       body: Row(
         children: [
           // Side Menu
-          Container(
-            width: 280,
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: _isMenuCollapsed ? 0 : 280,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: const Color(0xFFF8F9FA),
               border: Border(
                 right: BorderSide(
                   color: Colors.black.withOpacity(0.05),
@@ -263,9 +265,9 @@ class _DashboardPageState extends State<DashboardPage> {
                 // Side Menu Header
                 Container(
                   height: 65,
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  padding: EdgeInsets.zero,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: const Color(0xFFF8F9FA),
                     border: Border(
                       bottom: BorderSide(
                         color: Colors.black.withOpacity(0.05),
@@ -274,19 +276,21 @@ class _DashboardPageState extends State<DashboardPage> {
                     ),
                   ),
                   child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      const Icon(
-                        Icons.history,
-                        size: 20,
-                        color: Color(0xFF1E293B),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Report History',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF1E293B),
+                      Padding(
+                        padding: const EdgeInsets.only(left: 8),
+                        child: IconButton(
+                          padding: EdgeInsets.zero,
+                          icon: const Icon(
+                            Icons.menu_open,
+                            color: Color(0xFF1E293B),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isMenuCollapsed = true;
+                            });
+                          },
                         ),
                       ),
                     ],
@@ -367,90 +371,96 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            // Left: Title
-                            Row(
-                              children: [
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFF8F9FA),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: Colors.black.withOpacity(0.05),
-                                      width: 1,
-                                    ),
+                            // Left: Menu Toggle Button and Title
+                            if (_isMenuCollapsed)
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8F9FA),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.black.withOpacity(0.05),
+                                    width: 1,
                                   ),
-                                  child: const Icon(
-                                    Icons.dashboard,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(
+                                    Icons.menu,
                                     size: 24,
                                     color: Color(0xFF2563EB),
                                   ),
+                                  onPressed: () {
+                                    setState(() {
+                                      _isMenuCollapsed = false;
+                                    });
+                                  },
                                 ),
-                                const SizedBox(width: 12),
-                                const Text(
-                                  'KNK Research',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                ),
-                              ],
+                              ),
+                            if (_isMenuCollapsed) const SizedBox(width: 12),
+                            const Text(
+                              'KNK Research',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF1E293B),
+                              ),
                             ),
                             // Search Bar
-                            Container(
-                              width: 500,
-                              margin: const EdgeInsets.only(left: 24),
-                              child: TextField(
-                                key: _searchKey,
-                                controller: searchController,
-                                focusNode: _searchFocusNode,
-                                onChanged: _onSearchChanged,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFF1E293B),
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: 'Search company or ticker...',
-                                  hintStyle: TextStyle(
-                                    color: Colors.grey[400],
-                                    fontSize: 16,
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.grey[100],
-                                  suffixIcon: searchController.text.isNotEmpty
-                                      ? IconButton(
-                                          icon: Icon(Icons.clear,
-                                              color: Colors.grey[600]),
-                                          onPressed: () {
-                                            searchController.clear();
-                                            setState(() {
-                                              searchResults = [];
-                                            });
-                                            _hideSearchResults();
-                                          },
-                                        )
-                                      : Icon(Icons.search,
-                                          color: Colors.grey[600]),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16),
-                                  border: OutlineInputBorder(
-                                    borderSide: BorderSide.none,
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  focusedBorder: OutlineInputBorder(
-                                    borderSide:
-                                        BorderSide(color: Colors.grey[300]!),
-                                    borderRadius: BorderRadius.circular(8),
+                            Expanded(
+                              child: Center(
+                                child: SizedBox(
+                                  width: 500,
+                                  child: TextField(
+                                    key: _searchKey,
+                                    controller: searchController,
+                                    focusNode: _searchFocusNode,
+                                    onChanged: _onSearchChanged,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF1E293B),
+                                    ),
+                                    decoration: InputDecoration(
+                                      hintText: 'Search company or ticker...',
+                                      hintStyle: TextStyle(
+                                        color: Colors.grey[400],
+                                        fontSize: 16,
+                                      ),
+                                      filled: true,
+                                      fillColor: Colors.grey[100],
+                                      suffixIcon:
+                                          searchController.text.isNotEmpty
+                                              ? IconButton(
+                                                  icon: Icon(Icons.clear,
+                                                      color: Colors.grey[600]),
+                                                  onPressed: () {
+                                                    searchController.clear();
+                                                    setState(() {
+                                                      searchResults = [];
+                                                    });
+                                                    _hideSearchResults();
+                                                  },
+                                                )
+                                              : Icon(Icons.search,
+                                                  color: Colors.grey[600]),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 16),
+                                      border: OutlineInputBorder(
+                                        borderSide: BorderSide.none,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      focusedBorder: OutlineInputBorder(
+                                        borderSide: BorderSide(
+                                            color: Colors.grey[300]!),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ),
-                            // Spacer to push profile button to the right
-                            const Spacer(),
                             // Right: Profile Button
                             Container(
                               height: 40,
@@ -618,9 +628,10 @@ class _DashboardPageState extends State<DashboardPage> {
                                   borderRadius: BorderRadius.circular(16),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 20,
-                                      offset: const Offset(0, 4),
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 8),
+                                      spreadRadius: 2,
                                     ),
                                   ],
                                 ),
@@ -628,7 +639,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     const Icon(
-                                      Icons.search,
+                                      Icons.analytics_outlined,
                                       size: 48,
                                       color: Color(0xFF2563EB),
                                     ),
