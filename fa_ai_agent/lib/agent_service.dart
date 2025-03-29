@@ -55,6 +55,12 @@ class AgentService {
         forceRefresh, "financial-performance");
   }
 
+  Future<Map<String, dynamic>> getAccountingRedFlags(
+      String ticker, String language, bool forceRefresh) {
+    return getOutput("/report-advanced/accounting-redflags", ticker, language,
+        forceRefresh, "accounting-redflags");
+  }
+
   Future<Map<String, dynamic>> getCompetitorLandscape(
       String ticker, String language, bool forceRefresh) {
     return getOutput("/report-advanced/competitor-landscape", ticker, language,

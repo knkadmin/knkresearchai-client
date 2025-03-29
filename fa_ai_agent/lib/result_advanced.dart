@@ -93,6 +93,12 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
           getFinancialPerformance(widget.tickerCode, widget.language.value),
     ),
     Section(
+      title: 'Accounting Red Flags',
+      icon: Icons.warning_amber_rounded,
+      buildContent: () =>
+          getAccountingRedFlags(widget.tickerCode, widget.language.value),
+    ),
+    Section(
       title: 'Cash Flow',
       icon: Icons.account_balance,
       buildContent: () =>
@@ -1022,5 +1028,15 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       tickerSymbol: ticker,
       companyName: companyName,
     );
+  }
+
+  Widget getAccountingRedFlags(String ticker, String language) {
+    return getReport(
+        _getCachedFuture(
+            'accountingRedFlags',
+            () => widget.service
+                .getAccountingRedFlags(ticker, language, forceRefresh)),
+        "Accounting Red Flags",
+        "accountingRedflags");
   }
 }
