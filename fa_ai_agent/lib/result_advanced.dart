@@ -7,6 +7,7 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:rxdart/subjects.dart';
 import 'package:go_router/go_router.dart';
@@ -269,10 +270,11 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   }
 
   Widget _buildSection(Section section) {
+    final user = AuthService().currentUser;
     final bool isFullWidth = sections.indexOf(section) >=
         sections.indexWhere((s) => s.title == 'Cash Flow');
 
-    return Column(
+    Widget sectionContent = Column(
       key: _sectionKeys[section.title],
       children: [
         if (isFullWidth)
@@ -285,6 +287,76 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
         const SizedBox(height: 48),
       ],
     );
+
+    // For non-authenticated users, show sign-up prompt for all sections except Overview
+    if (user == null) {
+      if (section.title == 'Overview') {
+        return sectionContent;
+      }
+
+      final cacheKey = _sectionToCacheKey[section.title];
+      return StreamBuilder<Map<String, bool>>(
+        stream: widget.service.loadingStateSubject.stream,
+        builder: (context, snapshot) {
+          final loadingStates = snapshot.data ?? {};
+          final isLoading = cacheKey != null && loadingStates[cacheKey] == true;
+
+          if (isLoading) {
+            return sectionContent;
+          }
+
+          return Stack(
+            children: [
+              sectionContent,
+              Positioned.fill(
+                child: Container(
+                  color: Colors.white.withOpacity(0.7),
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Want to explore more?',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E3A8A),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        ElevatedButton(
+                          onPressed: () => context.go('/'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1E3A8A),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Sign Up Now',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    }
+
+    return sectionContent;
   }
 
   Widget getMetricsTable(bool isNarrow) {
@@ -822,6 +894,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
   @override
   Widget build(BuildContext context) {
+    final user = AuthService().currentUser;
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: Stack(
