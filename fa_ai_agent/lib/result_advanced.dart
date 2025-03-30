@@ -40,6 +40,7 @@ class ResultAdvancedPage extends StatefulWidget {
 
 class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   bool forceRefresh = false;
+  bool _isRefreshing = false;
   Widget? _cachedMetricsTable;
   final Map<String, Widget> _imageCache = {};
   final Map<String, Widget> _sectionCache = {};
@@ -302,6 +303,73 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     }
   }
 
+  void _handleRefresh() async {
+    setState(() {
+      _isRefreshing = true;
+      forceRefresh = true;
+      _cachedMetricsTable = null;
+      _imageCache.clear();
+      _sectionCache.clear();
+      _futureCache.clear();
+      _sectionLoadingStates.clear();
+      for (var notifier in _tickAnimationStates.values) {
+        notifier.dispose();
+      }
+      _tickAnimationStates.clear();
+    });
+
+    // Wait for all sections to load
+    await Future.wait(sections.map((section) async {
+      final cacheKey = _sectionToCacheKey[section.title];
+      if (cacheKey != null) {
+        await widget.service.getOutput(
+          "/report-advanced/$cacheKey",
+          widget.tickerCode,
+          widget.language.value,
+          true,
+          cacheKey,
+        );
+      }
+    }));
+
+    if (mounted) {
+      setState(() {
+        _isRefreshing = false;
+      });
+    }
+  }
+
+  Widget _buildRefreshButton(bool isHovered) {
+    return ElevatedButton.icon(
+      onPressed: _isRefreshing ? null : _handleRefresh,
+      icon: _isRefreshing
+          ? const SizedBox(
+              width: 16,
+              height: 16,
+              child: ThinkingAnimation(
+                size: 16,
+                color: Color(0xFF1E3A8A),
+              ),
+            )
+          : Icon(
+              isHovered ? Icons.refresh : Icons.refresh,
+              size: 16,
+              color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
+            ),
+      label: _isRefreshing
+          ? const SizedBox.shrink()
+          : Text(
+              'Refresh',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
+              ),
+            ),
+      style: isHovered ? _getHoverButtonStyle() : _getButtonStyle(),
+    );
+  }
+
   Widget _buildNavigationList() {
     return Container(
       width: 280,
@@ -443,31 +511,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                               setState(() => isHovered = true),
                                           onExit: (_) =>
                                               setState(() => isHovered = false),
-                                          child: ElevatedButton.icon(
-                                            onPressed: _handleRefresh,
-                                            icon: Icon(
-                                              isHovered
-                                                  ? Icons.refresh
-                                                  : Icons.refresh,
-                                              size: 16,
-                                              color: isHovered
-                                                  ? Colors.white
-                                                  : const Color(0xFF1E3A8A),
-                                            ),
-                                            label: Text(
-                                              'Refresh',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                                color: isHovered
-                                                    ? Colors.white
-                                                    : const Color(0xFF1E3A8A),
-                                              ),
-                                            ),
-                                            style: isHovered
-                                                ? _getHoverButtonStyle()
-                                                : _getButtonStyle(),
-                                          ),
+                                          child: _buildRefreshButton(isHovered),
                                         );
                                       },
                                     ),
@@ -554,31 +598,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                               setState(() => isHovered = true),
                                           onExit: (_) =>
                                               setState(() => isHovered = false),
-                                          child: ElevatedButton.icon(
-                                            onPressed: _handleRefresh,
-                                            icon: Icon(
-                                              isHovered
-                                                  ? Icons.refresh
-                                                  : Icons.refresh,
-                                              size: 16,
-                                              color: isHovered
-                                                  ? Colors.white
-                                                  : const Color(0xFF1E3A8A),
-                                            ),
-                                            label: Text(
-                                              'Refresh',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                                color: isHovered
-                                                    ? Colors.white
-                                                    : const Color(0xFF1E3A8A),
-                                              ),
-                                            ),
-                                            style: isHovered
-                                                ? _getHoverButtonStyle()
-                                                : _getButtonStyle(),
-                                          ),
+                                          child: _buildRefreshButton(isHovered),
                                         );
                                       },
                                     ),
@@ -1194,21 +1214,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       _futureCache[key] = createFuture();
     }
     return _futureCache[key]!;
-  }
-
-  void _handleRefresh() {
-    setState(() {
-      forceRefresh = true;
-      _cachedMetricsTable = null;
-      _imageCache.clear();
-      _sectionCache.clear();
-      _futureCache.clear();
-      _sectionLoadingStates.clear();
-      for (var notifier in _tickAnimationStates.values) {
-        notifier.dispose();
-      }
-      _tickAnimationStates.clear();
-    });
   }
 
   List<Widget> _buildActions() {

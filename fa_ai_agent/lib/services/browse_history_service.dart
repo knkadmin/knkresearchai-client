@@ -5,6 +5,7 @@ import '../models/browse_history.dart';
 class BrowseHistoryService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  static const int maxHistoryRecords = 50;
 
   Future<void> addHistory({
     required String companyName,
@@ -36,11 +37,36 @@ class BrowseHistoryService {
         viewedDate: DateTime.now(),
       );
 
+      // Add the new entry
       await _firestore
           .collection('users')
           .doc(user.uid)
           .collection('browseHistory')
           .add(history.toMap());
+
+      // Get total count of history records
+      final totalCount = await _firestore
+          .collection('users')
+          .doc(user.uid)
+          .collection('browseHistory')
+          .count()
+          .get();
+
+      // If we exceed the limit, delete the oldest records
+      if (totalCount.count! > maxHistoryRecords) {
+        final oldestRecords = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('browseHistory')
+            .orderBy('viewedDate')
+            .limit(totalCount.count! - maxHistoryRecords)
+            .get();
+
+        // Delete the oldest records
+        for (var doc in oldestRecords.docs) {
+          await doc.reference.delete();
+        }
+      }
     }
   }
 
@@ -53,6 +79,7 @@ class BrowseHistoryService {
         .doc(user.uid)
         .collection('browseHistory')
         .orderBy('viewedDate', descending: true)
+        .limit(maxHistoryRecords)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs
