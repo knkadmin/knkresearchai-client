@@ -129,17 +129,181 @@ class _DashboardPageState extends State<DashboardPage> {
                     itemBuilder: (context, index) {
                       final name = searchResults[index]["name"] ?? "";
                       final symbol = searchResults[index]["symbol"] ?? "";
-                      return ListTile(
-                        title: Text(name),
-                        subtitle: Text(symbol),
-                        onTap: () {
-                          setState(() {
-                            searchResults = [];
-                            searchController.text = "";
-                          });
-                          _hideSearchResults();
-                          _navigateToReport(symbol, name);
-                        },
+                      return Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            bottom: BorderSide(
+                              color: Colors.grey.withOpacity(0.1),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: () {
+                              setState(() {
+                                searchResults = [];
+                                searchController.text = "";
+                              });
+                              _hideSearchResults();
+                              _navigateToReport(symbol, name);
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          name,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xFF1E293B),
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Text(
+                                              symbol,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Color(0xFF1E3A8A),
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                            if (searchResults[index]
+                                                        ["exchange"] !=
+                                                    null &&
+                                                searchResults[index]["exchange"]
+                                                    .isNotEmpty)
+                                              Container(
+                                                margin: const EdgeInsets.only(
+                                                    left: 8),
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey[100],
+                                                  borderRadius:
+                                                      BorderRadius.circular(4),
+                                                ),
+                                                child: Text(
+                                                  searchResults[index]
+                                                      ["exchange"],
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                        if (searchResults[index]["sector"] !=
+                                                null &&
+                                            searchResults[index]["sector"]
+                                                .isNotEmpty)
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 4),
+                                            child: Text(
+                                              searchResults[index]["sector"],
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey[600],
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        if (searchResults[index]
+                                                    ["regularMarketPrice"] !=
+                                                null &&
+                                            searchResults[index]
+                                                    ["regularMarketPrice"] !=
+                                                0)
+                                          Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 4),
+                                            child: Row(
+                                              children: [
+                                                Text(
+                                                  '\$${searchResults[index]["regularMarketPrice"].toStringAsFixed(2)}',
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    fontWeight: FontWeight.w500,
+                                                    color: Color(0xFF1E293B),
+                                                  ),
+                                                ),
+                                                if (searchResults[index][
+                                                            "regularMarketChange"] !=
+                                                        null &&
+                                                    searchResults[index][
+                                                            "regularMarketChange"] !=
+                                                        0)
+                                                  Container(
+                                                    margin:
+                                                        const EdgeInsets.only(
+                                                            left: 8),
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2),
+                                                    decoration: BoxDecoration(
+                                                      color: (searchResults[
+                                                                          index]
+                                                                      [
+                                                                      "regularMarketChange"] >=
+                                                                  0
+                                                              ? Colors.green
+                                                              : Colors.red)
+                                                          .withOpacity(0.1),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              4),
+                                                    ),
+                                                    child: Text(
+                                                      '${searchResults[index]["regularMarketChange"] >= 0 ? '+' : ''}${searchResults[index]["regularMarketChangePercent"].toStringAsFixed(2)}%',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight:
+                                                            FontWeight.w500,
+                                                        color: searchResults[
+                                                                        index][
+                                                                    "regularMarketChange"] >=
+                                                                0
+                                                            ? Colors.green
+                                                            : Colors.red,
+                                                      ),
+                                                    ),
+                                                  ),
+                                              ],
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    size: 16,
+                                    color: Colors.grey[400],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       );
                     },
                   ),
@@ -199,6 +363,17 @@ class _DashboardPageState extends State<DashboardPage> {
             .map((item) => {
                   "name": item["shortname"],
                   "symbol": item["symbol"],
+                  "sector": item["sector"] ?? "",
+                  "exchange": item["exchange"] ?? "",
+                  "marketCap": item["marketCap"] ?? 0,
+                  "regularMarketPrice":
+                      item["regularMarketPrice"] ?? item["currentPrice"] ?? 0,
+                  "regularMarketChange":
+                      item["regularMarketChange"] ?? item["change"] ?? 0,
+                  "regularMarketChangePercent":
+                      item["regularMarketChangePercent"] ??
+                          item["changePercent"] ??
+                          0,
                 })
             .toList();
       });

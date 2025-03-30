@@ -56,10 +56,8 @@ class AlertReportBuilder extends StatelessWidget {
             }
 
             final data = snapshot.data!;
-            print('API Response Data: $data'); // Debug log
 
             final markdown = data['accountingRedflags']?['md'] as String?;
-            print('Extracted markdown: $markdown'); // Debug log
 
             // Count bullet points
             final bulletCount = markdown?.split('- ').length ?? 0;
@@ -87,7 +85,6 @@ class AlertReportBuilder extends StatelessWidget {
             }
 
             if (markdown == null || markdown.isEmpty) {
-              print('No markdown content found in response'); // Debug log
               return const Center(
                 child: Text('No content available'),
               );

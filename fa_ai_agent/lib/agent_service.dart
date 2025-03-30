@@ -166,7 +166,6 @@ class AgentService {
       final response = await http.get(url);
       final jsonResponse =
           convert.jsonDecode(response.body) as Map<String, dynamic>;
-      _log.info("API Response for $endpoint: $jsonResponse");
       final output = jsonResponse['output'];
       output["cachedAt"] = DateTime.now().microsecondsSinceEpoch;
       box.put(cacheReportKey, convert.jsonEncode(output));

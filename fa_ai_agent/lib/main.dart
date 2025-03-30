@@ -1083,7 +1083,6 @@ class _MyHomePageState extends State<MyHomePage>
         while (currentTry < maxRetries) {
           try {
             final response = await http.get(url);
-            print('Response for ${entry.key}: ${response.body}'); // Debug log
 
             if (response.statusCode == 200) {
               final data = json.decode(response.body);
@@ -1126,16 +1125,9 @@ class _MyHomePageState extends State<MyHomePage>
                   });
                 }
                 break; // Success, exit retry loop
-              } else {
-                print('Invalid data format for ${entry.key}: ${data}');
               }
-            } else {
-              print(
-                  'Error fetching data for ${entry.key}: ${response.statusCode}');
-              print('Error response: ${response.body}');
             }
           } catch (e) {
-            print('Error in try ${currentTry + 1} for ${entry.key}: $e');
             if (currentTry == maxRetries - 1) {
               // On last retry, update UI to show error state
               if (mounted) {

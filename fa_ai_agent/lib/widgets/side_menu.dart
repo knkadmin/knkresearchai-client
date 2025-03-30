@@ -121,7 +121,7 @@ class SideMenu extends StatelessWidget {
                             color: isHovered
                                 ? const Color(0xFF2563EB).withOpacity(0.1)
                                 : Colors.black.withOpacity(0.05),
-                            width: isHovered ? 1.5 : 1,
+                            width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
@@ -220,7 +220,7 @@ class SideMenu extends StatelessWidget {
                                               ? const Color(0xFF2563EB)
                                                   .withOpacity(0.1)
                                               : Colors.black.withOpacity(0.05),
-                                          width: isHovered ? 1.5 : 1,
+                                          width: 1,
                                         ),
                                         boxShadow: [
                                           BoxShadow(
@@ -408,7 +408,7 @@ class SideMenu extends StatelessWidget {
                                   color: isHovered
                                       ? const Color(0xFF2563EB).withOpacity(0.1)
                                       : Colors.black.withOpacity(0.05),
-                                  width: isHovered ? 1.5 : 1,
+                                  width: 1,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
