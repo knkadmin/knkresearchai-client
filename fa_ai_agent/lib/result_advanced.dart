@@ -23,13 +23,16 @@ class ResultAdvancedPage extends StatefulWidget {
     required this.tickerCode,
     required this.companyName,
     required this.language,
+    required this.sector,
   });
 
   final String tickerCode;
   final String companyName;
+  final String sector;
   final Language language;
   final AgentService service = AgentService();
   final BehaviorSubject cacheTimeSubject = BehaviorSubject();
+  final BehaviorSubject<String> sectorSubject = BehaviorSubject<String>();
 
   @override
   State<ResultAdvancedPage> createState() => _ResultAdvancedPageState();
@@ -189,10 +192,15 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     analytics.logEvent(
         name: 'view_reports', parameters: {'ticker': widget.tickerCode});
     _scrollController.addListener(_onScroll);
-    // Initialize section keys from sections list
-    _sectionKeys = {for (var section in sections) section.title: GlobalKey()};
+    // Initialize section keys from sections list with unique keys
+    _sectionKeys = {
+      for (var section in sections)
+        section.title:
+            GlobalKey(debugLabel: '${widget.tickerCode}_${section.title}')
+    };
     // Set initial section to the first one
     _currentSection.value = sections.first.title;
+    widget.sectorSubject.add(widget.sector);
   }
 
   @override
@@ -296,7 +304,10 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
   Widget _buildNavigationList() {
     return Container(
-      width: 240,
+      width: 280,
+      decoration: BoxDecoration(
+        color: Colors.white,
+      ),
       padding: const EdgeInsets.only(top: 16, bottom: 16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,233 +326,265 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           if (showCompanyName)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    Colors.blue.shade900,
-                                    Colors.blue.shade800,
-                                  ],
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: Container(
+                                width: double.infinity,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.blue.shade900,
+                                      Colors.blue.shade800,
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16),
-                                    child: MarqueeText(
-                                      text: widget.companyName,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16),
+                                      child: MarqueeText(
+                                        text: widget.companyName,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16),
-                                    child: StreamBuilder(
-                                      stream: widget.cacheTimeSubject.stream,
-                                      builder: (context, snapshot) {
-                                        if (snapshot.hasData) {
-                                          return Text(
-                                            'Report Generated: ${DateFormat('dd MMM yyyy').format(snapshot.data)}',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color:
-                                                  Colors.white.withOpacity(0.8),
+                                    const SizedBox(height: 4),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 16),
+                                      child: StreamBuilder(
+                                        stream: widget.cacheTimeSubject.stream,
+                                        builder: (context, snapshot) {
+                                          if (snapshot.hasData) {
+                                            return Text(
+                                              'Report Generated: ${DateFormat('dd MMM yyyy').format(snapshot.data)}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.white
+                                                    .withOpacity(0.8),
+                                              ),
+                                            );
+                                          }
+                                          return const SizedBox.shrink();
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          SizedBox(height: showCompanyName ? 12 : 0),
+                          if (showCompanyName)
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: StatefulBuilder(
+                                      builder: (context, setState) {
+                                        bool isHovered = false;
+                                        return MouseRegion(
+                                          cursor: SystemMouseCursors.click,
+                                          onEnter: (_) =>
+                                              setState(() => isHovered = true),
+                                          onExit: (_) =>
+                                              setState(() => isHovered = false),
+                                          child: ElevatedButton.icon(
+                                            onPressed: () {
+                                              // TODO: Implement bookmark functionality
+                                            },
+                                            icon: Icon(
+                                              isHovered
+                                                  ? Icons.bookmark
+                                                  : Icons.bookmark_border,
+                                              size: 16,
+                                              color: isHovered
+                                                  ? Colors.white
+                                                  : const Color(0xFF1E3A8A),
                                             ),
-                                          );
-                                        }
-                                        return const SizedBox.shrink();
+                                            label: Text(
+                                              'Bookmark',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: isHovered
+                                                    ? Colors.white
+                                                    : const Color(0xFF1E3A8A),
+                                              ),
+                                            ),
+                                            style: isHovered
+                                                ? _getHoverButtonStyle()
+                                                : _getButtonStyle(),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: StatefulBuilder(
+                                      builder: (context, setState) {
+                                        bool isHovered = false;
+                                        return MouseRegion(
+                                          cursor: SystemMouseCursors.click,
+                                          onEnter: (_) =>
+                                              setState(() => isHovered = true),
+                                          onExit: (_) =>
+                                              setState(() => isHovered = false),
+                                          child: ElevatedButton.icon(
+                                            onPressed: _handleRefresh,
+                                            icon: Icon(
+                                              isHovered
+                                                  ? Icons.refresh
+                                                  : Icons.refresh,
+                                              size: 16,
+                                              color: isHovered
+                                                  ? Colors.white
+                                                  : const Color(0xFF1E3A8A),
+                                            ),
+                                            label: Text(
+                                              'Refresh',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: isHovered
+                                                    ? Colors.white
+                                                    : const Color(0xFF1E3A8A),
+                                              ),
+                                            ),
+                                            style: isHovered
+                                                ? _getHoverButtonStyle()
+                                                : _getButtonStyle(),
+                                          ),
+                                        );
                                       },
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          const SizedBox(height: 12),
-                          if (showCompanyName)
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: StatefulBuilder(
-                                    builder: (context, setState) {
-                                      bool isHovered = false;
-                                      return MouseRegion(
-                                        cursor: SystemMouseCursors.click,
-                                        onEnter: (_) =>
-                                            setState(() => isHovered = true),
-                                        onExit: (_) =>
-                                            setState(() => isHovered = false),
-                                        child: ElevatedButton.icon(
-                                          onPressed: () {
-                                            // TODO: Implement bookmark functionality
-                                          },
-                                          icon: Icon(
-                                            isHovered
-                                                ? Icons.bookmark
-                                                : Icons.bookmark_border,
-                                            size: 16,
-                                            color: isHovered
-                                                ? Colors.white
-                                                : const Color(0xFF1E3A8A),
-                                          ),
-                                          label: Text(
-                                            'Bookmark',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w500,
-                                              color: isHovered
-                                                  ? Colors.white
-                                                  : const Color(0xFF1E3A8A),
-                                            ),
-                                          ),
-                                          style: isHovered
-                                              ? _getHoverButtonStyle()
-                                              : _getButtonStyle(),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: StatefulBuilder(
-                                    builder: (context, setState) {
-                                      bool isHovered = false;
-                                      return MouseRegion(
-                                        cursor: SystemMouseCursors.click,
-                                        onEnter: (_) =>
-                                            setState(() => isHovered = true),
-                                        onExit: (_) =>
-                                            setState(() => isHovered = false),
-                                        child: ElevatedButton.icon(
-                                          onPressed: _handleRefresh,
-                                          icon: Icon(
-                                            isHovered
-                                                ? Icons.refresh
-                                                : Icons.refresh,
-                                            size: 16,
-                                            color: isHovered
-                                                ? Colors.white
-                                                : const Color(0xFF1E3A8A),
-                                          ),
-                                          label: Text(
-                                            'Refresh',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w500,
-                                              color: isHovered
-                                                  ? Colors.white
-                                                  : const Color(0xFF1E3A8A),
-                                            ),
-                                          ),
-                                          style: isHovered
-                                              ? _getHoverButtonStyle()
-                                              : _getButtonStyle(),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
                             )
                           else
-                            Column(
-                              children: [
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: StatefulBuilder(
-                                    builder: (context, setState) {
-                                      bool isHovered = false;
-                                      return MouseRegion(
-                                        cursor: SystemMouseCursors.click,
-                                        onEnter: (_) =>
-                                            setState(() => isHovered = true),
-                                        onExit: (_) =>
-                                            setState(() => isHovered = false),
-                                        child: ElevatedButton.icon(
-                                          onPressed: () {
-                                            // TODO: Implement bookmark functionality
-                                          },
-                                          icon: Icon(
-                                            isHovered
-                                                ? Icons.bookmark
-                                                : Icons.bookmark_border,
-                                            size: 16,
-                                            color: isHovered
-                                                ? Colors.white
-                                                : const Color(0xFF1E3A8A),
-                                          ),
-                                          label: Text(
-                                            'Bookmark',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w500,
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    widget.tickerCode,
+                                    style: TextStyle(
+                                      fontSize: 28,
+                                      color: const Color(0xFF1E3A8A),
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
+                                      shadows: [
+                                        Shadow(
+                                          color: const Color(0xFF1E3A8A)
+                                              .withOpacity(0.1),
+                                          offset: const Offset(0, 1),
+                                          blurRadius: 2,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: StatefulBuilder(
+                                      builder: (context, setState) {
+                                        bool isHovered = false;
+                                        return MouseRegion(
+                                          cursor: SystemMouseCursors.click,
+                                          onEnter: (_) =>
+                                              setState(() => isHovered = true),
+                                          onExit: (_) =>
+                                              setState(() => isHovered = false),
+                                          child: ElevatedButton.icon(
+                                            onPressed: () {
+                                              // TODO: Implement bookmark functionality
+                                            },
+                                            icon: Icon(
+                                              isHovered
+                                                  ? Icons.bookmark
+                                                  : Icons.bookmark_border,
+                                              size: 16,
                                               color: isHovered
                                                   ? Colors.white
                                                   : const Color(0xFF1E3A8A),
                                             ),
+                                            label: Text(
+                                              'Bookmark',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: isHovered
+                                                    ? Colors.white
+                                                    : const Color(0xFF1E3A8A),
+                                              ),
+                                            ),
+                                            style: isHovered
+                                                ? _getHoverButtonStyle()
+                                                : _getButtonStyle(),
                                           ),
-                                          style: isHovered
-                                              ? _getHoverButtonStyle()
-                                              : _getButtonStyle(),
-                                        ),
-                                      );
-                                    },
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: StatefulBuilder(
-                                    builder: (context, setState) {
-                                      bool isHovered = false;
-                                      return MouseRegion(
-                                        cursor: SystemMouseCursors.click,
-                                        onEnter: (_) =>
-                                            setState(() => isHovered = true),
-                                        onExit: (_) =>
-                                            setState(() => isHovered = false),
-                                        child: ElevatedButton.icon(
-                                          onPressed: _handleRefresh,
-                                          icon: Icon(
-                                            isHovered
-                                                ? Icons.refresh
-                                                : Icons.refresh,
-                                            size: 16,
-                                            color: isHovered
-                                                ? Colors.white
-                                                : const Color(0xFF1E3A8A),
-                                          ),
-                                          label: Text(
-                                            'Refresh',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w500,
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: StatefulBuilder(
+                                      builder: (context, setState) {
+                                        bool isHovered = false;
+                                        return MouseRegion(
+                                          cursor: SystemMouseCursors.click,
+                                          onEnter: (_) =>
+                                              setState(() => isHovered = true),
+                                          onExit: (_) =>
+                                              setState(() => isHovered = false),
+                                          child: ElevatedButton.icon(
+                                            onPressed: _handleRefresh,
+                                            icon: Icon(
+                                              isHovered
+                                                  ? Icons.refresh
+                                                  : Icons.refresh,
+                                              size: 16,
                                               color: isHovered
                                                   ? Colors.white
                                                   : const Color(0xFF1E3A8A),
                                             ),
+                                            label: Text(
+                                              'Refresh',
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w500,
+                                                color: isHovered
+                                                    ? Colors.white
+                                                    : const Color(0xFF1E3A8A),
+                                              ),
+                                            ),
+                                            style: isHovered
+                                                ? _getHoverButtonStyle()
+                                                : _getButtonStyle(),
                                           ),
-                                          style: isHovered
-                                              ? _getHoverButtonStyle()
-                                              : _getButtonStyle(),
-                                        ),
-                                      );
-                                    },
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                         ],
                       ),
@@ -875,21 +918,50 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                               maxLines: 2,
                             ),
                             const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                widget.tickerCode,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.white,
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.15),
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: Text(
+                                    widget.tickerCode,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                                const SizedBox(width: 8),
+                                StreamBuilder<String>(
+                                  stream: widget.sectorSubject.stream,
+                                  builder: (context, snapshot) {
+                                    if (!snapshot.hasData) {
+                                      return const SizedBox.shrink();
+                                    }
+                                    return Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.15),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        snapshot.data!,
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w500,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
                             ),
                           ],
                         ),

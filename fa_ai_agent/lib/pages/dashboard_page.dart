@@ -30,7 +30,8 @@ class _DashboardPageState extends State<DashboardPage> {
   Timer? _debounce;
   OverlayEntry? _overlayEntry;
   final AgentService service = AgentService();
-  final GlobalKey _searchKey = GlobalKey();
+  final GlobalKey _searchBarKey = GlobalKey(debugLabel: 'search_bar');
+  final GlobalKey _searchCardKey = GlobalKey(debugLabel: 'search_card');
   Widget? _reportPage;
 
   @override
@@ -63,8 +64,15 @@ class _DashboardPageState extends State<DashboardPage> {
   void _showSearchResults() {
     _hideSearchResults();
 
+    // Determine which search field is focused and use its key
+    final searchKey = _searchFocusNode.hasFocus
+        ? (_searchBarKey.currentContext != null
+            ? _searchBarKey
+            : _searchCardKey)
+        : _searchCardKey;
+
     final searchBarBox =
-        _searchKey.currentContext?.findRenderObject() as RenderBox?;
+        searchKey.currentContext?.findRenderObject() as RenderBox?;
     if (searchBarBox == null) return;
 
     final position = searchBarBox.localToGlobal(Offset.zero);
@@ -218,10 +226,12 @@ class _DashboardPageState extends State<DashboardPage> {
             if (data["quotes"] != null && (data["quotes"] as List).isNotEmpty) {
               final quote = (data["quotes"] as List).first;
               final companyName = quote["shortname"] ?? symbol;
+              final sector = quote["sector"];
               return ResultAdvancedPage(
                 tickerCode: symbol.toUpperCase(),
                 companyName: companyName,
                 language: Language.english,
+                sector: sector ?? '',
               );
             }
           }
@@ -231,6 +241,7 @@ class _DashboardPageState extends State<DashboardPage> {
             tickerCode: symbol.toUpperCase(),
             companyName: symbol.toUpperCase(),
             language: Language.english,
+            sector: '',
           );
         },
       );
@@ -407,60 +418,63 @@ class _DashboardPageState extends State<DashboardPage> {
                                 color: Color(0xFF1E293B),
                               ),
                             ),
-                            // Search Bar
-                            Expanded(
-                              child: Center(
-                                child: SizedBox(
-                                  width: 500,
-                                  child: TextField(
-                                    key: _searchKey,
-                                    controller: searchController,
-                                    focusNode: _searchFocusNode,
-                                    onChanged: _onSearchChanged,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      color: Color(0xFF1E293B),
-                                    ),
-                                    decoration: InputDecoration(
-                                      hintText: 'Search company or ticker...',
-                                      hintStyle: TextStyle(
-                                        color: Colors.grey[400],
+                            // Search Bar in Navigation Bar (only show when report page is loaded)
+                            if (_reportPage != null)
+                              Expanded(
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 500,
+                                    child: TextField(
+                                      key: _searchBarKey,
+                                      controller: searchController,
+                                      focusNode: _searchFocusNode,
+                                      onChanged: _onSearchChanged,
+                                      style: const TextStyle(
                                         fontSize: 16,
+                                        color: Color(0xFF1E293B),
                                       ),
-                                      filled: true,
-                                      fillColor: Colors.grey[100],
-                                      suffixIcon:
-                                          searchController.text.isNotEmpty
-                                              ? IconButton(
-                                                  icon: Icon(Icons.clear,
-                                                      color: Colors.grey[600]),
-                                                  onPressed: () {
-                                                    searchController.clear();
-                                                    setState(() {
-                                                      searchResults = [];
-                                                    });
-                                                    _hideSearchResults();
-                                                  },
-                                                )
-                                              : Icon(Icons.search,
-                                                  color: Colors.grey[600]),
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 16),
-                                      border: OutlineInputBorder(
-                                        borderSide: BorderSide.none,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      focusedBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                            color: Colors.grey[300]!),
-                                        borderRadius: BorderRadius.circular(8),
+                                      decoration: InputDecoration(
+                                        hintText: 'Search company or ticker...',
+                                        hintStyle: TextStyle(
+                                          color: Colors.grey[400],
+                                          fontSize: 16,
+                                        ),
+                                        filled: true,
+                                        fillColor: Colors.grey[100],
+                                        suffixIcon: searchController
+                                                .text.isNotEmpty
+                                            ? IconButton(
+                                                icon: Icon(Icons.clear,
+                                                    color: Colors.grey[600]),
+                                                onPressed: () {
+                                                  searchController.clear();
+                                                  setState(() {
+                                                    searchResults = [];
+                                                  });
+                                                  _hideSearchResults();
+                                                },
+                                              )
+                                            : Icon(Icons.search,
+                                                color: Colors.grey[600]),
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 16),
+                                        border: OutlineInputBorder(
+                                          borderSide: BorderSide.none,
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        focusedBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                              color: Colors.grey[300]!),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
                             // Right: Profile Button
                             Container(
                               height: 40,
@@ -662,8 +676,9 @@ class _DashboardPageState extends State<DashboardPage> {
                                       textAlign: TextAlign.center,
                                     ),
                                     const SizedBox(height: 32),
+                                    // Search Field in Main Card
                                     TextField(
-                                      key: _searchKey,
+                                      key: _searchCardKey,
                                       controller: searchController,
                                       focusNode: _searchFocusNode,
                                       onChanged: _onSearchChanged,
