@@ -3,9 +3,12 @@ import 'package:rxdart/rxdart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert' as convert;
 import 'package:logging/logging.dart';
+import 'package:fa_ai_agent/config.dart';
+import 'package:fa_ai_agent/services/search_cache_service.dart';
 
 class AgentService {
   static final _log = Logger('AgentService');
+  final _searchCacheService = SearchCacheService();
 
   AgentService() {
     Logger.root.level = Level.INFO;
@@ -36,11 +39,42 @@ class AgentService {
   }
 
   Future<Map<String, dynamic>> searchTickerSymbol(String query) async {
+    _log.info("Searching for ticker symbol: $query");
+
+    // Check cache first
+    final cachedResults = await _searchCacheService.getCachedResults(query);
+    if (cachedResults != null) {
+      _log.info("Using cached results for query: $query");
+      return {'quotes': cachedResults};
+    }
+
+    _log.info("Cache miss, fetching from remote for query: $query");
     final url = Uri.https(baseUrl, 'ticker-symbol-search', {'q': query});
-    final response = await http.get(url);
-    final jsonResponse =
-        convert.jsonDecode(response.body) as Map<String, dynamic>;
-    return Future.value(jsonResponse);
+
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final jsonResponse =
+            convert.jsonDecode(response.body) as Map<String, dynamic>;
+
+        // Cache the results if we got valid data
+        if (jsonResponse['quotes'] != null) {
+          await _searchCacheService.cacheSearchResults(
+            query,
+            List<Map<String, dynamic>>.from(jsonResponse['quotes']),
+          );
+          _log.info("Cached results for query: $query");
+        }
+
+        return jsonResponse;
+      } else {
+        _log.severe('Error searching ticker symbol: ${response.statusCode}');
+        throw Exception('Failed to search ticker symbol');
+      }
+    } catch (e) {
+      _log.severe('Error searching ticker symbol: $e');
+      rethrow;
+    }
   }
 
   Future<Map<String, dynamic>> getBusinessOverview(
