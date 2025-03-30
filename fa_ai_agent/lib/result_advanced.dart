@@ -1003,8 +1003,11 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                         builder:
                             (BuildContext context, BoxConstraints constraints) {
                           final metricsTable = getMetricsTable(isNarrow);
-                          final contentSections = visibleSections
+                          final contentSections = sections
                               .map((section) => _buildSection(section))
+                              .where((widget) =>
+                                  widget is! SizedBox ||
+                                  (widget as SizedBox).width != 0)
                               .toList();
 
                           final keyMetricsSection = Container(
@@ -1044,11 +1047,9 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                ...contentSections.skip(4).take(
-                                    4), // Cash Flow, Competitors, Sector Stocks, Sector Comparison
+                                ...contentSections.skip(4).take(4),
                                 const SizedBox(height: 24),
-                                ...contentSections
-                                    .skip(8), // PE/PB Ratio and onwards
+                                ...contentSections.skip(8),
                               ],
                             ),
                           );

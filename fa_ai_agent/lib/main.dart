@@ -161,12 +161,6 @@ class MyApp extends StatelessWidget {
               child: const SignUpPage(),
             ),
           ),
-          GoRoute(
-            path: '/dashboard',
-            pageBuilder: (context, state) => NoTransitionPage<void>(
-              child: const DashboardPage(),
-            ),
-          ),
         ],
       ),
     );

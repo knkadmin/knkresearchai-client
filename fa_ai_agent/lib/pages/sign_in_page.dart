@@ -30,7 +30,7 @@ class _SignInPageState extends State<SignInPage> {
       // Navigate to dashboard if already signed in
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
-          context.go('/dashboard');
+          context.go('/');
         }
       });
     } else {
@@ -61,7 +61,7 @@ class _SignInPageState extends State<SignInPage> {
       );
 
       if (mounted) {
-        context.go('/dashboard');
+        context.go('/');
       }
     } catch (e) {
       if (mounted) {
@@ -85,7 +85,7 @@ class _SignInPageState extends State<SignInPage> {
       final firestoreService = FirestoreService();
       await firestoreService.createOrUpdateUserProfile();
       if (mounted) {
-        context.go('/dashboard');
+        context.go('/');
       }
     } catch (e) {
       if (mounted) {

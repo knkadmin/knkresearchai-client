@@ -53,7 +53,7 @@ class _SignUpPageState extends State<SignUpPage> {
       await firestoreService.createOrUpdateUserProfile();
 
       if (mounted) {
-        context.go('/dashboard');
+        context.go('/');
       }
     } catch (e) {
       if (mounted) {
@@ -78,7 +78,7 @@ class _SignUpPageState extends State<SignUpPage> {
       await firestoreService.createOrUpdateUserProfile();
 
       if (mounted) {
-        context.go('/dashboard');
+        context.go('/');
       }
     } catch (e) {
       if (mounted) {

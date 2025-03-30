@@ -37,12 +37,12 @@ class CustomSearchBar extends StatelessWidget {
       child: Container(
         height: height,
         decoration: BoxDecoration(
-          color: const Color(0xFFF8F9FA),
+          color: Colors.grey[100],
           borderRadius: BorderRadius.circular(12),
           border: showBorder
               ? Border.all(
-                  color: const Color(0xFF1E293B).withOpacity(0.2),
-                  width: 2,
+                  color: const Color(0xFF1E293B).withOpacity(0.1),
+                  width: 1,
                 )
               : null,
           boxShadow: showShadow
