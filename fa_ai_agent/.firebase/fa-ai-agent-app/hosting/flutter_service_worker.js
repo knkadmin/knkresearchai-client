@@ -3,46 +3,48 @@ const MANIFEST = 'flutter-app-manifest';
 const TEMP = 'flutter-temp-cache';
 const CACHE_NAME = 'flutter-app-cache';
 
-const RESOURCES = {"flutter_bootstrap.js": "924ab4a04c5e39cf8857810a12c337e2",
-"version.json": "374d01f69eba16a11009b7f23f815f39",
-"index.html": "e8ae45a976f773b1b68d151dd276d711",
-"/": "e8ae45a976f773b1b68d151dd276d711",
-"main.dart.js": "227352a76f391c17c8a1ba35af60a280",
-"flutter.js": "76f08d47ff9f5715220992f993002504",
-"favicon.png": "5dcef449791fa27946b3d35ad8803796",
-"icons/Icon-192.png": "ac9a721a12bbc803b44f645561ecb1e1",
-"icons/Icon-maskable-192.png": "c457ef57daa1d16f64b27b786ec2ea3c",
-"icons/Icon-maskable-512.png": "301a7604d45b3e739efc881eb04896ea",
-"icons/Icon-512.png": "96e752610906ba2a93c65f8abe1645f1",
-"manifest.json": "5a9fa45f799b398e33ee2f8d1260663b",
-"assets/AssetManifest.json": "0d8be223df64f684a30d1c7caf8e5489",
-"assets/NOTICES": "93c20203aa40a220af8059d7a638925c",
-"assets/FontManifest.json": "dc3d03800ccca4601324923c0b1d6d57",
-"assets/AssetManifest.bin.json": "88c715dcec5c7b4a4156f7da76617f6d",
-"assets/packages/cupertino_icons/assets/CupertinoIcons.ttf": "d7d83bd9ee909f8a9b348f56ca7b68c6",
-"assets/packages/wakelock_plus/assets/no_sleep.js": "7748a45cd593f33280669b29c2c8919a",
-"assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
-"assets/AssetManifest.bin": "16d26eb519f4e9e3ea9a403f56480427",
-"assets/fonts/MaterialIcons-Regular.otf": "676b428363f1f9503b17daaec6d8ae03",
-"canvaskit/skwasm_st.js": "d1326ceef381ad382ab492ba5d96f04d",
-"canvaskit/skwasm.js": "f2ad9363618c5f62e813740099a80e63",
-"canvaskit/skwasm.js.symbols": "80806576fa1056b43dd6d0b445b4b6f7",
-"canvaskit/canvaskit.js.symbols": "68eb703b9a609baef8ee0e413b442f33",
-"canvaskit/skwasm.wasm": "f0dfd99007f989368db17c9abeed5a49",
-"canvaskit/chromium/canvaskit.js.symbols": "5a23598a2a8efd18ec3b60de5d28af8f",
-"canvaskit/chromium/canvaskit.js": "ba4a8ae1a65ff3ad81c6818fd47e348b",
-"canvaskit/chromium/canvaskit.wasm": "64a386c87532ae52ae041d18a32a3635",
-"canvaskit/skwasm_st.js.symbols": "c7e7aac7cd8b612defd62b43e3050bdd",
-"canvaskit/canvaskit.js": "6cfe36b4647fbfa15683e09e7dd366bc",
-"canvaskit/canvaskit.wasm": "efeeba7dcc952dae57870d4df3111fad",
-"canvaskit/skwasm_st.wasm": "56c3973560dfcbf28ce47cebe40f3206"};
+const RESOURCES = {
+  "flutter_bootstrap.js": "924ab4a04c5e39cf8857810a12c337e2",
+  "version.json": "374d01f69eba16a11009b7f23f815f39",
+  "index.html": "e8ae45a976f773b1b68d151dd276d711",
+  "/": "e8ae45a976f773b1b68d151dd276d711",
+  "main.dart.js": "227352a76f391c17c8a1ba35af60a280",
+  "flutter.js": "76f08d47ff9f5715220992f993002504",
+  "favicon.png": "5dcef449791fa27946b3d35ad8803796",
+  "icons/Icon-192.png": "ac9a721a12bbc803b44f645561ecb1e1",
+  "icons/Icon-maskable-192.png": "c457ef57daa1d16f64b27b786ec2ea3c",
+  "icons/Icon-maskable-512.png": "301a7604d45b3e739efc881eb04896ea",
+  "icons/Icon-512.png": "96e752610906ba2a93c65f8abe1645f1",
+  "manifest.json": "5a9fa45f799b398e33ee2f8d1260663b",
+  "assets/AssetManifest.json": "0d8be223df64f684a30d1c7caf8e5489",
+  "assets/NOTICES": "93c20203aa40a220af8059d7a638925c",
+  "assets/FontManifest.json": "dc3d03800ccca4601324923c0b1d6d57",
+  "assets/AssetManifest.bin.json": "88c715dcec5c7b4a4156f7da76617f6d",
+  "assets/packages/cupertino_icons/assets/CupertinoIcons.ttf": "d7d83bd9ee909f8a9b348f56ca7b68c6",
+  "assets/packages/wakelock_plus/assets/no_sleep.js": "7748a45cd593f33280669b29c2c8919a",
+  "assets/shaders/ink_sparkle.frag": "ecc85a2e95f5e9f53123dcaf8cb9b6ce",
+  "assets/AssetManifest.bin": "16d26eb519f4e9e3ea9a403f56480427",
+  "assets/fonts/MaterialIcons-Regular.otf": "676b428363f1f9503b17daaec6d8ae03",
+  "canvaskit/skwasm_st.js": "d1326ceef381ad382ab492ba5d96f04d",
+  "canvaskit/skwasm.js": "f2ad9363618c5f62e813740099a80e63",
+  "canvaskit/skwasm.js.symbols": "80806576fa1056b43dd6d0b445b4b6f7",
+  "canvaskit/canvaskit.js.symbols": "68eb703b9a609baef8ee0e413b442f33",
+  "canvaskit/skwasm.wasm": "f0dfd99007f989368db17c9abeed5a49",
+  "canvaskit/chromium/canvaskit.js.symbols": "5a23598a2a8efd18ec3b60de5d28af8f",
+  "canvaskit/chromium/canvaskit.js": "ba4a8ae1a65ff3ad81c6818fd47e348b",
+  "canvaskit/chromium/canvaskit.wasm": "64a386c87532ae52ae041d18a32a3635",
+  "canvaskit/skwasm_st.js.symbols": "c7e7aac7cd8b612defd62b43e3050bdd",
+  "canvaskit/canvaskit.js": "6cfe36b4647fbfa15683e09e7dd366bc",
+  "canvaskit/canvaskit.wasm": "efeeba7dcc952dae57870d4df3111fad",
+  "canvaskit/skwasm_st.wasm": "56c3973560dfcbf28ce47cebe40f3206"
+};
 // The application shell files that are downloaded before a service worker can
 // start.
 const CORE = ["main.dart.js",
-"index.html",
-"flutter_bootstrap.js",
-"assets/AssetManifest.bin.json",
-"assets/FontManifest.json"];
+  "index.html",
+  "flutter_bootstrap.js",
+  "assets/AssetManifest.bin.json",
+  "assets/FontManifest.json"];
 
 // During install, the TEMP cache is populated with the application shell files.
 self.addEventListener("install", (event) => {
@@ -50,15 +52,15 @@ self.addEventListener("install", (event) => {
   return event.waitUntil(
     caches.open(TEMP).then((cache) => {
       return cache.addAll(
-        CORE.map((value) => new Request(value, {'cache': 'reload'})));
+        CORE.map((value) => new Request(value, { 'cache': 'reload' })));
     })
   );
 });
 // During activate, the cache is populated with the temp files downloaded in
 // install. If this service worker is upgrading from one with a saved
 // MANIFEST, then use this to retain unchanged resource files.
-self.addEventListener("activate", function(event) {
-  return event.waitUntil(async function() {
+self.addEventListener("activate", function (event) {
+  return event.waitUntil(async function () {
     try {
       var contentCache = await caches.open(CACHE_NAME);
       var tempCache = await caches.open(TEMP);
@@ -129,9 +131,16 @@ self.addEventListener("fetch", (event) => {
   if (event.request.url == origin || event.request.url.startsWith(origin + '/#') || key == '') {
     key = '/';
   }
-  // If the URL is not the RESOURCE list then return to signal that the
-  // browser should take over.
+  // If the URL is not the RESOURCE list then redirect to index.html
   if (!RESOURCES[key]) {
+    event.respondWith(
+      caches.match('index.html').then((response) => {
+        if (response) {
+          return response;
+        }
+        return fetch('index.html');
+      })
+    );
     return;
   }
   // If the URL is the index.html, perform an online-first request.
@@ -139,7 +148,7 @@ self.addEventListener("fetch", (event) => {
     return onlineFirst(event);
   }
   event.respondWith(caches.open(CACHE_NAME)
-    .then((cache) =>  {
+    .then((cache) => {
       return cache.match(event.request).then((response) => {
         // Either respond with the cached resource, or perform a fetch and
         // lazily populate the cache only if the resource was successfully fetched.

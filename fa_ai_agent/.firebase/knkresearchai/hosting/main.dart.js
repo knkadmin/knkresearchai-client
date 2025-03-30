@@ -48226,7 +48226,6 @@ s.aP()
 s.e.U(0,s.gT_())
 s.F4()
 s.ah3()
-s.zf()
 $.uQ().a.push(s.gRN())
 $.a9.xr$.push(new A.axU(s))},
 F4(){var s=0,r=A.z(t.H),q,p
@@ -48411,7 +48410,7 @@ $1(a){var s,r="/report/",q=this.a,p=q.c
 p.toString
 p=A.aQQ(p).b
 if(B.c.aV(p.gbX(p),r)){s=p.gbX(p).split(r)[1]
-q.lN(s,s)}},
+q.lN(s,s)}else q.zf()},
 $S:5}
 A.axc.prototype={
 $1(a){var s=this.a

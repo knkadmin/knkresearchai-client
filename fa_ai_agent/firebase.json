@@ -8,7 +8,13 @@
     ],
     "frameworksBackend": {
       "region": "us-central1"
-    }
+    },
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   },
   "flutter": {
     "platforms": {

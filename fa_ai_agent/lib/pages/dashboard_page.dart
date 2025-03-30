@@ -45,15 +45,17 @@ class _DashboardPageState extends State<DashboardPage> {
     _searchFocusNode.addListener(_onSearchFocusChange);
     _checkAuth();
     _loadBrowseHistory();
-    _loadMostRecentReport();
     RawKeyboard.instance.addListener(_handleKeyEvent);
 
-    // Check for route parameters
+    // Check for route parameters first
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final state = GoRouterState.of(context);
       if (state.uri.path.startsWith('/report/')) {
         final ticker = state.uri.path.split('/report/')[1];
         _navigateToReport(ticker, ticker);
+      } else {
+        // Only load most recent report if no ticker in URL
+        _loadMostRecentReport();
       }
     });
   }
@@ -567,6 +569,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   searchResults = [];
                                 });
                                 _hideSearchResults();
+                                context.go('/');
                               },
                               icon: const Icon(
                                 Icons.home,
