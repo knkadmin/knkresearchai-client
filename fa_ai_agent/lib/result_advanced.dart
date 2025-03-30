@@ -288,123 +288,136 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       ],
     );
 
-    // For non-authenticated users, show sign-up prompt for all sections except Overview
+    // For non-authenticated users, handle section visibility
     if (user == null) {
+      // List of sections that are free for non-authenticated users
+      final freeSections = ['Price Target', 'Overview', 'Financial Metrics'];
+
       // Check if the company is in Mega 7 list
       final bool isMega7Company = [
+        'AAPL', // Apple
+        'MSFT', // Microsoft
         'GOOGL', // Alphabet
         'AMZN', // Amazon
-        'AAPL', // Apple
+        'NVDA', // NVIDIA
         'META', // Meta
-        'MSFT', // Microsoft
-        'NVDA', // Nvidia
         'TSLA', // Tesla
       ].contains(widget.tickerCode);
 
-      if (section.title == 'Overview' || isMega7Company) {
-        return sectionContent;
-      }
+      // Special handling for Combined Charts section
+      if (section.title == 'Combined Charts') {
+        // For Mega 7 companies, show the content without blur
+        if (isMega7Company) {
+          return sectionContent;
+        }
 
-      final cacheKey = _sectionToCacheKey[section.title];
-      return StreamBuilder<Map<String, bool>>(
-        stream: widget.service.loadingStateSubject.stream,
-        builder: (context, snapshot) {
-          final loadingStates = snapshot.data ?? {};
-          final isLoading = cacheKey != null && loadingStates[cacheKey] == true;
+        final cacheKey = _sectionToCacheKey[section.title];
+        return StreamBuilder<Map<String, bool>>(
+          stream: widget.service.loadingStateSubject.stream,
+          builder: (context, snapshot) {
+            final loadingStates = snapshot.data ?? {};
+            final isLoading =
+                cacheKey != null && loadingStates[cacheKey] == true;
 
-          if (isLoading) {
-            return sectionContent;
-          }
+            if (isLoading) {
+              return sectionContent;
+            }
 
-          return Stack(
-            children: [
-              IgnorePointer(
-                child: sectionContent,
-              ),
-              Positioned.fill(
-                child: Stack(
-                  children: [
-                    ClipRect(
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                        child: Container(),
-                      ),
-                    ),
-                    Container(
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 16),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(12),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(0.1),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    'Unlock Premium Insights',
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF1E3A8A),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Get access to detailed analysis and exclusive content',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.grey.shade700,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            ElevatedButton(
-                              onPressed: () => context.go('/signup'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1E3A8A),
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 32,
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                elevation: 2,
-                              ),
-                              child: const Text(
-                                'Sign Up Now',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
+            return Stack(
+              children: [
+                IgnorePointer(
+                  child: sectionContent,
+                ),
+                Positioned.fill(
+                  child: Stack(
+                    children: [
+                      ClipRect(
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                          child: Container(),
                         ),
                       ),
-                    ),
-                  ],
+                      Container(
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 24, vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.9),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  children: [
+                                    const Text(
+                                      'Unlock Premium Insights',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF1E3A8A),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Get access to detailed analysis and exclusive content',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey.shade700,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton(
+                                onPressed: () => context.go('/signup'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1E3A8A),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 32,
+                                    vertical: 16,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  elevation: 2,
+                                ),
+                                child: const Text(
+                                  'Sign Up Now',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          );
-        },
-      );
+              ],
+            );
+          },
+        );
+      }
+
+      // Return null for non-free sections
+      if (!freeSections.contains(section.title) && !isMega7Company) {
+        return const SizedBox.shrink();
+      }
     }
 
     return sectionContent;
@@ -591,7 +604,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     );
   }
 
-  Widget _buildNavigationList() {
+  Widget _buildNavigationList(List<Section> sections) {
     final user = AuthService().currentUser;
     return Container(
       width: 280,
@@ -615,7 +628,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (showCompanyName && user != null)
+                          if (user != null && showCompanyName)
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
@@ -675,8 +688,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                               ),
                             ),
                           SizedBox(
-                              height: showCompanyName && user != null ? 12 : 0),
-                          if (showCompanyName && user != null)
+                              height: user != null && showCompanyName ? 12 : 0),
+                          if (user != null && showCompanyName)
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
@@ -946,6 +959,28 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
+    // Filter sections based on authentication status
+    final List<Section> visibleSections = user != null
+        ? sections
+        : sections.where((section) {
+            final freeSections = [
+              'Price Target',
+              'Overview',
+              'Combined Charts',
+              'Financial Metrics'
+            ];
+            final bool isMega7Company = [
+              'GOOGL', // Alphabet
+              'AMZN', // Amazon
+              'AAPL', // Apple
+              'META', // Meta
+              'MSFT', // Microsoft
+              'NVDA', // Nvidia
+              'TSLA', // Tesla
+            ].contains(widget.tickerCode);
+            return freeSections.contains(section.title) || isMega7Company;
+          }).toList();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: Stack(
@@ -968,7 +1003,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                         builder:
                             (BuildContext context, BoxConstraints constraints) {
                           final metricsTable = getMetricsTable(isNarrow);
-                          final contentSections = sections
+                          final contentSections = visibleSections
                               .map((section) => _buildSection(section))
                               .toList();
 
@@ -1055,7 +1090,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                         Container(
                           height: MediaQuery.of(context).size.height,
                           padding: const EdgeInsets.only(right: 24),
-                          child: _buildNavigationList(),
+                          child: _buildNavigationList(visibleSections),
                         ),
                         const Expanded(child: SizedBox()),
                       ],
