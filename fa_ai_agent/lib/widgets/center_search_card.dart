@@ -1,0 +1,191 @@
+import 'package:flutter/material.dart';
+import '../agent_service.dart';
+import '../result_advanced.dart';
+import 'company_button.dart';
+
+class CenterSearchCard extends StatelessWidget {
+  final TextEditingController searchController;
+  final FocusNode searchFocusNode;
+  final Function(String) onSearchChanged;
+  final Function(String, String) onNavigateToReport;
+  final List<Map<String, dynamic>> searchResults;
+  final Function() onHideSearchResults;
+  final GlobalKey searchCardKey;
+
+  const CenterSearchCard({
+    super.key,
+    required this.searchController,
+    required this.searchFocusNode,
+    required this.onSearchChanged,
+    required this.onNavigateToReport,
+    required this.searchResults,
+    required this.onHideSearchResults,
+    required this.searchCardKey,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 600,
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 30,
+            offset: const Offset(0, 8),
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.analytics_outlined,
+            size: 48,
+            color: Color(0xFF2563EB),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Search for a US-listed Company',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Enter a company name or ticker symbol to get started',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[600],
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 32),
+          // Search Field in Main Card
+          TextField(
+            key: searchCardKey,
+            controller: searchController,
+            focusNode: searchFocusNode,
+            onChanged: onSearchChanged,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Color(0xFF1E293B),
+            ),
+            decoration: InputDecoration(
+              hintText: 'Search company or ticker...',
+              hintStyle: TextStyle(
+                color: Colors.grey[400],
+                fontSize: 16,
+              ),
+              filled: true,
+              fillColor: Colors.grey[100],
+              suffixIcon: searchController.text.isNotEmpty
+                  ? IconButton(
+                      icon: Icon(Icons.clear, color: Colors.grey[600]),
+                      onPressed: () {
+                        searchController.clear();
+                        onHideSearchResults();
+                      },
+                    )
+                  : Icon(Icons.search, color: Colors.grey[600]),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+              border: OutlineInputBorder(
+                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey[300]!),
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+          ),
+          const SizedBox(height: 32),
+          Row(
+            children: [
+              Expanded(
+                child: Divider(
+                  color: Colors.grey[300],
+                  thickness: 1,
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'or',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[600],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: Divider(
+                  color: Colors.grey[300],
+                  thickness: 1,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          const Text(
+            'Quick Start with Mega 7 Companies',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
+            children: [
+              CompanyButton(
+                name: 'Alphabet',
+                symbol: 'GOOGL',
+                onTap: () => onNavigateToReport('GOOGL', 'Alphabet'),
+              ),
+              CompanyButton(
+                name: 'Amazon',
+                symbol: 'AMZN',
+                onTap: () => onNavigateToReport('AMZN', 'Amazon'),
+              ),
+              CompanyButton(
+                name: 'Apple',
+                symbol: 'AAPL',
+                onTap: () => onNavigateToReport('AAPL', 'Apple'),
+              ),
+              CompanyButton(
+                name: 'Meta',
+                symbol: 'META',
+                onTap: () => onNavigateToReport('META', 'Meta'),
+              ),
+              CompanyButton(
+                name: 'Microsoft',
+                symbol: 'MSFT',
+                onTap: () => onNavigateToReport('MSFT', 'Microsoft'),
+              ),
+              CompanyButton(
+                name: 'Nvidia',
+                symbol: 'NVDA',
+                onTap: () => onNavigateToReport('NVDA', 'Nvidia'),
+              ),
+              CompanyButton(
+                name: 'Tesla',
+                symbol: 'TSLA',
+                onTap: () => onNavigateToReport('TSLA', 'Tesla'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
