@@ -85,87 +85,87 @@ class CenterSearchCard extends StatelessWidget {
             showBorder: true,
             showShadow: false,
           ),
-          const SizedBox(height: 32),
-          Row(
-            children: [
-              Expanded(
-                child: Divider(
-                  color: Colors.grey[300],
-                  thickness: 1,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(
-                  'or',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+          if (AuthService().currentUser != null) ...[
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Expanded(
+                  child: Divider(
+                    color: Colors.grey[300],
+                    thickness: 1,
                   ),
                 ),
-              ),
-              Expanded(
-                child: Divider(
-                  color: Colors.grey[300],
-                  thickness: 1,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Text(
+                    'or',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          Text(
-            AuthService().currentUser == null
-                ? 'Quick Start with Mega 7 Companies for FREE'
-                : 'Quick Start with Mega 7 Companies',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1E293B),
+                Expanded(
+                  child: Divider(
+                    color: Colors.grey[300],
+                    thickness: 1,
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 24),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            alignment: WrapAlignment.center,
-            children: [
-              CompanyButton(
-                name: 'Alphabet',
-                symbol: 'GOOGL',
-                onTap: () => onNavigateToReport('GOOGL', 'Alphabet'),
+            const SizedBox(height: 32),
+            const Text(
+              'Quick Start with Mega 7 Companies',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF1E293B),
               ),
-              CompanyButton(
-                name: 'Amazon',
-                symbol: 'AMZN',
-                onTap: () => onNavigateToReport('AMZN', 'Amazon'),
-              ),
-              CompanyButton(
-                name: 'Apple',
-                symbol: 'AAPL',
-                onTap: () => onNavigateToReport('AAPL', 'Apple'),
-              ),
-              CompanyButton(
-                name: 'Meta',
-                symbol: 'META',
-                onTap: () => onNavigateToReport('META', 'Meta'),
-              ),
-              CompanyButton(
-                name: 'Microsoft',
-                symbol: 'MSFT',
-                onTap: () => onNavigateToReport('MSFT', 'Microsoft'),
-              ),
-              CompanyButton(
-                name: 'Nvidia',
-                symbol: 'NVDA',
-                onTap: () => onNavigateToReport('NVDA', 'Nvidia'),
-              ),
-              CompanyButton(
-                name: 'Tesla',
-                symbol: 'TSLA',
-                onTap: () => onNavigateToReport('TSLA', 'Tesla'),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              alignment: WrapAlignment.center,
+              children: [
+                CompanyButton(
+                  name: 'Alphabet',
+                  symbol: 'GOOGL',
+                  onTap: () => onNavigateToReport('GOOGL', 'Alphabet'),
+                ),
+                CompanyButton(
+                  name: 'Amazon',
+                  symbol: 'AMZN',
+                  onTap: () => onNavigateToReport('AMZN', 'Amazon'),
+                ),
+                CompanyButton(
+                  name: 'Apple',
+                  symbol: 'AAPL',
+                  onTap: () => onNavigateToReport('AAPL', 'Apple'),
+                ),
+                CompanyButton(
+                  name: 'Meta',
+                  symbol: 'META',
+                  onTap: () => onNavigateToReport('META', 'Meta'),
+                ),
+                CompanyButton(
+                  name: 'Microsoft',
+                  symbol: 'MSFT',
+                  onTap: () => onNavigateToReport('MSFT', 'Microsoft'),
+                ),
+                CompanyButton(
+                  name: 'Nvidia',
+                  symbol: 'NVDA',
+                  onTap: () => onNavigateToReport('NVDA', 'Nvidia'),
+                ),
+                CompanyButton(
+                  name: 'Tesla',
+                  symbol: 'TSLA',
+                  onTap: () => onNavigateToReport('TSLA', 'Tesla'),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

@@ -982,7 +982,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
           }).toList();
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           SingleChildScrollView(

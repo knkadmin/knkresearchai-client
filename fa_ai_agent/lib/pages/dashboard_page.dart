@@ -12,6 +12,7 @@ import 'package:fa_ai_agent/widgets/center_search_card.dart';
 import 'package:fa_ai_agent/widgets/side_menu.dart';
 import 'package:fa_ai_agent/main.dart';
 import 'package:fa_ai_agent/widgets/search_bar.dart' show CustomSearchBar;
+import 'package:quickalert/quickalert.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -35,6 +36,8 @@ class _DashboardPageState extends State<DashboardPage> {
   Widget? _reportPage;
   List<BrowseHistory> _browseHistory = [];
   bool _isHovered = false;
+  final TextEditingController feedbackController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
 
   @override
   void initState() {
@@ -897,22 +900,460 @@ class _DashboardPageState extends State<DashboardPage> {
                   child: _reportPage ??
                       Center(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.all(24.0),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              // Search Card
-                              CenterSearchCard(
-                                searchController: searchController,
-                                searchFocusNode: _searchFocusNode,
-                                onSearchChanged: _onSearchChanged,
-                                onNavigateToReport: _navigateToReport,
-                                searchResults: searchResults,
-                                onHideSearchResults: _hideSearchResults,
-                                searchCardKey: _searchCardKey,
-                              ),
-                              const SizedBox(height: 48),
-                              // Rest of the content...
+                              if (user == null) ...[
+                                // Combined Header and Search Section
+                                Container(
+                                  width: double.infinity,
+                                  decoration: const BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topCenter,
+                                      end: Alignment.bottomCenter,
+                                      colors: [
+                                        Color(0xFF1E2C3D),
+                                        Color(0xFF2E4B6F),
+                                      ],
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: <Widget>[
+                                      const SizedBox(height: 100),
+                                      const Text(
+                                        "AI-Powered Financial Analyst",
+                                        style: TextStyle(
+                                          fontSize: 64,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                          letterSpacing: -1,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 80),
+                                        height: 50,
+                                        child: const Text(
+                                          "Delivering in-depth research to empower informed investment decisions and optimize returns.",
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.white70,
+                                            fontWeight: FontWeight.normal,
+                                            height: 1.5,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 40),
+                                      Container(
+                                        constraints:
+                                            const BoxConstraints(maxWidth: 800),
+                                        margin: const EdgeInsets.symmetric(
+                                            horizontal: 12),
+                                        child: Card(
+                                          elevation: 20,
+                                          shadowColor: Colors.black26,
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius:
+                                                BorderRadius.circular(16),
+                                          ),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(12),
+                                            child: CenterSearchCard(
+                                              searchController:
+                                                  searchController,
+                                              searchFocusNode: _searchFocusNode,
+                                              onSearchChanged: _onSearchChanged,
+                                              onNavigateToReport:
+                                                  _navigateToReport,
+                                              searchResults: searchResults,
+                                              onHideSearchResults:
+                                                  _hideSearchResults,
+                                              searchCardKey: _searchCardKey,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 60),
+                                    ],
+                                  ),
+                                ),
+                                // Mega 7 Section for non-authenticated users
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 20, vertical: 40),
+                                  child: Column(
+                                    children: [
+                                      const Text(
+                                        "Quick Start with Mega 7 Companies for FREE. No Signup Required.",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1E2C3D),
+                                          height: 1.2,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 30),
+                                      Container(
+                                        width: 900,
+                                        child: Center(
+                                          child: Wrap(
+                                            spacing: 12,
+                                            runSpacing: 12,
+                                            alignment: WrapAlignment.center,
+                                            children: [
+                                              {"AAPL": "Apple"},
+                                              {"MSFT": "Microsoft"},
+                                              {"GOOGL": "Alphabet (Google)"},
+                                              {"AMZN": "Amazon"},
+                                              {"NVDA": "NVIDIA"},
+                                              {"META": "Meta Platforms"},
+                                              {"TSLA": "Tesla"}
+                                            ].map((company) {
+                                              final companyName =
+                                                  company.values.toList().first;
+                                              final ticker =
+                                                  company.keys.toList().first;
+                                              return Material(
+                                                color: Colors.transparent,
+                                                child: InkWell(
+                                                  onTap: () =>
+                                                      _navigateToReport(
+                                                          ticker, companyName),
+                                                  borderRadius:
+                                                      BorderRadius.circular(25),
+                                                  hoverColor:
+                                                      const Color(0xFF2E4B6F)
+                                                          .withOpacity(0.1),
+                                                  child: Container(
+                                                    decoration: BoxDecoration(
+                                                      border: Border.all(
+                                                        color: const Color(
+                                                            0xFF2E4B6F),
+                                                        width: 1.5,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              25),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: Colors.black
+                                                              .withOpacity(
+                                                                  0.05),
+                                                          blurRadius: 10,
+                                                          offset: const Offset(
+                                                              0, 2),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                    padding: const EdgeInsets
+                                                        .symmetric(
+                                                      horizontal: 20,
+                                                      vertical: 12,
+                                                    ),
+                                                    child: Row(
+                                                      mainAxisSize:
+                                                          MainAxisSize.min,
+                                                      children: [
+                                                        Text(
+                                                          ticker,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 16,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            color: Color(
+                                                                0xFF2E4B6F),
+                                                          ),
+                                                        ),
+                                                        Container(
+                                                          height: 20,
+                                                          width: 1,
+                                                          margin:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  horizontal:
+                                                                      12),
+                                                          color: const Color(
+                                                                  0xFF2E4B6F)
+                                                              .withOpacity(0.3),
+                                                        ),
+                                                        Text(
+                                                          companyName,
+                                                          style: TextStyle(
+                                                            fontSize: 14,
+                                                            color: Colors
+                                                                .grey[800],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ] else ...[
+                                // Search Card for authenticated users
+                                Padding(
+                                  padding: const EdgeInsets.all(24.0),
+                                  child: CenterSearchCard(
+                                    searchController: searchController,
+                                    searchFocusNode: _searchFocusNode,
+                                    onSearchChanged: _onSearchChanged,
+                                    onNavigateToReport: _navigateToReport,
+                                    searchResults: searchResults,
+                                    onHideSearchResults: _hideSearchResults,
+                                    searchCardKey: _searchCardKey,
+                                  ),
+                                ),
+                              ],
+                              if (user == null) ...[
+                                const SizedBox(height: 32),
+                                // Why Choose Us Section
+                                Container(
+                                  width: double.infinity,
+                                  color: const Color(0xFFF8F9FA),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 80),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      gradientTitle(
+                                          "Why choose AI agent with us?", 32),
+                                      const SizedBox(height: 60),
+                                      Center(
+                                        child: SingleChildScrollView(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 40),
+                                          scrollDirection: Axis.horizontal,
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              showcaseCard(
+                                                "Quick Insights",
+                                                "Understand a U.S.-listed company in just 2 minutes",
+                                                "Get a comprehensive overview of any U.S.-listed company in just two minutes, including business model, financials, and market performance.",
+                                                Icons.speed,
+                                              ),
+                                              const SizedBox(width: 24),
+                                              showcaseCard(
+                                                "Instant Updates",
+                                                "Refresh reports in just 30 seconds",
+                                                "No need to search for updates manually—simply refresh the report and get the latest company news and market changes in 30 seconds.",
+                                                Icons.update,
+                                              ),
+                                              const SizedBox(width: 24),
+                                              showcaseCard(
+                                                "Comprehensive View",
+                                                "Full industry landscape & competitor analysis",
+                                                "Easily see where a company fits within its industry, from upstream and downstream supply chains to key competitors, all in one clear report.",
+                                                Icons.view_comfy,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Feedback Form Section
+                                Stack(
+                                  children: [
+                                    Container(
+                                      width: double.infinity,
+                                      height: 700,
+                                      color: Colors.black,
+                                    ),
+                                    Align(
+                                      alignment: Alignment.center,
+                                      child: Container(
+                                        constraints:
+                                            const BoxConstraints(maxWidth: 900),
+                                        color: Colors.black,
+                                        padding: const EdgeInsets.all(80),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const SizedBox(height: 10),
+                                            const Text(
+                                              "We would like to hear your feedback.",
+                                              textAlign: TextAlign.center,
+                                              style: TextStyle(
+                                                fontSize: 30,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 40),
+                                            const Text(
+                                              'Issue description (* Required)',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 5),
+                                            TextField(
+                                              controller: feedbackController,
+                                              maxLines: 5,
+                                              style: const TextStyle(
+                                                  color: Colors.white),
+                                              decoration: InputDecoration(
+                                                hintText:
+                                                    'Please tell us what you were trying to achieve and what unexpected results or false information you noticed from AI agent reports.',
+                                                hintStyle: const TextStyle(
+                                                    color: Colors.grey),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                  borderSide: BorderSide(
+                                                      color:
+                                                          Colors.grey.shade800),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                  borderSide: BorderSide(
+                                                      color:
+                                                          Colors.grey.shade300),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 20),
+                                            const Text(
+                                              'Your email',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 5),
+                                            TextField(
+                                              controller: emailController,
+                                              keyboardType:
+                                                  TextInputType.emailAddress,
+                                              style: const TextStyle(
+                                                  color: Colors.white),
+                                              decoration: InputDecoration(
+                                                hintText: 'Enter your email',
+                                                hintStyle: const TextStyle(
+                                                    color: Colors.grey),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                  borderSide: BorderSide(
+                                                      color:
+                                                          Colors.grey.shade800),
+                                                ),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                  borderSide: BorderSide(
+                                                      color:
+                                                          Colors.grey.shade300),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 30),
+                                            Container(
+                                              child: ElevatedButton(
+                                                onPressed: () {
+                                                  if (feedbackController
+                                                      .text.isEmpty) {
+                                                    QuickAlert.show(
+                                                      context: context,
+                                                      type:
+                                                          QuickAlertType.error,
+                                                      title:
+                                                          "Your message is empty",
+                                                      text:
+                                                          'Please describe your issue in the description.',
+                                                      showConfirmBtn: true,
+                                                    );
+                                                    return;
+                                                  }
+                                                  service.sendFeedback(
+                                                      emailController.text,
+                                                      feedbackController.text);
+                                                  emailController.text = "";
+                                                  feedbackController.text = "";
+                                                  setState(() {
+                                                    QuickAlert.show(
+                                                      context: context,
+                                                      type: QuickAlertType
+                                                          .success,
+                                                      title: "Thank you",
+                                                      text:
+                                                          'Your feedback is on its way to our mailbox.',
+                                                      showConfirmBtn: true,
+                                                    );
+                                                  });
+                                                },
+                                                style: ButtonStyle(
+                                                  backgroundColor:
+                                                      MaterialStateProperty
+                                                          .resolveWith<Color>(
+                                                    (Set<MaterialState>
+                                                        states) {
+                                                      if (states.contains(
+                                                          MaterialState
+                                                              .hovered)) {
+                                                        return Colors.white60;
+                                                      }
+                                                      return Colors.white;
+                                                    },
+                                                  ),
+                                                ),
+                                                child: Container(
+                                                  width: 100,
+                                                  height: 40,
+                                                  child: const Center(
+                                                    child: Text(
+                                                      'Send',
+                                                      style: TextStyle(
+                                                        color: Colors.black,
+                                                        fontSize: 18,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.only(bottom: 20),
+                                  width: double.infinity,
+                                  color: Colors.black,
+                                  child: const Text(
+                                    "© 2025 KNK research",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -952,6 +1393,149 @@ class _DashboardPageState extends State<DashboardPage> {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMarketCard(String title, String value, String change,
+      bool isPositive, String detail) {
+    return Card(
+      elevation: 8,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        width: 280,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1E2C3D),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E2C3D),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+                  color: isPositive ? Colors.green : Colors.red,
+                  size: 20,
+                ),
+                Text(
+                  change,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: isPositive ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              detail,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget gradientTitle(String text, double fontSize) {
+    return ShaderMask(
+      shaderCallback: (bounds) => const LinearGradient(
+        colors: [Color(0xFF1E2C3D), Color(0xFF2E4B6F)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(bounds),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: fontSize,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget showcaseCard(
+      String title, String subtitle, String description, IconData iconName) {
+    return Card(
+      elevation: 8,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(40),
+        width: 350,
+        height: 420,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E2C3D).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                iconName,
+                color: const Color(0xFF1E2C3D),
+                size: 32,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E2C3D),
+                height: 1.2,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              subtitle,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF1E2C3D),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              description,
+              style: TextStyle(
+                fontSize: 16,
+                height: 1.6,
+                color: Colors.grey[500],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
