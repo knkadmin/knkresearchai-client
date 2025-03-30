@@ -47,6 +47,15 @@ class _DashboardPageState extends State<DashboardPage> {
     _loadBrowseHistory();
     _loadMostRecentReport();
     RawKeyboard.instance.addListener(_handleKeyEvent);
+
+    // Check for route parameters
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final state = GoRouterState.of(context);
+      if (state.uri.path.startsWith('/report/')) {
+        final ticker = state.uri.path.split('/report/')[1];
+        _navigateToReport(ticker, ticker);
+      }
+    });
   }
 
   Future<void> _checkAuth() async {
@@ -69,6 +78,17 @@ class _DashboardPageState extends State<DashboardPage> {
     final user = AuthService().currentUser;
     if (user == null) return;
 
+    // Check if there's a ticker in the URL
+    final state = GoRouterState.of(context);
+    if (state.uri.path.startsWith('/report/')) {
+      final urlTicker = state.uri.path.split('/report/')[1];
+
+      // If there's a ticker in URL, load that report instead of history
+      _navigateToReport(urlTicker, urlTicker);
+      return;
+    }
+
+    // If no ticker in URL, load most recent history
     final history = await _historyService.getMostRecentHistory();
     if (history != null) {
       _navigateToReport(history.companyTicker, history.companyName);
@@ -397,6 +417,9 @@ class _DashboardPageState extends State<DashboardPage> {
           return; // Already viewing this company's report
         }
       }
+
+      // Update URL to /report with ticker
+      context.go('/report/${symbol.toUpperCase()}');
 
       setState(() {
         searchResults = [];

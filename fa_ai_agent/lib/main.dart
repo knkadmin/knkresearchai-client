@@ -27,6 +27,7 @@ import 'package:fa_ai_agent/widgets/loading_spinner.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:fa_ai_agent/auth_service.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
+import 'package:fa_ai_agent/pages/error_page.dart';
 
 import 'firebase_options.dart';
 
@@ -161,7 +162,16 @@ class MyApp extends StatelessWidget {
               child: const SignUpPage(),
             ),
           ),
+          GoRoute(
+            path: '/report/:ticker',
+            pageBuilder: (context, state) => NoTransitionPage<void>(
+              child: const DashboardPage(),
+            ),
+          ),
         ],
+        errorBuilder: (context, state) => ErrorPage(
+          errorMessage: 'The page "${state.uri.path}" could not be found.',
+        ),
       ),
     );
   }
