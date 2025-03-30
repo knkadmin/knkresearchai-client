@@ -920,23 +920,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                             const SizedBox(height: 6),
                             Row(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.15),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    widget.tickerCode,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w500,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
                                 StreamBuilder<String>(
                                   stream: widget.sectorSubject.stream,
                                   builder: (context, snapshot) {
@@ -1381,17 +1364,22 @@ class MarqueeText extends StatefulWidget {
 class _MarqueeTextState extends State<MarqueeText> {
   late ScrollController _scrollController;
   bool _isOverflowing = false;
+  bool _isDisposed = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController = ScrollController();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _checkOverflow();
+      if (!_isDisposed) {
+        _checkOverflow();
+      }
     });
   }
 
   void _checkOverflow() {
+    if (_isDisposed) return;
+
     final textStyle = widget.style;
     final text = widget.text;
     final fontSize = textStyle.fontSize ?? 18.0;
@@ -1403,20 +1391,22 @@ class _MarqueeTextState extends State<MarqueeText> {
 
     if (approximateWidth > 200) {
       // Check against container width
-      setState(() {
-        _isOverflowing = true;
-      });
-      // Add a small delay before starting the animation
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) {
-          _startMarquee();
-        }
-      });
+      if (!_isDisposed) {
+        setState(() {
+          _isOverflowing = true;
+        });
+        // Add a small delay before starting the animation
+        Future.delayed(const Duration(milliseconds: 500), () {
+          if (!_isDisposed && mounted) {
+            _startMarquee();
+          }
+        });
+      }
     }
   }
 
   void _startMarquee() {
-    if (!_scrollController.hasClients) return;
+    if (!_scrollController.hasClients || _isDisposed) return;
 
     _scrollController
         .animateTo(
@@ -1425,7 +1415,7 @@ class _MarqueeTextState extends State<MarqueeText> {
       curve: Curves.linear,
     )
         .then((_) {
-      if (mounted) {
+      if (!_isDisposed && mounted) {
         _scrollController.jumpTo(0);
         _startMarquee();
       }
@@ -1434,6 +1424,7 @@ class _MarqueeTextState extends State<MarqueeText> {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _scrollController.dispose();
     super.dispose();
   }
