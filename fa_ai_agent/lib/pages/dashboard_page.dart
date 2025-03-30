@@ -13,6 +13,8 @@ import 'package:fa_ai_agent/pages/membership_page.dart';
 import 'package:fa_ai_agent/pages/resources_page.dart';
 import 'package:fa_ai_agent/result_advanced.dart';
 import 'package:fa_ai_agent/widgets/thinking_animation.dart';
+import 'package:fa_ai_agent/widgets/search_result_item.dart';
+import 'package:fa_ai_agent/widgets/company_button.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -382,43 +384,48 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ),
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            // Left: Menu Toggle Button and Title
-                            if (_isMenuCollapsed)
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF8F9FA),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.black.withOpacity(0.05),
-                                    width: 1,
+                            // Left side: Menu and Title
+                            Row(
+                              children: [
+                                if (_isMenuCollapsed)
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF8F9FA),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: Colors.black.withOpacity(0.05),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.menu,
+                                        size: 24,
+                                        color: Color(0xFF2563EB),
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _isMenuCollapsed = false;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                if (_isMenuCollapsed) const SizedBox(width: 12),
+                                const Text(
+                                  'KNK Research',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
                                   ),
                                 ),
-                                child: IconButton(
-                                  icon: const Icon(
-                                    Icons.menu,
-                                    size: 24,
-                                    color: Color(0xFF2563EB),
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      _isMenuCollapsed = false;
-                                    });
-                                  },
-                                ),
-                              ),
-                            if (_isMenuCollapsed) const SizedBox(width: 12),
-                            const Text(
-                              'KNK Research',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B),
-                              ),
+                              ],
                             ),
-                            // Search Bar in Navigation Bar (only show when report page is loaded)
+                            // Center: Search Bar (only show when report page is loaded)
                             if (_reportPage != null)
                               Expanded(
                                 child: Center(
@@ -768,15 +775,41 @@ class _DashboardPageState extends State<DashboardPage> {
                                       runSpacing: 12,
                                       alignment: WrapAlignment.center,
                                       children: [
-                                        _buildCompanyButton(
-                                            'Alphabet', 'GOOGL'),
-                                        _buildCompanyButton('Amazon', 'AMZN'),
-                                        _buildCompanyButton('Apple', 'AAPL'),
-                                        _buildCompanyButton('Meta', 'META'),
-                                        _buildCompanyButton(
-                                            'Microsoft', 'MSFT'),
-                                        _buildCompanyButton('Nvidia', 'NVDA'),
-                                        _buildCompanyButton('Tesla', 'TSLA'),
+                                        CompanyButton(
+                                            name: 'Alphabet',
+                                            symbol: 'GOOGL',
+                                            onTap: () => _navigateToReport(
+                                                'GOOGL', 'Alphabet')),
+                                        CompanyButton(
+                                            name: 'Amazon',
+                                            symbol: 'AMZN',
+                                            onTap: () => _navigateToReport(
+                                                'AMZN', 'Amazon')),
+                                        CompanyButton(
+                                            name: 'Apple',
+                                            symbol: 'AAPL',
+                                            onTap: () => _navigateToReport(
+                                                'AAPL', 'Apple')),
+                                        CompanyButton(
+                                            name: 'Meta',
+                                            symbol: 'META',
+                                            onTap: () => _navigateToReport(
+                                                'META', 'Meta')),
+                                        CompanyButton(
+                                            name: 'Microsoft',
+                                            symbol: 'MSFT',
+                                            onTap: () => _navigateToReport(
+                                                'MSFT', 'Microsoft')),
+                                        CompanyButton(
+                                            name: 'Nvidia',
+                                            symbol: 'NVDA',
+                                            onTap: () => _navigateToReport(
+                                                'NVDA', 'Nvidia')),
+                                        CompanyButton(
+                                            name: 'Tesla',
+                                            symbol: 'TSLA',
+                                            onTap: () => _navigateToReport(
+                                                'TSLA', 'Tesla')),
                                       ],
                                     ),
                                   ],
@@ -793,125 +826,6 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildCompanyButton(String name, String symbol) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => _navigateToReport(symbol, name),
-        borderRadius: BorderRadius.circular(25),
-        hoverColor: const Color(0xFF2E4B6F).withOpacity(0.1),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: const Color(0xFF2E4B6F),
-              width: 1.5,
-            ),
-            borderRadius: BorderRadius.circular(25),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 12,
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                symbol,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2E4B6F),
-                ),
-              ),
-              Container(
-                height: 20,
-                width: 1,
-                margin: const EdgeInsets.symmetric(horizontal: 12),
-                color: const Color(0xFF2E4B6F).withOpacity(0.3),
-              ),
-              Text(
-                name,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[800],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class SearchResultItem extends StatefulWidget {
-  final String name;
-  final String symbol;
-  final VoidCallback onTap;
-
-  const SearchResultItem({
-    super.key,
-    required this.name,
-    required this.symbol,
-    required this.onTap,
-  });
-
-  @override
-  State<SearchResultItem> createState() => _SearchResultItemState();
-}
-
-class _SearchResultItemState extends State<SearchResultItem> {
-  bool isHovered = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => isHovered = true),
-      onExit: (_) => setState(() => isHovered = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: Container(
-          color: isHovered
-              ? const Color(0xFF2563EB).withOpacity(0.1)
-              : Colors.transparent,
-          child: ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            title: Text(
-              widget.name,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-            subtitle: Text(
-              widget.symbol,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2E4B6F),
-              ),
-            ),
-            trailing: const Icon(
-              Icons.chevron_right,
-              color: Color(0xFF2E4B6F),
-              size: 20,
-            ),
-          ),
-        ),
       ),
     );
   }
