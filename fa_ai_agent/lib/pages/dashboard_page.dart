@@ -17,6 +17,7 @@ import 'package:fa_ai_agent/result_advanced.dart';
 import 'package:fa_ai_agent/widgets/thinking_animation.dart';
 import 'package:fa_ai_agent/widgets/search_result_item.dart';
 import 'package:fa_ai_agent/widgets/company_button.dart';
+import 'package:fa_ai_agent/services/watchlist_service.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -1052,6 +1053,222 @@ class _DashboardPageState extends State<DashboardPage> {
                             ),
                           ),
                         ),
+                      ),
+                      // Add Watchlist Section
+                      StreamBuilder<List<Map<String, dynamic>>>(
+                        stream: WatchlistService().getWatchlist(),
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                            return const SizedBox.shrink();
+                          }
+
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                child: const Text(
+                                  'Watchlist',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                              ),
+                              ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 8),
+                                itemCount: snapshot.data!.length,
+                                itemBuilder: (context, index) {
+                                  final item = snapshot.data![index];
+                                  return StatefulBuilder(
+                                    builder: (context, setState) {
+                                      return MouseRegion(
+                                        cursor: SystemMouseCursors.click,
+                                        onEnter: (_) =>
+                                            setState(() => _isHovered = true),
+                                        onExit: (_) =>
+                                            setState(() => _isHovered = false),
+                                        child: AnimatedContainer(
+                                          duration:
+                                              const Duration(milliseconds: 200),
+                                          margin: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: _isHovered
+                                                ? const Color(0xFFF8FAFC)
+                                                : Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: _isHovered
+                                                  ? const Color(0xFF2563EB)
+                                                      .withOpacity(0.1)
+                                                  : Colors.black
+                                                      .withOpacity(0.05),
+                                              width: _isHovered ? 1.5 : 1,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: _isHovered
+                                                    ? const Color(0xFF2563EB)
+                                                        .withOpacity(0.1)
+                                                    : Colors.black
+                                                        .withOpacity(0.05),
+                                                blurRadius: _isHovered ? 8 : 4,
+                                                offset: const Offset(0, 2),
+                                                spreadRadius: 0,
+                                              ),
+                                            ],
+                                          ),
+                                          child: Material(
+                                            color: Colors.transparent,
+                                            child: InkWell(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              onTap: () {
+                                                _navigateToReport(
+                                                    item['companyTicker'],
+                                                    item['companyName']);
+                                              },
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 12,
+                                                        vertical: 8),
+                                                child: Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.center,
+                                                  children: [
+                                                    Container(
+                                                      padding: const EdgeInsets
+                                                          .symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: const Color(
+                                                            0xFFF1F5F9),
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(4),
+                                                      ),
+                                                      child: Text(
+                                                        item['companyTicker'],
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color:
+                                                              Color(0xFF64748B),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment:
+                                                            CrossAxisAlignment
+                                                                .start,
+                                                        mainAxisSize:
+                                                            MainAxisSize.min,
+                                                        children: [
+                                                          Text(
+                                                            item['companyName'],
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 13,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w500,
+                                                              color: Color(
+                                                                  0xFF1E293B),
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                          ),
+                                                          if (item['companyName']
+                                                                  .length >
+                                                              30)
+                                                            Text(
+                                                              item[
+                                                                  'companyName'],
+                                                              style:
+                                                                  const TextStyle(
+                                                                fontSize: 11,
+                                                                fontWeight:
+                                                                    FontWeight
+                                                                        .w400,
+                                                                color: Color(
+                                                                    0xFF64748B),
+                                                              ),
+                                                              maxLines: 1,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                            ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    IconButton(
+                                                      padding: EdgeInsets.zero,
+                                                      constraints:
+                                                          const BoxConstraints(),
+                                                      icon: const Icon(
+                                                        Icons
+                                                            .remove_circle_outline,
+                                                        size: 16,
+                                                        color:
+                                                            Color(0xFF64748B),
+                                                      ),
+                                                      onPressed: () async {
+                                                        try {
+                                                          await WatchlistService()
+                                                              .removeFromWatchlist(
+                                                                  item[
+                                                                      'companyTicker']);
+                                                        } catch (e) {
+                                                          if (context.mounted) {
+                                                            ScaffoldMessenger
+                                                                    .of(context)
+                                                                .showSnackBar(
+                                                              SnackBar(
+                                                                content: Text(
+                                                                    'Error removing from watchlist: $e'),
+                                                                backgroundColor:
+                                                                    Colors.red,
+                                                              ),
+                                                            );
+                                                          }
+                                                        }
+                                                      },
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
+                              const Divider(
+                                height: 32,
+                                indent: 16,
+                                endIndent: 16,
+                                color: Color(0xFFE2E8F0),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
