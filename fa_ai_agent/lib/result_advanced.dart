@@ -17,6 +17,7 @@ import 'package:fa_ai_agent/widgets/tick_animation.dart';
 import 'package:fa_ai_agent/widgets/trading_view_chart.dart';
 import 'package:fa_ai_agent/widgets/alert_report_builder.dart';
 import 'services/watchlist_service.dart';
+import 'auth_service.dart';
 
 class ResultAdvancedPage extends StatefulWidget {
   ResultAdvancedPage({
@@ -321,24 +322,35 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       _tickAnimationStates.clear();
     });
 
-    // Wait for all sections to load
-    await Future.wait(sections.map((section) async {
-      final cacheKey = _sectionToCacheKey[section.title];
-      if (cacheKey != null) {
-        await widget.service.getOutput(
-          "/report-advanced/$cacheKey",
-          widget.tickerCode,
-          widget.language.value,
-          true,
-          cacheKey,
-        );
-      }
-    }));
+    try {
+      // Wait for all sections to load
+      await Future.wait(sections.map((section) async {
+        final cacheKey = _sectionToCacheKey[section.title];
+        if (cacheKey != null) {
+          await widget.service.getOutput(
+            "/report-advanced/$cacheKey",
+            widget.tickerCode,
+            widget.language.value,
+            true,
+            cacheKey,
+          );
+        }
+      }));
 
-    if (mounted) {
-      setState(() {
-        _isRefreshing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+          forceRefresh = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+          forceRefresh = false;
+        });
+      }
+      print('Error refreshing report: $e');
     }
   }
 
@@ -457,6 +469,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   }
 
   Widget _buildNavigationList() {
+    final user = AuthService().currentUser;
     return Container(
       width: 280,
       decoration: BoxDecoration(
@@ -479,7 +492,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (showCompanyName)
+                          if (showCompanyName && user != null)
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
@@ -538,8 +551,9 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                 ),
                               ),
                             ),
-                          SizedBox(height: showCompanyName ? 12 : 0),
-                          if (showCompanyName)
+                          SizedBox(
+                              height: showCompanyName && user != null ? 12 : 0),
+                          if (showCompanyName && user != null)
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
@@ -591,7 +605,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
                                     widget.tickerCode,
@@ -610,24 +624,26 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                       ],
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: StatefulBuilder(
-                                      builder: (context, setState) {
-                                        bool isHovered = false;
-                                        return MouseRegion(
-                                          cursor: SystemMouseCursors.click,
-                                          onEnter: (_) =>
-                                              setState(() => isHovered = true),
-                                          onExit: (_) =>
-                                              setState(() => isHovered = false),
-                                          child: _buildWatchButton(),
-                                        );
-                                      },
+                                  if (user != null) ...[
+                                    const SizedBox(height: 4),
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: StatefulBuilder(
+                                        builder: (context, setState) {
+                                          bool isHovered = false;
+                                          return MouseRegion(
+                                            cursor: SystemMouseCursors.click,
+                                            onEnter: (_) => setState(
+                                                () => isHovered = true),
+                                            onExit: (_) => setState(
+                                                () => isHovered = false),
+                                            child: _buildWatchButton(),
+                                          );
+                                        },
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
+                                    const SizedBox(height: 8),
+                                  ],
                                   SizedBox(
                                     width: double.infinity,
                                     child: StatefulBuilder(
@@ -934,6 +950,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     return StreamBuilder(
         stream: widget.cacheTimeSubject.stream,
         builder: (BuildContext context, AsyncSnapshot snapshot) {
+          final user = AuthService().currentUser;
           return Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -967,16 +984,34 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              companyName,
-                              style: const TextStyle(
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                                letterSpacing: 0.5,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 2,
+                            Row(
+                              children: [
+                                if (user == null)
+                                  IconButton(
+                                    onPressed: () {
+                                      context.go('/');
+                                    },
+                                    icon: const Icon(
+                                      Icons.home,
+                                      color: Colors.white,
+                                      size: 24,
+                                    ),
+                                    tooltip: 'Home',
+                                  ),
+                                Expanded(
+                                  child: Text(
+                                    companyName,
+                                    style: const TextStyle(
+                                      fontSize: 28,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      letterSpacing: 0.5,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 2,
+                                  ),
+                                ),
+                              ],
                             ),
                             const SizedBox(height: 6),
                             Row(
@@ -1391,6 +1426,9 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   }
 
   Widget _buildWatchButton() {
+    final user = AuthService().currentUser;
+    if (user == null) return const SizedBox.shrink();
+
     return StreamBuilder<bool>(
       stream: _watchlistService.isInWatchlist(widget.tickerCode),
       builder: (context, snapshot) {

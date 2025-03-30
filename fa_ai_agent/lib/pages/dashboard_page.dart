@@ -531,23 +531,37 @@ class _DashboardPageState extends State<DashboardPage> {
                       // Left: Logo
                       Row(
                         children: [
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Colors.black.withOpacity(0.05),
-                                width: 1,
+                          if (user == null)
+                            IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _reportPage = null;
+                                  searchController.clear();
+                                  searchResults = [];
+                                });
+                                _hideSearchResults();
+                              },
+                              icon: const Icon(
+                                Icons.home,
+                                size: 24,
+                                color: Color(0xFF1E293B),
                               ),
+                              tooltip: 'Home',
+                            )
+                          else if (_isMenuCollapsed)
+                            IconButton(
+                              onPressed: () {
+                                setState(() {
+                                  _isMenuCollapsed = false;
+                                });
+                              },
+                              icon: const Icon(
+                                Icons.menu,
+                                size: 24,
+                                color: Color(0xFF1E293B),
+                              ),
+                              tooltip: 'Expand Menu',
                             ),
-                            child: const Icon(
-                              Icons.analytics,
-                              size: 24,
-                              color: Color(0xFF2563EB),
-                            ),
-                          ),
                           const SizedBox(width: 12),
                           const Text(
                             'KNK Research',
@@ -559,6 +573,68 @@ class _DashboardPageState extends State<DashboardPage> {
                           ),
                         ],
                       ),
+                      // Middle: Search Bar (only show when report is open)
+                      if (_reportPage != null)
+                        Expanded(
+                          child: Center(
+                            child: SizedBox(
+                              width: 500,
+                              child: Container(
+                                key: _searchBarKey,
+                                height: 40,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8F9FA),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: Colors.black.withOpacity(0.05),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: TextField(
+                                  controller: searchController,
+                                  focusNode: _searchFocusNode,
+                                  onChanged: _onSearchChanged,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                  decoration: InputDecoration(
+                                    hintText: 'Search for a company...',
+                                    hintStyle: TextStyle(
+                                      color: Colors.grey[400],
+                                      fontSize: 16,
+                                    ),
+                                    prefixIcon: Icon(
+                                      Icons.search,
+                                      size: 20,
+                                      color: Colors.grey[400],
+                                    ),
+                                    suffixIcon: searchController.text.isNotEmpty
+                                        ? IconButton(
+                                            icon: Icon(
+                                              Icons.clear,
+                                              size: 20,
+                                              color: Colors.grey[400],
+                                            ),
+                                            onPressed: () {
+                                              searchController.clear();
+                                              searchResults = [];
+                                              setState(() {});
+                                            },
+                                          )
+                                        : null,
+                                    border: InputBorder.none,
+                                    isDense: false,
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       // Right: Action Buttons
                       Row(
                         children: [
@@ -831,6 +907,10 @@ class _DashboardPageState extends State<DashboardPage> {
                                     try {
                                       await AuthService().signOut();
                                       if (context.mounted) {
+                                        setState(() {
+                                          _reportPage = null;
+                                          _isMenuCollapsed = true;
+                                        });
                                         context.go('/');
                                       }
                                     } catch (e) {

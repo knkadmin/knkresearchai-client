@@ -161,17 +161,41 @@ class AgentService {
     final String cacheReportKey = "$ticker-$language-$cacheKey";
     final String? cachedReport = box.get(cacheReportKey);
     if (cachedReport == null || forceRefresh) {
-      final url = Uri.https(baseUrl, endpoint,
-          {'code': ticker, 'language': language.toLowerCase()});
-      final response = await http.get(url);
-      final jsonResponse =
-          convert.jsonDecode(response.body) as Map<String, dynamic>;
-      final output = jsonResponse['output'];
-      output["cachedAt"] = DateTime.now().microsecondsSinceEpoch;
-      box.put(cacheReportKey, convert.jsonEncode(output));
-      loadingState[cacheKey] = false;
-      loadingStateSubject.add(loadingState);
-      return Future.value(output);
+      try {
+        final url = Uri.https(baseUrl, endpoint,
+            {'code': ticker, 'language': language.toLowerCase()});
+        final response = await http.get(url);
+
+        if (response.statusCode != 200) {
+          _log.warning(
+              "Request failed with status code: ${response.statusCode}");
+          loadingState[cacheKey] = false;
+          loadingStateSubject.add(loadingState);
+          return Future.value({});
+        }
+
+        final jsonResponse =
+            convert.jsonDecode(response.body) as Map<String, dynamic>;
+        final output = jsonResponse['output'];
+
+        if (output == null || output.isEmpty) {
+          _log.warning("Empty output received for endpoint: $endpoint");
+          loadingState[cacheKey] = false;
+          loadingStateSubject.add(loadingState);
+          return Future.value({});
+        }
+
+        output["cachedAt"] = DateTime.now().microsecondsSinceEpoch;
+        box.put(cacheReportKey, convert.jsonEncode(output));
+        loadingState[cacheKey] = false;
+        loadingStateSubject.add(loadingState);
+        return Future.value(output);
+      } catch (e) {
+        _log.severe("Error in getOutput: $e");
+        loadingState[cacheKey] = false;
+        loadingStateSubject.add(loadingState);
+        return Future.value({});
+      }
     } else {
       loadingState[cacheKey] = false;
       loadingStateSubject.add(loadingState);
