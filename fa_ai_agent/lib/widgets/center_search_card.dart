@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../agent_service.dart';
 import '../result_advanced.dart';
 import 'company_button.dart';
@@ -73,6 +74,11 @@ class CenterSearchCard extends StatelessWidget {
             controller: searchController,
             focusNode: searchFocusNode,
             onChanged: onSearchChanged,
+            onSubmitted: (value) {
+              if (value.isNotEmpty) {
+                onSearchChanged(value);
+              }
+            },
             style: const TextStyle(
               fontSize: 16,
               color: Color(0xFF1E293B),

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../auth_service.dart';
 import '../agent_service.dart';
@@ -41,6 +42,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _checkAuth();
     _loadBrowseHistory();
     _loadMostRecentReport();
+    RawKeyboard.instance.addListener(_handleKeyEvent);
   }
 
   Future<void> _checkAuth() async {
@@ -78,6 +80,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _debounce?.cancel();
     _overlayEntry?.remove();
     searchController.dispose();
+    RawKeyboard.instance.removeListener(_handleKeyEvent);
     super.dispose();
   }
 
@@ -504,6 +507,17 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
           );
         });
+      }
+    }
+  }
+
+  void _handleKeyEvent(RawKeyEvent event) {
+    if (event is RawKeyUpEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.meta) {
+        if (RawKeyboard.instance.keysPressed
+            .contains(LogicalKeyboardKey.meta)) {
+          // Handle Meta key up event
+        }
       }
     }
   }
