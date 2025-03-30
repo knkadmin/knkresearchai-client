@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../agent_service.dart';
 import '../result_advanced.dart';
 import 'company_button.dart';
+import '../auth_service.dart';
 
 class CenterSearchCard extends StatelessWidget {
   final TextEditingController searchController;
@@ -139,9 +140,11 @@ class CenterSearchCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 32),
-          const Text(
-            'Quick Start with Mega 7 Companies',
-            style: TextStyle(
+          Text(
+            AuthService().currentUser == null
+                ? 'Quick Start with Mega 7 Companies for FREE'
+                : 'Quick Start with Mega 7 Companies',
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: Color(0xFF1E293B),
