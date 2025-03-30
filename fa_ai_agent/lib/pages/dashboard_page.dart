@@ -47,6 +47,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _searchFocusNode.addListener(_onSearchFocusChange);
     _checkAuth();
     _loadBrowseHistory();
+    _loadMostRecentReport();
   }
 
   Future<void> _checkAuth() async {
@@ -66,6 +67,16 @@ class _DashboardPageState extends State<DashboardPage> {
         _browseHistory = history;
       });
     });
+  }
+
+  Future<void> _loadMostRecentReport() async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+
+    final history = await _historyService.getMostRecentHistory();
+    if (history != null) {
+      _navigateToReport(history.companyTicker, history.companyName);
+    }
   }
 
   @override
@@ -397,7 +408,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                       icon: const Icon(
                                         Icons.menu,
                                         size: 24,
-                                        color: Color(0xFF2563EB),
+                                        color: Color(0xFF1E293B),
                                       ),
                                       onPressed: () {
                                         setState(() {
@@ -877,6 +888,79 @@ class _DashboardPageState extends State<DashboardPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 12),
+                        child: MouseRegion(
+                          cursor: SystemMouseCursors.click,
+                          onEnter: (_) => setState(() => _isHovered = true),
+                          onExit: (_) => setState(() => _isHovered = false),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 0, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _isHovered
+                                  ? const Color(0xFFF8FAFC)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _isHovered
+                                    ? const Color(0xFF2563EB).withOpacity(0.1)
+                                    : Colors.black.withOpacity(0.05),
+                                width: _isHovered ? 1.5 : 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _isHovered
+                                      ? const Color(0xFF2563EB).withOpacity(0.1)
+                                      : Colors.black.withOpacity(0.05),
+                                  blurRadius: _isHovered ? 8 : 4,
+                                  offset: const Offset(0, 2),
+                                  spreadRadius: 0,
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () {
+                                  setState(() {
+                                    _reportPage = null;
+                                    searchController.clear();
+                                    searchResults = [];
+                                  });
+                                  _hideSearchResults();
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 16, vertical: 8),
+                                  child: Row(
+                                    children: [
+                                      const Text(
+                                        'New Search',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF1E293B),
+                                          letterSpacing: -0.2,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      const Icon(
+                                        Icons.add,
+                                        size: 20,
+                                        color: Color(0xFF2563EB),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 12),

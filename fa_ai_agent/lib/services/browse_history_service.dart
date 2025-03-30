@@ -81,10 +81,24 @@ class BrowseHistoryService {
         .orderBy('viewedDate', descending: true)
         .limit(maxHistoryRecords)
         .snapshots()
-        .map((snapshot) {
-      return snapshot.docs
-          .map((doc) => BrowseHistory.fromMap(doc.data()))
-          .toList();
-    });
+        .map((snapshot) => snapshot.docs
+            .map((doc) => BrowseHistory.fromMap(doc.data()))
+            .toList());
+  }
+
+  Future<BrowseHistory?> getMostRecentHistory() async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .collection('browseHistory')
+        .orderBy('viewedDate', descending: true)
+        .limit(1)
+        .get();
+
+    if (snapshot.docs.isEmpty) return null;
+    return BrowseHistory.fromMap(snapshot.docs.first.data());
   }
 }

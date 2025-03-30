@@ -340,33 +340,43 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   }
 
   Widget _buildRefreshButton(bool isHovered) {
-    return ElevatedButton.icon(
-      onPressed: _isRefreshing ? null : _handleRefresh,
-      icon: _isRefreshing
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: ThinkingAnimation(
-                size: 16,
-                color: Color(0xFF1E3A8A),
-              ),
-            )
-          : Icon(
-              isHovered ? Icons.refresh : Icons.refresh,
-              size: 16,
-              color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
-            ),
-      label: _isRefreshing
-          ? const SizedBox.shrink()
-          : Text(
-              'Refresh',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
-              ),
-            ),
-      style: isHovered ? _getHoverButtonStyle() : _getButtonStyle(),
+    return StreamBuilder<Map<String, bool>>(
+      stream: widget.service.loadingStateSubject.stream,
+      builder: (context, snapshot) {
+        final loadingStates = snapshot.data ?? {};
+        final isAnySectionLoading =
+            loadingStates.values.any((isLoading) => isLoading);
+        final isRefreshing = _isRefreshing || isAnySectionLoading;
+
+        return ElevatedButton.icon(
+          onPressed: isRefreshing ? null : _handleRefresh,
+          icon: isRefreshing
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: ThinkingAnimation(
+                    size: 16,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                )
+              : Icon(
+                  isHovered ? Icons.refresh : Icons.refresh,
+                  size: 16,
+                  color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
+                ),
+          label: isRefreshing
+              ? const SizedBox.shrink()
+              : Text(
+                  'Refresh',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
+                  ),
+                ),
+          style: isHovered ? _getHoverButtonStyle() : _getButtonStyle(),
+        );
+      },
     );
   }
 
@@ -475,15 +485,15 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                             },
                                             icon: Icon(
                                               isHovered
-                                                  ? Icons.bookmark
-                                                  : Icons.bookmark_border,
+                                                  ? Icons.add_alert
+                                                  : Icons.add_alert_outlined,
                                               size: 16,
                                               color: isHovered
                                                   ? Colors.white
                                                   : const Color(0xFF1E3A8A),
                                             ),
                                             label: Text(
-                                              'Bookmark',
+                                              'Watch',
                                               style: TextStyle(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w500,
@@ -561,15 +571,15 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                             },
                                             icon: Icon(
                                               isHovered
-                                                  ? Icons.bookmark
-                                                  : Icons.bookmark_border,
+                                                  ? Icons.add_alert
+                                                  : Icons.add_alert_outlined,
                                               size: 16,
                                               color: isHovered
                                                   ? Colors.white
                                                   : const Color(0xFF1E3A8A),
                                             ),
                                             label: Text(
-                                              'Bookmark',
+                                              'Watch',
                                               style: TextStyle(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w500,
