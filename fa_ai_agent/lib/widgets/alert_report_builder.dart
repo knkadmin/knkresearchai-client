@@ -56,25 +56,15 @@ class AlertReportBuilder extends StatelessWidget {
             }
 
             final data = snapshot.data!;
-
             final markdown = data['accountingRedflags']?['md'] as String?;
+            final rating =
+                data['accountingRedflags']?['mScoreRating'] as String?;
 
-            // Count bullet points
-            final bulletCount = markdown?.split('- ').length ?? 0;
-            final isCritical = bulletCount > 5;
-            final statusLabel = bulletCount == 0
-                ? "No Issues"
-                : (isCritical ? "Critical" : "Acceptable");
-            final statusColor = bulletCount == 0
-                ? const Color(0xFF1E3A8A)
-                : (isCritical
-                    ? const Color(0xFF991B1B)
-                    : const Color(0xFF059669));
-            final headerColor = bulletCount == 0
-                ? const Color(0xFFF8FAFC)
-                : const Color(0xFFFFF5F5);
-            final borderColor =
-                bulletCount == 0 ? Colors.blue.shade50 : Colors.red.shade50;
+            // Determine theme based on rating
+            final statusLabel = rating ?? "No Rating";
+            final statusColor = _getStatusColor(rating);
+            final headerColor = _getHeaderColor(rating);
+            final borderColor = _getBorderColor(rating);
 
             final cacheTime = data['cachedAt'] != null
                 ? DateTime.fromMicrosecondsSinceEpoch(data['cachedAt'])
@@ -95,7 +85,7 @@ class AlertReportBuilder extends StatelessWidget {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFFE5E7EB),
+                  color: borderColor,
                   width: 1,
                 ),
                 boxShadow: [
@@ -119,29 +109,29 @@ class AlertReportBuilder extends StatelessWidget {
                         'ol': OrderedListBuilder(),
                       },
                       styleSheet: MarkdownStyleSheet(
-                        h1: const TextStyle(
+                        h1: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF991B1B),
+                          color: statusColor,
                         ),
-                        h2: const TextStyle(
+                        h2: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF991B1B),
+                          color: statusColor,
                         ),
-                        h3: const TextStyle(
+                        h3: TextStyle(
                           fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF991B1B),
+                          fontWeight: FontWeight.w300,
+                          color: statusColor,
                         ),
                         p: const TextStyle(
                           fontSize: 15,
                           color: Color(0xFF475569),
                           height: 1.6,
                         ),
-                        strong: const TextStyle(
+                        strong: TextStyle(
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF991B1B),
+                          color: statusColor,
                         ),
                         em: const TextStyle(
                           fontStyle: FontStyle.italic,
@@ -174,26 +164,58 @@ class AlertReportBuilder extends StatelessWidget {
     );
   }
 
+  Color _getStatusColor(String? rating) {
+    switch (rating?.toLowerCase()) {
+      case 'acceptable':
+        return const Color(0xFF059669); // Green
+      case 'skeptical':
+        return const Color(0xFFD97706); // Orange
+      case 'critical':
+        return const Color(0xFF991B1B); // Dark Red
+      default:
+        return const Color(0xFF1E293B); // Default dark gray
+    }
+  }
+
+  Color _getHeaderColor(String? rating) {
+    switch (rating?.toLowerCase()) {
+      case 'acceptable':
+        return const Color(0xFFF0FDF4); // Light green
+      case 'skeptical':
+        return const Color(0xFFFFFBEB); // Light orange
+      case 'critical':
+        return const Color(0xFFFFF5F5); // Light red
+      default:
+        return const Color(0xFFF8FAFC); // Default light gray
+    }
+  }
+
+  Color _getBorderColor(String? rating) {
+    switch (rating?.toLowerCase()) {
+      case 'acceptable':
+        return const Color(0xFFD1FAE5); // Green border
+      case 'skeptical':
+        return const Color(0xFFFEF3C7); // Orange border
+      case 'critical':
+        return const Color(0xFFFEE2E2); // Red border
+      default:
+        return const Color(0xFFE5E7EB); // Default gray border
+    }
+  }
+
   Widget _buildHeader(Map<String, dynamic> data) {
-    final markdown = data['accountingRedflags']?['md'];
-    final bulletCount = markdown?.split('- ').length ?? 0;
-    final isCritical = bulletCount > 5;
-    final statusLabel = bulletCount == 0
-        ? "No Issues"
-        : (isCritical ? "Critical" : "Acceptable");
-    final statusColor = bulletCount == 0
-        ? const Color(0xFF1E3A8A)
-        : (isCritical ? const Color(0xFF991B1B) : const Color(0xFF059669));
+    final rating = data['accountingRedflags']?['mScoreRating'] as String?;
+    final statusColor = _getStatusColor(rating);
+    final headerColor = _getHeaderColor(rating);
+    final borderColor = _getBorderColor(rating);
 
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: bulletCount == 0 ? Colors.blue.shade50 : const Color(0xFFFFF5F5),
+        color: headerColor,
         border: Border(
           bottom: BorderSide(
-            color: bulletCount == 0
-                ? Colors.blue.shade100
-                : const Color(0xFFFFE5E5),
+            color: borderColor,
           ),
         ),
         borderRadius: const BorderRadius.only(
@@ -207,9 +229,7 @@ class AlertReportBuilder extends StatelessWidget {
           Row(
             children: [
               Icon(
-                bulletCount == 0
-                    ? Icons.check_circle_outline
-                    : Icons.warning_amber_rounded,
+                _getStatusIcon(rating),
                 color: statusColor,
                 size: 24,
               ),
@@ -252,7 +272,7 @@ class AlertReportBuilder extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      statusLabel,
+                      rating ?? "No Rating",
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -272,9 +292,7 @@ class AlertReportBuilder extends StatelessWidget {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: bulletCount == 0
-                        ? Colors.blue.shade50
-                        : const Color(0xFFFFE5E5),
+                    color: borderColor,
                   ),
                 ),
                 child: Row(
@@ -300,11 +318,7 @@ class AlertReportBuilder extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            bulletCount == 0
-                ? "No significant accounting concerns detected in the financial statements."
-                : (isCritical
-                    ? "Multiple critical financial indicators require immediate attention"
-                    : "Financial indicators are within acceptable ranges"),
+            _getStatusDescription(rating),
             style: const TextStyle(
               fontSize: 14,
               color: Color(0xFF64748B),
@@ -314,6 +328,32 @@ class AlertReportBuilder extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  IconData _getStatusIcon(String? rating) {
+    switch (rating?.toLowerCase()) {
+      case 'acceptable':
+        return Icons.check_circle_outline;
+      case 'skeptical':
+        return Icons.warning_amber_rounded;
+      case 'critical':
+        return Icons.error_outline;
+      default:
+        return Icons.info_outline;
+    }
+  }
+
+  String _getStatusDescription(String? rating) {
+    switch (rating?.toLowerCase()) {
+      case 'acceptable':
+        return "Financial indicators are within acceptable ranges and show no significant concerns.";
+      case 'skeptical':
+        return "Some financial indicators require attention and further investigation.";
+      case 'critical':
+        return "Multiple critical financial indicators require immediate attention.";
+      default:
+        return "No rating available for this report.";
+    }
   }
 }
 

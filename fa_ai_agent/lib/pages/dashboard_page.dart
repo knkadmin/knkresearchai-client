@@ -11,6 +11,7 @@ import 'package:fa_ai_agent/widgets/thinking_animation.dart';
 import 'package:fa_ai_agent/widgets/center_search_card.dart';
 import 'package:fa_ai_agent/widgets/side_menu.dart';
 import 'package:fa_ai_agent/main.dart';
+import 'package:fa_ai_agent/widgets/search_bar.dart' show CustomSearchBar;
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -577,61 +578,17 @@ class _DashboardPageState extends State<DashboardPage> {
                       if (_reportPage != null)
                         Expanded(
                           child: Center(
-                            child: SizedBox(
-                              width: 500,
-                              child: Container(
-                                key: _searchBarKey,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF8F9FA),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Colors.black.withOpacity(0.05),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: TextField(
-                                  controller: searchController,
-                                  focusNode: _searchFocusNode,
-                                  onChanged: _onSearchChanged,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                  decoration: InputDecoration(
-                                    hintText: 'Search for a company...',
-                                    hintStyle: TextStyle(
-                                      color: Colors.grey[400],
-                                      fontSize: 16,
-                                    ),
-                                    prefixIcon: Icon(
-                                      Icons.search,
-                                      size: 20,
-                                      color: Colors.grey[400],
-                                    ),
-                                    suffixIcon: searchController.text.isNotEmpty
-                                        ? IconButton(
-                                            icon: Icon(
-                                              Icons.clear,
-                                              size: 20,
-                                              color: Colors.grey[400],
-                                            ),
-                                            onPressed: () {
-                                              searchController.clear();
-                                              searchResults = [];
-                                              setState(() {});
-                                            },
-                                          )
-                                        : null,
-                                    border: InputBorder.none,
-                                    isDense: false,
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 16,
-                                      vertical: 8,
-                                    ),
-                                  ),
-                                ),
-                              ),
+                            child: CustomSearchBar(
+                              key: _searchBarKey,
+                              controller: searchController,
+                              focusNode: _searchFocusNode,
+                              onChanged: _onSearchChanged,
+                              hintText: 'Search for a company...',
+                              onClear: () {
+                                searchController.clear();
+                                searchResults = [];
+                                setState(() {});
+                              },
                             ),
                           ),
                         ),

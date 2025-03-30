@@ -4,6 +4,7 @@ import '../agent_service.dart';
 import '../result_advanced.dart';
 import 'company_button.dart';
 import '../auth_service.dart';
+import 'search_bar.dart' show CustomSearchBar;
 
 class CenterSearchCard extends StatelessWidget {
   final TextEditingController searchController;
@@ -48,7 +49,7 @@ class CenterSearchCard extends StatelessWidget {
           const Icon(
             Icons.analytics_outlined,
             size: 48,
-            color: Color(0xFF2563EB),
+            color: Color(0xFF1E293B),
           ),
           const SizedBox(height: 24),
           const Text(
@@ -70,47 +71,19 @@ class CenterSearchCard extends StatelessWidget {
           ),
           const SizedBox(height: 32),
           // Search Field in Main Card
-          TextField(
+          CustomSearchBar(
             key: searchCardKey,
             controller: searchController,
             focusNode: searchFocusNode,
             onChanged: onSearchChanged,
-            onSubmitted: (value) {
-              if (value.isNotEmpty) {
-                onSearchChanged(value);
-              }
+            hintText: 'Search company or ticker...',
+            onClear: () {
+              searchController.clear();
+              onHideSearchResults();
             },
-            style: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF1E293B),
-            ),
-            decoration: InputDecoration(
-              hintText: 'Search company or ticker...',
-              hintStyle: TextStyle(
-                color: Colors.grey[400],
-                fontSize: 16,
-              ),
-              filled: true,
-              fillColor: Colors.grey[100],
-              suffixIcon: searchController.text.isNotEmpty
-                  ? IconButton(
-                      icon: Icon(Icons.clear, color: Colors.grey[600]),
-                      onPressed: () {
-                        searchController.clear();
-                        onHideSearchResults();
-                      },
-                    )
-                  : Icon(Icons.search, color: Colors.grey[600]),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-              border: OutlineInputBorder(
-                borderSide: BorderSide.none,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey[300]!),
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
+            width: 600,
+            showBorder: true,
+            showShadow: false,
           ),
           const SizedBox(height: 32),
           Row(
