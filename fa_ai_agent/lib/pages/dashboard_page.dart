@@ -487,6 +487,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               ),
                             // Right: Profile Button
                             Container(
+                              width: 40,
                               height: 40,
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF8F9FA),
@@ -497,13 +498,71 @@ class _DashboardPageState extends State<DashboardPage> {
                                 ),
                               ),
                               child: PopupMenuButton<String>(
-                                icon: const Icon(
-                                  Icons.person_outline,
-                                  color: Color(0xFF1E293B),
-                                  size: 20,
-                                ),
+                                icon: user?.photoURL != null
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(8),
+                                        child: Image.network(
+                                          user!.photoURL!,
+                                          width: 40,
+                                          height: 40,
+                                          fit: BoxFit.cover,
+                                          cacheWidth: 80,
+                                          cacheHeight: 80,
+                                          loadingBuilder: (context, child,
+                                              loadingProgress) {
+                                            if (loadingProgress == null)
+                                              return child;
+                                            return Container(
+                                              width: 40,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFF1F5F9),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: const Icon(
+                                                Icons.person_outline,
+                                                size: 20,
+                                                color: Color(0xFF1E293B),
+                                              ),
+                                            );
+                                          },
+                                          errorBuilder:
+                                              (context, error, stackTrace) {
+                                            print(
+                                                'Error loading profile image: $error');
+                                            return Container(
+                                              width: 40,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFF1F5F9),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                              child: const Icon(
+                                                Icons.person_outline,
+                                                size: 20,
+                                                color: Color(0xFF1E293B),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      )
+                                    : Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF1F5F9),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                          Icons.person_outline,
+                                          size: 20,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                      ),
                                 position: PopupMenuPosition.under,
-                                offset: const Offset(0, 8),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
@@ -525,33 +584,66 @@ class _DashboardPageState extends State<DashboardPage> {
                                               width: 40,
                                               height: 40,
                                               fit: BoxFit.cover,
+                                              cacheWidth: 80,
+                                              cacheHeight: 80,
                                               loadingBuilder: (context, child,
                                                   loadingProgress) {
                                                 if (loadingProgress == null)
                                                   return child;
-                                                return const Icon(
-                                                  Icons.person_outline,
-                                                  size: 40,
-                                                  color: Color(0xFF1E293B),
+                                                return Container(
+                                                  width: 40,
+                                                  height: 40,
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        const Color(0xFFF1F5F9),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.person_outline,
+                                                    size: 24,
+                                                    color: Color(0xFF1E293B),
+                                                  ),
                                                 );
                                               },
                                               errorBuilder:
                                                   (context, error, stackTrace) {
                                                 print(
                                                     'Error loading dropdown profile image: $error');
-                                                return const Icon(
-                                                  Icons.person_outline,
-                                                  size: 40,
-                                                  color: Color(0xFF1E293B),
+                                                return Container(
+                                                  width: 40,
+                                                  height: 40,
+                                                  decoration: BoxDecoration(
+                                                    color:
+                                                        const Color(0xFFF1F5F9),
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            20),
+                                                  ),
+                                                  child: const Icon(
+                                                    Icons.person_outline,
+                                                    size: 24,
+                                                    color: Color(0xFF1E293B),
+                                                  ),
                                                 );
                                               },
                                             ),
                                           )
                                         else
-                                          const Icon(
-                                            Icons.person_outline,
-                                            size: 40,
-                                            color: Color(0xFF1E293B),
+                                          Container(
+                                            width: 40,
+                                            height: 40,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFF1F5F9),
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                            ),
+                                            child: const Icon(
+                                              Icons.person_outline,
+                                              size: 24,
+                                              color: Color(0xFF1E293B),
+                                            ),
                                           ),
                                         const SizedBox(width: 12),
                                         Expanded(
