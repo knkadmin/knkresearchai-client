@@ -16,6 +16,7 @@ import 'package:fa_ai_agent/widgets/thinking_animation.dart';
 import 'package:fa_ai_agent/widgets/tick_animation.dart';
 import 'package:fa_ai_agent/widgets/trading_view_chart.dart';
 import 'package:fa_ai_agent/widgets/alert_report_builder.dart';
+import 'services/watchlist_service.dart';
 
 class ResultAdvancedPage extends StatefulWidget {
   ResultAdvancedPage({
@@ -53,6 +54,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   final ValueNotifier<String> _currentSection = ValueNotifier<String>('');
   Map<String, GlobalKey> _sectionKeys = {};
   final Map<String, ValueNotifier<bool>> _tickAnimationStates = {};
+  final WatchlistService _watchlistService = WatchlistService();
+  bool _isHovered = false;
 
   // Add mapping between section titles and their cache keys
   final Map<String, String> _sectionToCacheKey = {
@@ -348,33 +351,106 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             loadingStates.values.any((isLoading) => isLoading);
         final isRefreshing = _isRefreshing || isAnySectionLoading;
 
-        return ElevatedButton.icon(
-          onPressed: isRefreshing ? null : _handleRefresh,
-          icon: isRefreshing
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: ThinkingAnimation(
-                    size: 16,
-                    color: Color(0xFF1E3A8A),
-                  ),
-                )
-              : Icon(
-                  isHovered ? Icons.refresh : Icons.refresh,
-                  size: 16,
-                  color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
-                ),
-          label: isRefreshing
-              ? const SizedBox.shrink()
-              : Text(
-                  'Refresh',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
-                  ),
-                ),
-          style: isHovered ? _getHoverButtonStyle() : _getButtonStyle(),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            bool isHovered = false;
+            return MouseRegion(
+              cursor: SystemMouseCursors.click,
+              onEnter: (_) => setState(() => isHovered = true),
+              onExit: (_) => setState(() => isHovered = false),
+              child: ValueListenableBuilder<bool>(
+                valueListenable: _showCompanyNameInTitle,
+                builder: (context, showCompanyName, child) {
+                  return SizedBox(
+                    width: showCompanyName ? 32 : null,
+                    child: showCompanyName
+                        ? ElevatedButton(
+                            onPressed: isRefreshing ? null : _handleRefresh,
+                            style: isHovered
+                                ? _getHoverButtonStyle().copyWith(
+                                    padding: MaterialStateProperty.all(
+                                      const EdgeInsets.all(0),
+                                    ),
+                                    minimumSize: MaterialStateProperty.all(
+                                      const Size(32, 40),
+                                    ),
+                                  )
+                                : _getButtonStyle().copyWith(
+                                    padding: MaterialStateProperty.all(
+                                      const EdgeInsets.all(0),
+                                    ),
+                                    minimumSize: MaterialStateProperty.all(
+                                      const Size(32, 40),
+                                    ),
+                                  ),
+                            child: isRefreshing
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: ThinkingAnimation(
+                                      size: 16,
+                                      color: Color(0xFF1E3A8A),
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.refresh,
+                                    size: 16,
+                                    color: isHovered
+                                        ? Colors.white
+                                        : const Color(0xFF1E3A8A),
+                                  ),
+                          )
+                        : ElevatedButton.icon(
+                            onPressed: isRefreshing ? null : _handleRefresh,
+                            icon: isRefreshing
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: ThinkingAnimation(
+                                      size: 16,
+                                      color: Color(0xFF1E3A8A),
+                                    ),
+                                  )
+                                : Icon(
+                                    Icons.refresh,
+                                    size: 16,
+                                    color: isHovered
+                                        ? Colors.white
+                                        : const Color(0xFF1E3A8A),
+                                  ),
+                            label: Text(
+                              'Refresh',
+                              style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: isHovered
+                                    ? Colors.white
+                                    : const Color(0xFF1E3A8A),
+                              ),
+                            ),
+                            style: isHovered
+                                ? _getHoverButtonStyle().copyWith(
+                                    padding: MaterialStateProperty.all(
+                                      const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                        horizontal: 16,
+                                      ),
+                                    ),
+                                  )
+                                : _getButtonStyle().copyWith(
+                                    padding: MaterialStateProperty.all(
+                                      const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                        horizontal: 16,
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                  );
+                },
+              ),
+            );
+          },
         );
       },
     );
@@ -479,52 +555,33 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                               setState(() => isHovered = true),
                                           onExit: (_) =>
                                               setState(() => isHovered = false),
-                                          child: ElevatedButton.icon(
-                                            onPressed: () {
-                                              // TODO: Implement bookmark functionality
-                                            },
-                                            icon: Icon(
-                                              isHovered
-                                                  ? Icons.add_alert
-                                                  : Icons.add_alert_outlined,
-                                              size: 16,
-                                              color: isHovered
-                                                  ? Colors.white
-                                                  : const Color(0xFF1E3A8A),
-                                            ),
-                                            label: Text(
-                                              'Watch',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                                color: isHovered
-                                                    ? Colors.white
-                                                    : const Color(0xFF1E3A8A),
-                                              ),
-                                            ),
-                                            style: isHovered
-                                                ? _getHoverButtonStyle()
-                                                : _getButtonStyle(),
-                                          ),
+                                          child: _buildWatchButton(),
                                         );
                                       },
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  Expanded(
-                                    child: StatefulBuilder(
-                                      builder: (context, setState) {
-                                        bool isHovered = false;
-                                        return MouseRegion(
-                                          cursor: SystemMouseCursors.click,
-                                          onEnter: (_) =>
-                                              setState(() => isHovered = true),
-                                          onExit: (_) =>
-                                              setState(() => isHovered = false),
-                                          child: _buildRefreshButton(isHovered),
-                                        );
-                                      },
-                                    ),
+                                  ValueListenableBuilder<bool>(
+                                    valueListenable: _showCompanyNameInTitle,
+                                    builder: (context, showCompanyName, child) {
+                                      return SizedBox(
+                                        width: showCompanyName ? 32 : null,
+                                        child: StatefulBuilder(
+                                          builder: (context, setState) {
+                                            bool isHovered = false;
+                                            return MouseRegion(
+                                              cursor: SystemMouseCursors.click,
+                                              onEnter: (_) => setState(
+                                                  () => isHovered = true),
+                                              onExit: (_) => setState(
+                                                  () => isHovered = false),
+                                              child: _buildRefreshButton(
+                                                  isHovered),
+                                            );
+                                          },
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
@@ -565,33 +622,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                               setState(() => isHovered = true),
                                           onExit: (_) =>
                                               setState(() => isHovered = false),
-                                          child: ElevatedButton.icon(
-                                            onPressed: () {
-                                              // TODO: Implement bookmark functionality
-                                            },
-                                            icon: Icon(
-                                              isHovered
-                                                  ? Icons.add_alert
-                                                  : Icons.add_alert_outlined,
-                                              size: 16,
-                                              color: isHovered
-                                                  ? Colors.white
-                                                  : const Color(0xFF1E3A8A),
-                                            ),
-                                            label: Text(
-                                              'Watch',
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                fontWeight: FontWeight.w500,
-                                                color: isHovered
-                                                    ? Colors.white
-                                                    : const Color(0xFF1E3A8A),
-                                              ),
-                                            ),
-                                            style: isHovered
-                                                ? _getHoverButtonStyle()
-                                                : _getButtonStyle(),
-                                          ),
+                                          child: _buildWatchButton(),
                                         );
                                       },
                                     ),
@@ -1356,6 +1387,72 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
           width: 1,
         ),
       ),
+    );
+  }
+
+  Widget _buildWatchButton() {
+    return StreamBuilder<bool>(
+      stream: _watchlistService.isInWatchlist(widget.tickerCode),
+      builder: (context, snapshot) {
+        final isInWatchlist = snapshot.data ?? false;
+
+        return ElevatedButton.icon(
+          onPressed: () async {
+            try {
+              if (isInWatchlist) {
+                await _watchlistService.removeFromWatchlist(widget.tickerCode);
+              } else {
+                await _watchlistService.addToWatchlist(
+                  companyName: widget.companyName,
+                  companyTicker: widget.tickerCode,
+                );
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: ${e.toString()}'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            }
+          },
+          icon: Icon(
+            isInWatchlist ? Icons.check_circle : Icons.notifications_outlined,
+            size: 16,
+            color: isInWatchlist
+                ? (_isHovered ? Colors.white : const Color(0xFF1E3A8A))
+                : Colors.white,
+          ),
+          label: Text(
+            isInWatchlist ? 'In Watchlist' : 'Watch',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: isInWatchlist
+                  ? (_isHovered ? Colors.white : const Color(0xFF1E3A8A))
+                  : Colors.white,
+            ),
+          ),
+          style: isInWatchlist
+              ? (_isHovered ? _getHoverButtonStyle() : _getButtonStyle())
+              : ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1E3A8A),
+                  foregroundColor: Colors.white,
+                  elevation: 2,
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: const BorderSide(
+                      color: Color(0xFF1E3A8A),
+                      width: 1,
+                    ),
+                  ),
+                ),
+        );
+      },
     );
   }
 }
