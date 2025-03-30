@@ -48,11 +48,8 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _checkAuth() async {
     final user = AuthService().currentUser;
     if (user == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.go('/');
-        }
-      });
+      // No need to navigate since we're already on the dashboard
+      // The UI will automatically show the sign in/sign up buttons
     }
   }
 
@@ -389,102 +386,77 @@ class _DashboardPageState extends State<DashboardPage> {
 
   void _navigateToReport(String symbol, String name) async {
     try {
+      // Check if we're already viewing this company's report
+      if (_reportPage is ResultAdvancedPage) {
+        final currentReport = _reportPage as ResultAdvancedPage;
+        if (currentReport.tickerCode.toUpperCase() == symbol.toUpperCase()) {
+          return; // Already viewing this company's report
+        }
+      }
+
       setState(() {
         searchResults = [];
         searchController.text = "";
         _isSearchFocused = false;
+        _reportPage = const Scaffold(
+          body: Center(
+            child: ThinkingAnimation(
+              size: 24,
+              color: Color(0xFF1E3A8A),
+            ),
+          ),
+        );
       });
       _hideSearchResults();
 
-      setState(() {
-        _reportPage = FutureBuilder(
-          future: service.searchTickerSymbol(symbol),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(
-                  child: ThinkingAnimation(
-                    size: 24,
-                    color: Color(0xFF1E3A8A),
-                  ),
-                ),
-              );
-            }
+      // Update browse history if user is signed in
+      final user = AuthService().currentUser;
+      if (user != null) {
+        _historyService
+            .addHistory(
+          companyName: name,
+          companyTicker: symbol,
+        )
+            .catchError((error) {
+          print('Error updating history: $error');
+        });
+      }
 
-            if (snapshot.hasError) {
-              return Scaffold(
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: Colors.red,
-                        size: 48,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading report: ${snapshot.error}',
-                        style: const TextStyle(
-                          color: Colors.red,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-
-            if (!snapshot.hasData) {
-              return const Scaffold(
-                body: Center(
-                  child: Text(
-                    'No data available',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-              );
-            }
-
-            final data = snapshot.data as Map<String, dynamic>;
-            if (data["quotes"] != null && (data["quotes"] as List).isNotEmpty) {
-              final quote = (data["quotes"] as List).first;
-              final companyName = quote["shortname"] ?? symbol;
-              final sector = quote["sector"];
-              return ResultAdvancedPage(
-                tickerCode: symbol.toUpperCase(),
-                companyName: companyName,
-                language: Language.english,
-                sector: sector ?? '',
-              );
-            }
-
-            return ResultAdvancedPage(
+      // Fetch company data and create report page
+      final data = await service.searchTickerSymbol(symbol);
+      if (data["quotes"] != null && (data["quotes"] as List).isNotEmpty) {
+        final quote = (data["quotes"] as List).first;
+        final companyName = quote["shortname"] ?? symbol;
+        final sector = quote["sector"];
+        if (mounted) {
+          setState(() {
+            _reportPage = ResultAdvancedPage(
+              key: ValueKey(symbol),
+              tickerCode: symbol.toUpperCase(),
+              companyName: companyName,
+              language: Language.english,
+              sector: sector ?? '',
+            );
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _reportPage = ResultAdvancedPage(
+              key: ValueKey(symbol),
               tickerCode: symbol.toUpperCase(),
               companyName: symbol.toUpperCase(),
               language: Language.english,
               sector: '',
             );
-          },
-        );
-      });
-
-      _historyService
-          .addHistory(
-        companyName: name,
-        companyTicker: symbol,
-      )
-          .catchError((error) {
-        print('Error updating history: $error');
-      });
+          });
+        }
+      }
     } catch (e) {
       if (mounted) {
         setState(() {
           _reportPage = Scaffold(
+            key: ValueKey('error_${DateTime.now().millisecondsSinceEpoch}'),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -536,125 +508,114 @@ class _DashboardPageState extends State<DashboardPage> {
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOutCubic,
-            margin: EdgeInsets.only(left: _isMenuCollapsed ? 0 : 280),
+            margin: EdgeInsets.only(
+                left: user != null && !_isMenuCollapsed ? 280 : 0),
             child: Column(
               children: [
-                SafeArea(
-                  child: Column(
+                // Top Navigation Bar
+                Container(
+                  height: 65,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.black.withOpacity(0.05),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Top Navigation Bar
-                      Container(
-                        height: 65,
-                        padding: const EdgeInsets.symmetric(horizontal: 24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          border: Border(
-                            bottom: BorderSide(
-                              color: Colors.black.withOpacity(0.05),
-                              width: 1,
+                      // Left: Logo
+                      Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.black.withOpacity(0.05),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.analytics,
+                              size: 24,
+                              color: Color(0xFF2563EB),
                             ),
                           ),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Left side: Menu and Title
-                            Row(
-                              children: [
-                                if (_isMenuCollapsed)
-                                  Container(
-                                    width: 40,
-                                    height: 40,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF8F9FA),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                        color: Colors.black.withOpacity(0.05),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: IconButton(
-                                      icon: const Icon(
-                                        Icons.menu,
-                                        size: 24,
-                                        color: Color(0xFF1E293B),
-                                      ),
-                                      onPressed: () {
-                                        setState(() {
-                                          _isMenuCollapsed = false;
-                                        });
-                                      },
-                                    ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'KNK Research',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E293B),
+                            ),
+                          ),
+                        ],
+                      ),
+                      // Right: Action Buttons
+                      Row(
+                        children: [
+                          if (user == null) ...[
+                            // Sign Up Button
+                            SizedBox(
+                              height: 40,
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  context.go('/signup');
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF1E2C3D),
+                                  side: const BorderSide(
+                                    color: Color(0xFF1E2C3D),
+                                    width: 1,
                                   ),
-                                if (_isMenuCollapsed) const SizedBox(width: 12),
-                                const Text(
-                                  'KNK Research',
-                                  style: TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF1E293B),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
                                   ),
                                 ),
-                              ],
-                            ),
-                            // Center: Search Bar (only show when report page is loaded)
-                            if (_reportPage != null)
-                              Expanded(
-                                child: Center(
-                                  child: SizedBox(
-                                    width: 500,
-                                    child: TextField(
-                                      key: _searchBarKey,
-                                      controller: searchController,
-                                      focusNode: _searchFocusNode,
-                                      onChanged: _onSearchChanged,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        color: Color(0xFF1E293B),
-                                      ),
-                                      decoration: InputDecoration(
-                                        hintText: 'Search company or ticker...',
-                                        hintStyle: TextStyle(
-                                          color: Colors.grey[400],
-                                          fontSize: 16,
-                                        ),
-                                        filled: true,
-                                        fillColor: Colors.grey[100],
-                                        suffixIcon: searchController
-                                                .text.isNotEmpty
-                                            ? IconButton(
-                                                icon: Icon(Icons.clear,
-                                                    color: Colors.grey[600]),
-                                                onPressed: () {
-                                                  searchController.clear();
-                                                  setState(() {
-                                                    searchResults = [];
-                                                  });
-                                                  _hideSearchResults();
-                                                },
-                                              )
-                                            : Icon(Icons.search,
-                                                color: Colors.grey[600]),
-                                        contentPadding:
-                                            const EdgeInsets.symmetric(
-                                                horizontal: 16),
-                                        border: OutlineInputBorder(
-                                          borderSide: BorderSide.none,
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                        focusedBorder: OutlineInputBorder(
-                                          borderSide: BorderSide(
-                                              color: Colors.grey[300]!),
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                    ),
+                                child: const Text(
+                                  'Sign Up',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
-                            // Right: Profile Button
+                            ),
+                            const SizedBox(width: 12),
+                            // Sign In Button
+                            SizedBox(
+                              height: 40,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  context.go('/signin');
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF1E2C3D),
+                                  foregroundColor: Colors.white,
+                                  elevation: 0,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child: const Text(
+                                  'Sign In',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ] else ...[
+                            // User Menu
                             Container(
                               width: 40,
                               height: 40,
@@ -687,11 +648,11 @@ class _DashboardPageState extends State<DashboardPage> {
                                               decoration: BoxDecoration(
                                                 color: const Color(0xFFF1F5F9),
                                                 borderRadius:
-                                                    BorderRadius.circular(8),
+                                                    BorderRadius.circular(20),
                                               ),
                                               child: const Icon(
                                                 Icons.person_outline,
-                                                size: 20,
+                                                size: 24,
                                                 color: Color(0xFF1E293B),
                                               ),
                                             );
@@ -699,18 +660,18 @@ class _DashboardPageState extends State<DashboardPage> {
                                           errorBuilder:
                                               (context, error, stackTrace) {
                                             print(
-                                                'Error loading profile image: $error');
+                                                'Error loading dropdown profile image: $error');
                                             return Container(
                                               width: 40,
                                               height: 40,
                                               decoration: BoxDecoration(
                                                 color: const Color(0xFFF1F5F9),
                                                 borderRadius:
-                                                    BorderRadius.circular(8),
+                                                    BorderRadius.circular(20),
                                               ),
                                               child: const Icon(
                                                 Icons.person_outline,
-                                                size: 20,
+                                                size: 24,
                                                 color: Color(0xFF1E293B),
                                               ),
                                             );
@@ -723,11 +684,11 @@ class _DashboardPageState extends State<DashboardPage> {
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF1F5F9),
                                           borderRadius:
-                                              BorderRadius.circular(8),
+                                              BorderRadius.circular(20),
                                         ),
                                         child: const Icon(
                                           Icons.person_outline,
-                                          size: 20,
+                                          size: 24,
                                           color: Color(0xFF1E293B),
                                         ),
                                       ),
@@ -889,23 +850,22 @@ class _DashboardPageState extends State<DashboardPage> {
                               ),
                             ),
                           ],
-                        ),
+                        ],
                       ),
                     ],
                   ),
                 ),
                 // Main Content
                 Expanded(
-                  child: Stack(
-                    children: [
-                      if (_reportPage != null)
-                        _reportPage!
-                      else
-                        Column(
-                          children: [
-                            const Spacer(flex: 2),
-                            Center(
-                              child: CenterSearchCard(
+                  child: _reportPage ??
+                      Center(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              // Search Card
+                              CenterSearchCard(
                                 searchController: searchController,
                                 searchFocusNode: _searchFocusNode,
                                 onSearchChanged: _onSearchChanged,
@@ -914,36 +874,46 @@ class _DashboardPageState extends State<DashboardPage> {
                                 onHideSearchResults: _hideSearchResults,
                                 searchCardKey: _searchCardKey,
                               ),
-                            ),
-                            const Spacer(flex: 3),
-                          ],
+                              const SizedBox(height: 48),
+                              // Rest of the content...
+                            ],
+                          ),
                         ),
-                    ],
-                  ),
+                      ),
                 ),
               ],
             ),
           ),
-          // Side Menu
-          SideMenu(
-            isMenuCollapsed: _isMenuCollapsed,
-            isHovered: _isHovered,
-            onMenuCollapse: (value) => setState(() => _isMenuCollapsed = value),
-            onHoverChange: (value) => setState(() => _isHovered = value),
-            onNewSearch: () {
-              setState(() {
-                _reportPage = null;
-                searchController.clear();
-                searchResults = [];
-              });
-              _hideSearchResults();
-            },
-            onNavigateToReport: _navigateToReport,
-            browseHistory: _browseHistory,
-            searchController: searchController,
-            searchResults: searchResults,
-            onHideSearchResults: _hideSearchResults,
-          ),
+          // Side Menu (only show if user is signed in)
+          if (user != null)
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOutCubic,
+              left: _isMenuCollapsed ? -280 : 0,
+              top: 0,
+              bottom: 0,
+              width: 280,
+              child: SideMenu(
+                isMenuCollapsed: _isMenuCollapsed,
+                isHovered: _isHovered,
+                onMenuCollapse: (value) =>
+                    setState(() => _isMenuCollapsed = value),
+                onHoverChange: (value) => setState(() => _isHovered = value),
+                onNewSearch: () {
+                  setState(() {
+                    _reportPage = null;
+                    searchController.clear();
+                    searchResults = [];
+                  });
+                  _hideSearchResults();
+                },
+                onNavigateToReport: _navigateToReport,
+                browseHistory: _browseHistory,
+                searchController: searchController,
+                searchResults: searchResults,
+                onHideSearchResults: _hideSearchResults,
+              ),
+            ),
         ],
       ),
     );

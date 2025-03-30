@@ -12,7 +12,6 @@ import 'package:fa_ai_agent/agent_service.dart';
 import 'package:fa_ai_agent/gradient_text.dart';
 import 'package:fa_ai_agent/result_advanced.dart';
 import 'package:fa_ai_agent/config.dart';
-import 'package:fa_ai_agent/widgets/welcome_screen.dart';
 import 'package:fa_ai_agent/pages/sign_in_page.dart';
 import 'package:fa_ai_agent/pages/sign_up_page.dart';
 import 'package:fa_ai_agent/pages/dashboard_page.dart';
@@ -147,7 +146,7 @@ class MyApp extends StatelessWidget {
           GoRoute(
             path: '/',
             pageBuilder: (context, state) => NoTransitionPage<void>(
-              child: const WelcomeScreen(),
+              child: const DashboardPage(),
             ),
           ),
           GoRoute(
