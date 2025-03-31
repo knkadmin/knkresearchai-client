@@ -225,4 +225,28 @@ class FirestoreService {
       rethrow;
     }
   }
+
+  // Get user data
+  Future<Map<String, dynamic>?> getUserData(String userId) async {
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+      return doc.data();
+    } catch (e) {
+      print('Error getting user data: $e');
+      rethrow;
+    }
+  }
+
+  // Update user profile
+  Future<void> updateUserProfile(Map<String, dynamic> data) async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).update(data);
+      }
+    } catch (e) {
+      print('Error updating user profile: $e');
+      rethrow;
+    }
+  }
 }

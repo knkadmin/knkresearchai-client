@@ -15,6 +15,7 @@ import 'package:fa_ai_agent/config.dart';
 import 'package:fa_ai_agent/pages/sign_in_page.dart';
 import 'package:fa_ai_agent/pages/sign_up_page.dart';
 import 'package:fa_ai_agent/pages/dashboard_page.dart';
+import 'package:fa_ai_agent/pages/pricing_page.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -166,6 +167,12 @@ class MyApp extends StatelessWidget {
             path: '/report/:ticker',
             pageBuilder: (context, state) => NoTransitionPage<void>(
               child: const DashboardPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/pricing',
+            pageBuilder: (context, state) => NoTransitionPage<void>(
+              child: const PricingPage(),
             ),
           ),
         ],

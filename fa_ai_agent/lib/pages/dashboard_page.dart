@@ -894,6 +894,67 @@ class _DashboardPageState extends State<DashboardPage> {
                                     ),
                                   ),
                                   PopupMenuItem<String>(
+                                    value: 'upgrade',
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 12),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            const Icon(
+                                              Icons.workspace_premium,
+                                              size: 20,
+                                              color: Color(0xFF1E293B),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            const Text(
+                                              'Upgrade Plan',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: Color(0xFF1E293B),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        FutureBuilder<Map<String, dynamic>?>(
+                                          future: FirestoreService()
+                                              .getUserData(user.uid),
+                                          builder: (context, snapshot) {
+                                            if (snapshot.connectionState ==
+                                                ConnectionState.waiting) {
+                                              return const SizedBox(width: 4);
+                                            }
+                                            final subscription = snapshot
+                                                    .data?['subscription'] ??
+                                                'free';
+                                            return Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF1E3A8A)
+                                                    .withOpacity(0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(12),
+                                              ),
+                                              child: Text(
+                                                subscription.toUpperCase(),
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Color(0xFF1E3A8A),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
                                     value: 'signout',
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 16, vertical: 12),
@@ -938,6 +999,10 @@ class _DashboardPageState extends State<DashboardPage> {
                                           ),
                                         );
                                       }
+                                    }
+                                  } else if (value == 'upgrade') {
+                                    if (context.mounted) {
+                                      context.go('/pricing');
                                     }
                                   }
                                 },
