@@ -5,10 +5,12 @@ import 'dart:convert' as convert;
 import 'package:logging/logging.dart';
 import 'package:fa_ai_agent/config.dart';
 import 'package:fa_ai_agent/services/search_cache_service.dart';
+import 'package:fa_ai_agent/services/firestore_service.dart';
 
 class AgentService {
   static final _log = Logger('AgentService');
   final _searchCacheService = SearchCacheService();
+  final _firestoreService = FirestoreService();
 
   AgentService() {
     Logger.root.level = Level.INFO;
@@ -195,8 +197,17 @@ class AgentService {
     final String cacheReportKey = "$ticker-$language-$cacheKey";
     final String? cachedReport = box.get(cacheReportKey);
     if (cachedReport == null || forceRefresh) {
-      final url = Uri.https(baseUrl, endpoint,
-          {'code': ticker, 'language': language.toLowerCase()});
+      // Get user ID and token from Firestore
+      final userDoc = await _firestoreService.currentUserDoc.get();
+      final userId = userDoc.id;
+      final token = userDoc.data()?['token'] as String?;
+
+      final url = Uri.https(baseUrl, endpoint, {
+        'code': ticker,
+        'language': language.toLowerCase(),
+        'userId': userId,
+        'token': token ?? '',
+      });
       final response = await http.get(url);
 
       if (response.statusCode == 500) {
