@@ -853,93 +853,98 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                             _sectionLoadingStates[cacheKey] = isLoading;
                           }
 
-                          return InkWell(
-                            onTap: () => _scrollToSection(section.title),
-                            borderRadius: BorderRadius.circular(8),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 12),
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  left: BorderSide(
-                                    color: isActive
-                                        ? const Color(0xFF1E3A8A)
-                                        : Colors.blue.shade50,
-                                    width: isActive ? 4 : 3,
-                                  ),
-                                ),
-                                color: isActive
-                                    ? Colors.blue.shade50.withOpacity(0.3)
-                                    : null,
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(
-                                    section.icon,
-                                    size: isActive ? 18 : 16,
-                                    color: isLoading
-                                        ? Colors.grey.shade400
-                                        : isActive
-                                            ? const Color(0xFF1E3A8A)
-                                            : Colors.grey.shade600,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      section.title,
-                                      style: TextStyle(
-                                        fontSize: isActive ? 15 : 14,
-                                        color: isLoading
-                                            ? Colors.grey.shade400
-                                            : isActive
-                                                ? const Color(0xFF1E3A8A)
-                                                : Colors.grey.shade700,
-                                        fontWeight: isActive
-                                            ? FontWeight.w600
-                                            : FontWeight.w500,
-                                      ),
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _scrollToSection(section.title),
+                              borderRadius: BorderRadius.circular(8),
+                              hoverColor: Colors.grey.shade100,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  border: Border(
+                                    left: BorderSide(
+                                      color: isActive
+                                          ? const Color(0xFF1E3A8A)
+                                          : Colors.blue.shade50,
+                                      width: isActive ? 4 : 3,
                                     ),
                                   ),
-                                  if (isLoading)
-                                    const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: ThinkingAnimation(
-                                        size: 16,
-                                        color: Color(0xFF1E3A8A),
+                                  color: isActive
+                                      ? Colors.blue.shade50.withOpacity(0.3)
+                                      : null,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      section.icon,
+                                      size: isActive ? 18 : 16,
+                                      color: isLoading
+                                          ? Colors.grey.shade400
+                                          : isActive
+                                              ? const Color(0xFF1E3A8A)
+                                              : Colors.grey.shade600,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        section.title,
+                                        style: TextStyle(
+                                          fontSize: isActive ? 15 : 14,
+                                          color: isLoading
+                                              ? Colors.grey.shade400
+                                              : isActive
+                                                  ? const Color(0xFF1E3A8A)
+                                                  : Colors.grey.shade700,
+                                          fontWeight: isActive
+                                              ? FontWeight.w600
+                                              : FontWeight.w500,
+                                        ),
                                       ),
-                                    )
-                                  else if (cacheKey != null)
-                                    ValueListenableBuilder<bool>(
-                                      valueListenable:
-                                          _tickAnimationStates.putIfAbsent(
-                                        cacheKey,
-                                        () => ValueNotifier<bool>(false),
-                                      ),
-                                      builder: (context, showTick, child) {
-                                        if (showTick) {
-                                          return const SizedBox(
-                                            width: 16,
-                                            height: 16,
-                                            child: TickAnimation(
-                                              size: 16,
-                                              color: Color(0xFF1E3A8A),
-                                            ),
-                                          );
-                                        }
-                                        return isActive
-                                            ? Container(
-                                                width: 6,
-                                                height: 6,
-                                                decoration: const BoxDecoration(
-                                                  color: Color(0xFF1E3A8A),
-                                                  shape: BoxShape.circle,
-                                                ),
-                                              )
-                                            : const SizedBox.shrink();
-                                      },
-                                    )
-                                ],
+                                    ),
+                                    if (isLoading)
+                                      const SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: ThinkingAnimation(
+                                          size: 16,
+                                          color: Color(0xFF1E3A8A),
+                                        ),
+                                      )
+                                    else if (cacheKey != null)
+                                      ValueListenableBuilder<bool>(
+                                        valueListenable:
+                                            _tickAnimationStates.putIfAbsent(
+                                          cacheKey,
+                                          () => ValueNotifier<bool>(false),
+                                        ),
+                                        builder: (context, showTick, child) {
+                                          if (showTick) {
+                                            return const SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: TickAnimation(
+                                                size: 16,
+                                                color: Color(0xFF1E3A8A),
+                                              ),
+                                            );
+                                          }
+                                          return isActive
+                                              ? Container(
+                                                  width: 6,
+                                                  height: 6,
+                                                  decoration:
+                                                      const BoxDecoration(
+                                                    color: Color(0xFF1E3A8A),
+                                                    shape: BoxShape.circle,
+                                                  ),
+                                                )
+                                              : const SizedBox.shrink();
+                                        },
+                                      )
+                                  ],
+                                ),
                               ),
                             ),
                           );
