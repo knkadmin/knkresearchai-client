@@ -6,6 +6,7 @@ import '../auth_service.dart';
 import '../agent_service.dart';
 import '../services/browse_history_service.dart';
 import '../models/browse_history.dart';
+import '../services/firestore_service.dart';
 import 'package:fa_ai_agent/result_advanced.dart';
 import 'package:fa_ai_agent/widgets/thinking_animation.dart';
 import 'package:fa_ai_agent/widgets/center_search_card.dart';
@@ -13,6 +14,7 @@ import 'package:fa_ai_agent/widgets/side_menu.dart';
 import 'package:fa_ai_agent/main.dart';
 import 'package:fa_ai_agent/widgets/search_bar.dart' show CustomSearchBar;
 import 'package:quickalert/quickalert.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -62,9 +64,23 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Future<void> _checkAuth() async {
     final user = AuthService().currentUser;
-    if (user == null) {
-      // No need to navigate since we're already on the dashboard
-      // The UI will automatically show the sign in/sign up buttons
+    if (user != null) {
+      try {
+        // Get the user's ID token
+        final idToken = await user.getIdToken();
+
+        if (idToken != null) {
+          // Update token in Firestore
+          final firestoreService = FirestoreService();
+          await firestoreService.updateUserToken(idToken);
+
+          print('User token updated successfully in Firestore');
+        } else {
+          print('Failed to get user ID token');
+        }
+      } catch (e) {
+        print('Error updating user token: $e');
+      }
     }
   }
 

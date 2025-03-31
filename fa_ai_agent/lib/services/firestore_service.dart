@@ -198,4 +198,27 @@ class FirestoreService {
       String collection, String documentId) {
     return _firestore.collection(collection).doc(documentId).snapshots();
   }
+
+  // Update user token
+  Future<void> updateUserToken(String token) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        print('No authenticated user found');
+        throw Exception('No user logged in');
+      }
+
+      await _firestore.collection('users').doc(user.uid).update({
+        'token': token,
+        'lastTokenUpdate': FieldValue.serverTimestamp(),
+      });
+
+      print('User token updated successfully');
+    } catch (e) {
+      print('Error updating user token: $e');
+      print('Error type: ${e.runtimeType}');
+      print('Error details: ${e.toString()}');
+      rethrow;
+    }
+  }
 }
