@@ -1016,32 +1016,57 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                               .toList();
 
                           final keyMetricsSection = Container(
-                            padding: const EdgeInsets.all(32),
                             color: Colors.white,
                             child: isNarrow
-                                ? Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      metricsTable,
-                                      const SizedBox(height: 48),
-                                      ...contentSections.take(4),
-                                    ],
+                                ? Padding(
+                                    padding: const EdgeInsets.all(32),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        metricsTable,
+                                        const SizedBox(height: 48),
+                                        ...contentSections.take(4),
+                                      ],
+                                    ),
                                   )
-                                : Row(
+                                : Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      Expanded(
-                                        child: Column(
+                                      contentSections[0], // Price Target
+                                      const SizedBox(height: 8),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 32),
+                                        child: Row(
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
-                                          children:
-                                              contentSections.take(4).toList(),
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  contentSections[
+                                                      1], // Overview
+                                                  const SizedBox(height: 48),
+                                                  contentSections[
+                                                      2], // Combined Charts
+                                                  const SizedBox(height: 48),
+                                                  contentSections[
+                                                      3], // Financial Performance
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 24),
+                                            SizedBox(
+                                              width: 280,
+                                              child: metricsTable,
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      const SizedBox(width: 24),
-                                      metricsTable,
                                     ],
                                   ),
                           );
@@ -1093,10 +1118,13 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          height: MediaQuery.of(context).size.height,
-                          padding: const EdgeInsets.only(right: 24),
-                          child: _buildNavigationList(visibleSections),
+                        Material(
+                          color: Colors.transparent,
+                          child: Container(
+                            height: MediaQuery.of(context).size.height,
+                            padding: const EdgeInsets.only(right: 24),
+                            child: _buildNavigationList(visibleSections),
+                          ),
                         ),
                         const Expanded(child: SizedBox()),
                       ],
