@@ -5,8 +5,9 @@ import '../result_advanced.dart';
 import 'company_button.dart';
 import '../auth_service.dart';
 import 'search_bar.dart' show CustomSearchBar;
+import '../constants/company_data.dart';
 
-class CenterSearchCard extends StatelessWidget {
+class CenterSearchCard extends StatefulWidget {
   final TextEditingController searchController;
   final FocusNode searchFocusNode;
   final Function(String) onSearchChanged;
@@ -25,6 +26,28 @@ class CenterSearchCard extends StatelessWidget {
     required this.onHideSearchResults,
     required this.searchCardKey,
   });
+
+  @override
+  State<CenterSearchCard> createState() => _CenterSearchCardState();
+}
+
+class _CenterSearchCardState extends State<CenterSearchCard> {
+  List<Map<String, String>> _mega7Companies = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMega7Companies();
+  }
+
+  Future<void> _loadMega7Companies() async {
+    final companies = await CompanyData.getMega7CompaniesForButtons();
+    if (mounted) {
+      setState(() {
+        _mega7Companies = companies;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,14 +95,14 @@ class CenterSearchCard extends StatelessWidget {
           const SizedBox(height: 32),
           // Search Field in Main Card
           CustomSearchBar(
-            key: searchCardKey,
-            controller: searchController,
-            focusNode: searchFocusNode,
-            onChanged: onSearchChanged,
+            key: widget.searchCardKey,
+            controller: widget.searchController,
+            focusNode: widget.searchFocusNode,
+            onChanged: widget.onSearchChanged,
             hintText: 'Search company or ticker...',
             onClear: () {
-              searchController.clear();
-              onHideSearchResults();
+              widget.searchController.clear();
+              widget.onHideSearchResults();
             },
             width: 600,
             showBorder: true,
@@ -127,43 +150,15 @@ class CenterSearchCard extends StatelessWidget {
               spacing: 12,
               runSpacing: 12,
               alignment: WrapAlignment.center,
-              children: [
-                CompanyButton(
-                  name: 'Alphabet',
-                  symbol: 'GOOGL',
-                  onTap: () => onNavigateToReport('GOOGL', 'Alphabet'),
-                ),
-                CompanyButton(
-                  name: 'Amazon',
-                  symbol: 'AMZN',
-                  onTap: () => onNavigateToReport('AMZN', 'Amazon'),
-                ),
-                CompanyButton(
-                  name: 'Apple',
-                  symbol: 'AAPL',
-                  onTap: () => onNavigateToReport('AAPL', 'Apple'),
-                ),
-                CompanyButton(
-                  name: 'Meta',
-                  symbol: 'META',
-                  onTap: () => onNavigateToReport('META', 'Meta'),
-                ),
-                CompanyButton(
-                  name: 'Microsoft',
-                  symbol: 'MSFT',
-                  onTap: () => onNavigateToReport('MSFT', 'Microsoft'),
-                ),
-                CompanyButton(
-                  name: 'Nvidia',
-                  symbol: 'NVDA',
-                  onTap: () => onNavigateToReport('NVDA', 'Nvidia'),
-                ),
-                CompanyButton(
-                  name: 'Tesla',
-                  symbol: 'TSLA',
-                  onTap: () => onNavigateToReport('TSLA', 'Tesla'),
-                ),
-              ],
+              children: _mega7Companies.map((company) {
+                final symbol = company.keys.toList().first;
+                final name = company.values.toList().first;
+                return CompanyButton(
+                  name: name,
+                  symbol: symbol,
+                  onTap: () => widget.onNavigateToReport(symbol, name),
+                );
+              }).toList(),
             ),
           ],
         ],

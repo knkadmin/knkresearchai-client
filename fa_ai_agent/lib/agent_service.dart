@@ -198,15 +198,19 @@ class AgentService {
     final String? cachedReport = box.get(cacheReportKey);
     if (cachedReport == null || forceRefresh) {
       // Get user ID and token from Firestore
-      final userDoc = await _firestoreService.currentUserDoc.get();
-      final userId = userDoc.id;
-      final token = userDoc.data()?['token'] as String?;
+      String userId = '';
+      String token = '';
+      if (_firestoreService.isCurrentUserAuthed()) {
+        final userDoc = await _firestoreService.currentUserDoc.get();
+        userId = userDoc.id;
+        token = userDoc.data()?['token'] as String? ?? '';
+      }
 
       final url = Uri.https(baseUrl, endpoint, {
         'code': ticker,
         'language': language.toLowerCase(),
         'userId': userId,
-        'token': token ?? '',
+        'token': token,
       });
       final response = await http.get(url);
 

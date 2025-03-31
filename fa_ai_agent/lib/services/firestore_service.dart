@@ -14,6 +14,10 @@ class FirestoreService {
     );
   }
 
+  bool isCurrentUserAuthed() {
+    return _auth.currentUser != null;
+  }
+
   // Get current user's document reference
   DocumentReference<Map<String, dynamic>> get currentUserDoc {
     final user = _auth.currentUser;

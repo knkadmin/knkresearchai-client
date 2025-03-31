@@ -15,6 +15,7 @@ import 'package:fa_ai_agent/main.dart';
 import 'package:fa_ai_agent/widgets/search_bar.dart' show CustomSearchBar;
 import 'package:quickalert/quickalert.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:fa_ai_agent/constants/company_data.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -40,6 +41,7 @@ class _DashboardPageState extends State<DashboardPage> {
   bool _isHovered = false;
   final TextEditingController feedbackController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
+  List<Map<String, String>> _mega7Companies = [];
 
   @override
   void initState() {
@@ -47,6 +49,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _searchFocusNode.addListener(_onSearchFocusChange);
     _checkAuth();
     _loadBrowseHistory();
+    _loadMega7Companies();
     RawKeyboard.instance.addListener(_handleKeyEvent);
 
     // Check for route parameters first
@@ -110,6 +113,15 @@ class _DashboardPageState extends State<DashboardPage> {
     final history = await _historyService.getMostRecentHistory();
     if (history != null) {
       _navigateToReport(history.companyTicker, history.companyName);
+    }
+  }
+
+  Future<void> _loadMega7Companies() async {
+    final companies = await CompanyData.getMega7Companies();
+    if (mounted) {
+      setState(() {
+        _mega7Companies = companies;
+      });
     }
   }
 
@@ -1046,15 +1058,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                             spacing: 12,
                                             runSpacing: 12,
                                             alignment: WrapAlignment.center,
-                                            children: [
-                                              {"AAPL": "Apple"},
-                                              {"MSFT": "Microsoft"},
-                                              {"GOOGL": "Alphabet (Google)"},
-                                              {"AMZN": "Amazon"},
-                                              {"NVDA": "NVIDIA"},
-                                              {"META": "Meta Platforms"},
-                                              {"TSLA": "Tesla"}
-                                            ].map((company) {
+                                            children:
+                                                _mega7Companies.map((company) {
                                               final companyName =
                                                   company.values.toList().first;
                                               final ticker =
