@@ -303,7 +303,11 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     // For non-authenticated users, handle section visibility
     if (user == null) {
       // List of sections that are free for non-authenticated users
-      final freeSections = ['Price Target', 'Overview', 'Financial Metrics'];
+      final freeSections = [
+        'Price Target',
+        'Company Overview',
+        'Financial Metrics'
+      ];
 
       // Special handling for Combined Charts section
       if (section.title == 'Combined Charts') {
@@ -483,8 +487,28 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     });
 
     try {
+      final user = AuthService().currentUser;
+      final freeSections = [
+        'Price Target',
+        'Company Overview',
+        'Financial Metrics'
+      ];
+
+      // Get the list of visible sections based on authentication status
+      final visibleSections = user != null
+          ? sections
+          : sections
+              .where((section) => freeSections.contains(section.title))
+              .toList();
+
+      // Create a list of sections to refresh
+      final sectionsToRefresh = visibleSections.where((section) {
+        final cacheKey = _sectionToCacheKey[section.title];
+        return cacheKey != null;
+      }).toList();
+
       // Wait for all sections to load
-      await Future.wait(sections.map((section) async {
+      await Future.wait(sectionsToRefresh.map((section) async {
         final cacheKey = _sectionToCacheKey[section.title];
         if (cacheKey != null) {
           await widget.service.getOutput(
@@ -994,7 +1018,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
         : sections.where((section) {
             final freeSections = [
               'Price Target',
-              'Overview',
+              'Company Overview',
               'Combined Charts',
               'Financial Metrics'
             ];

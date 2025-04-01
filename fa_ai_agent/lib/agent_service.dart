@@ -197,49 +197,60 @@ class AgentService {
   Future<Map<String, dynamic>> getOutput(String endpoint, String ticker,
       String language, bool forceRefresh, String cacheKey) async {
     _log.info("Requesting $endpoint");
-    loadingState[cacheKey] = true;
-    loadingStateSubject.add(loadingState);
-    final box = Hive.box('settings');
-    final String cacheReportKey = "$ticker-$language-$cacheKey";
-    final String? cachedReport = box.get(cacheReportKey);
-    if (cachedReport == null || forceRefresh) {
-      // Get user ID and token from Firestore
-      String userId = '';
-      String token = '';
-      if (_firestoreService.isCurrentUserAuthed()) {
-        final userDoc = await _firestoreService.currentUserDoc.get();
-        userId = userDoc.id;
-        token = userDoc.data()?['token'] as String? ?? '';
-      }
+    try {
+      loadingState[cacheKey] = true;
+      loadingStateSubject.add(loadingState);
 
-      final url = Uri.https(baseUrl, endpoint, {
-        'code': ticker,
-        'language': language.toLowerCase(),
-        'userId': userId,
-        'token': token,
-      });
-      final response = await http.get(url);
+      final box = Hive.box('settings');
+      final String cacheReportKey = "$ticker-$language-$cacheKey";
+      final String? cachedReport = box.get(cacheReportKey);
 
-      if (response.statusCode == 500) {
-        _log.warning("Request failed with status code: ${response.statusCode}");
+      if (cachedReport == null || forceRefresh) {
+        // Get user ID and token from Firestore
+        String userId = '';
+        String token = '';
+        if (_firestoreService.isCurrentUserAuthed()) {
+          final userDoc = await _firestoreService.currentUserDoc.get();
+          userId = userDoc.id;
+          token = userDoc.data()?['token'] as String? ?? '';
+        }
+
+        final url = Uri.https(baseUrl, endpoint, {
+          'code': ticker,
+          'language': language.toLowerCase(),
+          'userId': userId,
+          'token': token,
+        });
+
+        final response = await http.get(url);
+
+        if (response.statusCode == 500) {
+          _log.warning(
+              "Request failed with status code: ${response.statusCode}");
+          loadingState[cacheKey] = false;
+          loadingStateSubject.add(loadingState);
+          return {};
+        }
+
+        final jsonResponse =
+            convert.jsonDecode(response.body) as Map<String, dynamic>;
+        final output = jsonResponse['output'];
+
+        output["cachedAt"] = DateTime.now().microsecondsSinceEpoch;
+        box.put(cacheReportKey, convert.jsonEncode(output));
         loadingState[cacheKey] = false;
         loadingStateSubject.add(loadingState);
-        return Future.value({});
+        return output;
+      } else {
+        loadingState[cacheKey] = false;
+        loadingStateSubject.add(loadingState);
+        return convert.jsonDecode(cachedReport);
       }
-
-      final jsonResponse =
-          convert.jsonDecode(response.body) as Map<String, dynamic>;
-      final output = jsonResponse['output'];
-
-      output["cachedAt"] = DateTime.now().microsecondsSinceEpoch;
-      box.put(cacheReportKey, convert.jsonEncode(output));
+    } catch (e) {
+      _log.severe('Error in getOutput: $e');
       loadingState[cacheKey] = false;
       loadingStateSubject.add(loadingState);
-      return Future.value(output);
-    } else {
-      loadingState[cacheKey] = false;
-      loadingStateSubject.add(loadingState);
-      return Future.value(convert.jsonDecode(cachedReport));
+      return {};
     }
   }
 }
