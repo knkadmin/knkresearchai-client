@@ -3,12 +3,12 @@ import 'package:fa_ai_agent/widgets/image_viewer.dart';
 
 class ChartImage extends StatefulWidget {
   final Widget image;
-  final Function(BuildContext, Widget) onTap;
+  final String encodedImage;
 
   const ChartImage({
     super.key,
     required this.image,
-    required this.onTap,
+    required this.encodedImage,
   });
 
   @override
@@ -45,7 +45,7 @@ class _ChartImageState extends State<ChartImage> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => ImageViewer.show(context, widget.image),
+            onTap: () => ImageViewer.show(context, widget.encodedImage),
             borderRadius: BorderRadius.circular(8),
             hoverColor: Colors.transparent,
             child: widget.image,

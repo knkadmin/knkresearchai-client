@@ -46,6 +46,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   bool _isRefreshing = false;
   Widget? _cachedMetricsTable;
   final Map<String, Widget> _imageCache = {};
+  final Map<String, String> _encodedImageCache = {};
   final Map<String, Widget> _sectionCache = {};
   final Map<String, Future<Map<String, dynamic>>> _futureCache = {};
   final Map<String, bool> _sectionLoadingStates = {};
@@ -1026,7 +1027,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                       children: [
                                         metricsTable,
                                         const SizedBox(height: 48),
-                                        ...contentSections.take(4),
+                                        ...contentSections
+                                            .take(contentSections.length),
                                       ],
                                     ),
                                   )
@@ -1034,7 +1036,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      contentSections[0], // Price Target
+                                      if (contentSections.isNotEmpty)
+                                        contentSections[0], // Price Target
                                       const SizedBox(height: 8),
                                       Padding(
                                         padding: const EdgeInsets.symmetric(
@@ -1048,14 +1051,20 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                                 crossAxisAlignment:
                                                     CrossAxisAlignment.start,
                                                 children: [
-                                                  contentSections[
-                                                      1], // Overview
+                                                  if (contentSections.length >
+                                                      1)
+                                                    contentSections[
+                                                        1], // Overview
                                                   const SizedBox(height: 48),
-                                                  contentSections[
-                                                      2], // Combined Charts
+                                                  if (contentSections.length >
+                                                      2)
+                                                    contentSections[
+                                                        2], // Combined Charts
                                                   const SizedBox(height: 48),
-                                                  contentSections[
-                                                      3], // Financial Performance
+                                                  if (contentSections.length >
+                                                      3)
+                                                    contentSections[
+                                                        3], // Financial Performance
                                                 ],
                                               ),
                                             ),
@@ -1077,9 +1086,11 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                ...contentSections.skip(4).take(4),
-                                const SizedBox(height: 24),
-                                ...contentSections.skip(8),
+                                if (contentSections.length > 4) ...[
+                                  ...contentSections.skip(4).take(4),
+                                  const SizedBox(height: 24),
+                                  ...contentSections.skip(8),
+                                ],
                               ],
                             ),
                           );
@@ -1471,8 +1482,12 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       cachedImage: (!forceRefresh && _imageCache.containsKey(key))
           ? _imageCache[key]
           : null,
-      onImageCached: (Widget image) {
+      cachedEncodedImage: (!forceRefresh && _encodedImageCache.containsKey(key))
+          ? _encodedImageCache[key]
+          : null,
+      onImageCached: (Widget image, String encodedImage) {
         _imageCache[key] = image;
+        _encodedImageCache[key] = encodedImage;
       },
     );
   }

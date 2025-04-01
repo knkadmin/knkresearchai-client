@@ -10,19 +10,21 @@ class ChartBuilder extends StatelessWidget {
   final Future<Map<String, dynamic>> future;
   final String chartKey;
   final Widget? cachedImage;
-  final Function(Widget) onImageCached;
+  final String? cachedEncodedImage;
+  final Function(Widget, String) onImageCached;
 
   const ChartBuilder({
     super.key,
     required this.future,
     required this.chartKey,
     this.cachedImage,
+    this.cachedEncodedImage,
     required this.onImageCached,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (cachedImage != null) {
+    if (cachedImage != null && cachedEncodedImage != null) {
       return Center(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -32,7 +34,7 @@ class ChartBuilder extends StatelessWidget {
                   : constraints.maxWidth,
               child: ChartImage(
                 image: cachedImage!,
-                onTap: (context, image) => ImageViewer.show(context, image),
+                encodedImage: cachedEncodedImage!,
               ),
             );
           },
@@ -59,8 +61,19 @@ class ChartBuilder extends StatelessWidget {
             filterQuality: FilterQuality.high,
           );
 
-          // Cache the image widget
-          onImageCached(image);
+          // Create a high resolution version for the viewer without size constraints
+          final highResImage = Image.memory(
+            decodedImage,
+            filterQuality: FilterQuality.high,
+            gaplessPlayback: true,
+            fit: BoxFit.contain,
+            isAntiAlias: true,
+            cacheWidth: null, // Remove size constraints
+            cacheHeight: null, // Remove size constraints
+          );
+
+          // Cache the image widget and encoded string
+          onImageCached(image, imageEncodedString);
 
           return Center(
             child: LayoutBuilder(
@@ -71,7 +84,7 @@ class ChartBuilder extends StatelessWidget {
                       : constraints.maxWidth,
                   child: ChartImage(
                     image: image,
-                    onTap: (context, image) => ImageViewer.show(context, image),
+                    encodedImage: imageEncodedString,
                   ),
                 );
               },

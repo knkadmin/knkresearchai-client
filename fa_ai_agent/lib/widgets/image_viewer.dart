@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:flutter/gestures.dart';
+import 'dart:convert' as convert;
 
 class ImageViewer extends StatefulWidget {
-  final Widget image;
+  final String encodedImage;
 
   const ImageViewer({
     super.key,
-    required this.image,
+    required this.encodedImage,
   });
 
-  static void show(BuildContext context, Widget image) {
+  static void show(BuildContext context, String encodedImage) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -18,7 +19,7 @@ class ImageViewer extends StatefulWidget {
         return Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: EdgeInsets.zero,
-          child: ImageViewer(image: image),
+          child: ImageViewer(encodedImage: encodedImage),
         );
       },
     );
@@ -159,6 +160,9 @@ class _ImageViewerState extends State<ImageViewer>
 
   @override
   Widget build(BuildContext context) {
+    final decodedImage = convert.base64.decode(widget.encodedImage);
+    final imageProvider = MemoryImage(decodedImage);
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -175,7 +179,7 @@ class _ImageViewerState extends State<ImageViewer>
             child: Transform.translate(
               offset: _position,
               child: PhotoView(
-                imageProvider: (widget.image as Image).image,
+                imageProvider: imageProvider,
                 minScale: PhotoViewComputedScale.contained,
                 maxScale: PhotoViewComputedScale.covered * 4,
                 initialScale: PhotoViewComputedScale.contained,
@@ -200,6 +204,16 @@ class _ImageViewerState extends State<ImageViewer>
                     case PhotoViewScaleState.zoomedOut:
                       return PhotoViewScaleState.initial;
                   }
+                },
+                loadingBuilder: (context, event) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Text('Error loading image'),
+                  );
                 },
               ),
             ),
