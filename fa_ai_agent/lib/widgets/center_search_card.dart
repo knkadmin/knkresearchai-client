@@ -138,7 +138,7 @@ class _CenterSearchCardState extends State<CenterSearchCard> {
             ),
             const SizedBox(height: 32),
             const Text(
-              'Quick Start with Mega 7 Companies',
+              'Quick Start with Mag 7 Companies',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,

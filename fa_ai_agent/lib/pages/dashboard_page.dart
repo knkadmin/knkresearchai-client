@@ -1099,14 +1099,14 @@ class _DashboardPageState extends State<DashboardPage> {
                                     ],
                                   ),
                                 ),
-                                // Mega 7 Section for non-authenticated users
+                                // Mag 7 Section for non-authenticated users
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 20, vertical: 40),
                                   child: Column(
                                     children: [
                                       const Text(
-                                        "Quick Start with Mega 7 Companies for FREE. No Signup Required.",
+                                        "Quick Start with Mag 7 Companies for FREE. No Signup Required.",
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           fontSize: 28,

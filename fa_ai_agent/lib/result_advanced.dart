@@ -3,6 +3,7 @@ import 'package:fa_ai_agent/main.dart';
 import 'package:fa_ai_agent/widgets/dynamic_app_bar_title.dart';
 import 'package:fa_ai_agent/models/section.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
+import 'package:fa_ai_agent/constants/company_data.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -59,6 +60,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   final Map<String, ValueNotifier<bool>> _tickAnimationStates = {};
   final WatchlistService _watchlistService = WatchlistService();
   bool _isHovered = false;
+  late final Future<bool> _isMag7CompanyFuture;
 
   // Add mapping between section titles and their cache keys
   final Map<String, String> _sectionToCacheKey = {
@@ -208,6 +210,9 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     // Set initial section to the first one
     _currentSection.value = sections.first.title;
     widget.sectorSubject.add(widget.sector);
+
+    // Initialize the Mag 7 company check future
+    _isMag7CompanyFuture = _checkIfMag7Company();
   }
 
   @override
@@ -294,131 +299,143 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       // List of sections that are free for non-authenticated users
       final freeSections = ['Price Target', 'Overview', 'Financial Metrics'];
 
-      // Check if the company is in Mega 7 list
-      final bool isMega7Company = [
-        'AAPL', // Apple
-        'MSFT', // Microsoft
-        'GOOGL', // Alphabet
-        'AMZN', // Amazon
-        'NVDA', // NVIDIA
-        'META', // Meta
-        'TSLA', // Tesla
-      ].contains(widget.tickerCode);
-
       // Special handling for Combined Charts section
       if (section.title == 'Combined Charts') {
-        // For Mega 7 companies, show the content without blur
-        if (isMega7Company) {
-          return sectionContent;
-        }
-
-        final cacheKey = _sectionToCacheKey[section.title];
-        return StreamBuilder<Map<String, bool>>(
-          stream: widget.service.loadingStateSubject.stream,
+        return FutureBuilder<bool>(
+          future: _isMag7CompanyFuture,
           builder: (context, snapshot) {
-            final loadingStates = snapshot.data ?? {};
-            final isLoading =
-                cacheKey != null && loadingStates[cacheKey] == true;
-
-            if (isLoading) {
+            // Show loading state while checking
+            if (snapshot.connectionState == ConnectionState.waiting) {
               return sectionContent;
             }
 
-            return Stack(
-              children: [
-                IgnorePointer(
-                  child: sectionContent,
-                ),
-                Positioned.fill(
-                  child: Stack(
-                    children: [
-                      ClipRect(
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(),
-                        ),
-                      ),
-                      Container(
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 24, vertical: 16),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.9),
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 4),
+            // For Mag 7 companies, show the content without blur
+            if (snapshot.data == true) {
+              return sectionContent;
+            }
+
+            final cacheKey = _sectionToCacheKey[section.title];
+            return StreamBuilder<Map<String, bool>>(
+              stream: widget.service.loadingStateSubject.stream,
+              builder: (context, snapshot) {
+                final loadingStates = snapshot.data ?? {};
+                final isLoading =
+                    cacheKey != null && loadingStates[cacheKey] == true;
+
+                if (isLoading) {
+                  return sectionContent;
+                }
+
+                return Stack(
+                  children: [
+                    IgnorePointer(
+                      child: sectionContent,
+                    ),
+                    Positioned.fill(
+                      child: Stack(
+                        children: [
+                          ClipRect(
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                              child: Container(),
+                            ),
+                          ),
+                          Container(
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 24, vertical: 16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.9),
+                                      borderRadius: BorderRadius.circular(12),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                                child: Column(
-                                  children: [
-                                    const Text(
-                                      'Unlock Premium Insights',
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF1E3A8A),
+                                    child: Column(
+                                      children: [
+                                        const Text(
+                                          'Unlock Premium Insights',
+                                          style: TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF1E3A8A),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 8),
+                                        Text(
+                                          'Get access to detailed analysis and exclusive content',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 24),
+                                  ElevatedButton(
+                                    onPressed: () => context.go('/signup'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF1E3A8A),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 32,
+                                        vertical: 16,
                                       ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      elevation: 2,
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      'Get access to detailed analysis and exclusive content',
+                                    child: const Text(
+                                      'Sign Up Now',
                                       style: TextStyle(
                                         fontSize: 16,
-                                        color: Colors.grey.shade700,
+                                        fontWeight: FontWeight.w600,
                                       ),
-                                      textAlign: TextAlign.center,
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 24),
-                              ElevatedButton(
-                                onPressed: () => context.go('/signup'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF1E3A8A),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 32,
-                                    vertical: 16,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  elevation: 2,
-                                ),
-                                child: const Text(
-                                  'Sign Up Now',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
-              ],
+                    ),
+                  ],
+                );
+              },
             );
           },
         );
       }
 
       // Return null for non-free sections
-      if (!freeSections.contains(section.title) && !isMega7Company) {
-        return const SizedBox.shrink();
-      }
+      return FutureBuilder<bool>(
+        future: _isMag7CompanyFuture,
+        builder: (context, snapshot) {
+          // Show loading state while checking
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox.shrink();
+          }
+
+          // Show content for free sections or Mag 7 companies
+          if (freeSections.contains(section.title) || snapshot.data == true) {
+            return sectionContent;
+          }
+
+          return const SizedBox.shrink();
+        },
+      );
     }
 
     return sectionContent;
@@ -975,7 +992,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
               'Combined Charts',
               'Financial Metrics'
             ];
-            final bool isMega7Company = [
+            final bool isMag7Company = [
               'GOOGL', // Alphabet
               'AMZN', // Amazon
               'AAPL', // Apple
@@ -984,7 +1001,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
               'NVDA', // Nvidia
               'TSLA', // Tesla
             ].contains(widget.tickerCode);
-            return freeSections.contains(section.title) || isMega7Company;
+            return freeSections.contains(section.title) || isMag7Company;
           }).toList();
 
     return Scaffold(
@@ -1700,6 +1717,17 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
         );
       },
     );
+  }
+
+  Future<bool> _checkIfMag7Company() async {
+    try {
+      final companies = await CompanyData.getMega7Companies();
+      return companies
+          .any((company) => company.keys.first == widget.tickerCode);
+    } catch (e) {
+      print('Error checking if company is Mag 7: $e');
+      return false;
+    }
   }
 }
 
