@@ -4,6 +4,8 @@ import 'package:fa_ai_agent/widgets/thinking_animation.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/agent_service.dart';
+import 'dart:convert';
+import 'package:fa_ai_agent/widgets/chart_image.dart';
 
 class AlertReportBuilder extends StatelessWidget {
   final Future<Map<String, dynamic>> future;
@@ -59,11 +61,13 @@ class AlertReportBuilder extends StatelessWidget {
             final markdown = data['accountingRedflags']?['md'] as String?;
             final rating =
                 data['accountingRedflags']?['mScoreRating'] as String?;
+            final incomeStatement =
+                data['accountingRedflags']?['incomeStatement'] as String?;
+            final balanceSheet =
+                data['accountingRedflags']?['balanceSheet'] as String?;
 
             // Determine theme based on rating
-            final statusLabel = rating ?? "No Rating";
             final statusColor = _getStatusColor(rating);
-            final headerColor = _getHeaderColor(rating);
             final borderColor = _getBorderColor(rating);
 
             final cacheTime = data['cachedAt'] != null
@@ -100,6 +104,58 @@ class AlertReportBuilder extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(data),
+                  if (incomeStatement != null || balanceSheet != null) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (incomeStatement != null) ...[
+                            const Text(
+                              'Income Statement',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1E3A8A),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ChartImage(
+                              image: Image.memory(
+                                base64Decode(incomeStatement),
+                                fit: BoxFit.contain,
+                              ),
+                              encodedImage: incomeStatement,
+                            ),
+                            const SizedBox(height: 8),
+                          ],
+                          if (balanceSheet != null) ...[
+                            const Text(
+                              'Balance Sheet',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1E3A8A),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            ChartImage(
+                              image: Image.memory(
+                                base64Decode(balanceSheet),
+                                fit: BoxFit.contain,
+                              ),
+                              encodedImage: balanceSheet,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: double.infinity,
+                      height: 1,
+                      color: Colors.grey.shade200,
+                    ),
+                  ],
                   Padding(
                     padding: const EdgeInsets.all(20),
                     child: MarkdownBody(

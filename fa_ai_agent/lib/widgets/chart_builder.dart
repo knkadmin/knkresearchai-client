@@ -4,6 +4,7 @@ import 'package:fa_ai_agent/widgets/error_display.dart';
 import 'package:fa_ai_agent/widgets/chart_image.dart';
 import 'package:fa_ai_agent/widgets/image_viewer.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
+import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:convert' as convert;
 
 class ChartBuilder extends StatelessWidget {
@@ -32,9 +33,23 @@ class ChartBuilder extends StatelessWidget {
               width: constraints.maxWidth > LayoutConstants.maxWidth
                   ? LayoutConstants.maxWidth
                   : constraints.maxWidth,
-              child: ChartImage(
-                image: cachedImage!,
-                encodedImage: cachedEncodedImage!,
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Colors.grey.shade200,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    ChartImage(
+                      image: cachedImage!,
+                      encodedImage: cachedEncodedImage!,
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -53,6 +68,7 @@ class ChartBuilder extends StatelessWidget {
           }
           final Map<String, dynamic> payload = data[chartKey];
           final String imageEncodedString = payload['base64'] ?? "";
+          final String? markdown = payload['md'];
 
           final decodedImage = convert.base64.decode(imageEncodedString);
           final image = Image.memory(
@@ -82,15 +98,69 @@ class ChartBuilder extends StatelessWidget {
                   width: constraints.maxWidth > LayoutConstants.maxWidth
                       ? LayoutConstants.maxWidth
                       : constraints.maxWidth,
-                  child: ChartImage(
-                    image: image,
-                    encodedImage: imageEncodedString,
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.grey.shade200,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        ChartImage(
+                          image: image,
+                          encodedImage: imageEncodedString,
+                        ),
+                        if (markdown != null && markdown.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          Container(
+                            width: double.infinity,
+                            child: MarkdownBody(
+                              data: markdown,
+                              styleSheet: MarkdownStyleSheet(
+                                p: const TextStyle(
+                                  fontSize: 15,
+                                  color: Color(0xFF475569),
+                                  height: 1.6,
+                                ),
+                                strong: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1E293B),
+                                ),
+                                em: const TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                blockquote: const TextStyle(
+                                  color: Color(0xFF64748B),
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                code: const TextStyle(
+                                  backgroundColor: Color(0xFFF8FAFC),
+                                  fontFamily: 'monospace',
+                                  fontSize: 14,
+                                ),
+                                codeblockDecoration: BoxDecoration(
+                                  color: const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFFE5E7EB),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 );
               },
             ),
           );
         }
+
         return Center(
           child: LayoutBuilder(
             builder: (context, constraints) {
