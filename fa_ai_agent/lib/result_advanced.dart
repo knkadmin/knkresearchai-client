@@ -91,10 +91,16 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
           getStockPriceTarget(widget.tickerCode, widget.language.value),
     ),
     Section(
-      title: 'Overview',
+      title: 'Company Overview',
       icon: Icons.business,
       buildContent: () =>
           getBusinessOverview(widget.tickerCode, widget.language.value),
+    ),
+    Section(
+      title: 'EPS vs Stock Price',
+      icon: Icons.compare_arrows,
+      buildContent: () =>
+          getEPSvsStockPriceChart(widget.tickerCode, widget.language.value),
     ),
     Section(
       title: 'Combined Charts',
@@ -1327,6 +1333,15 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                 .getBusinessOverview(ticker, language, forceRefresh)),
         "Company Overview",
         "businessOverview");
+  }
+
+  Widget getEPSvsStockPriceChart(String ticker, String language) {
+    return getChart(
+        _getCachedFuture(
+            'epsVsStockPriceChart',
+            () => widget.service
+                .getEPSvsStockPriceChart(ticker, language, forceRefresh)),
+        'epsVsStockPriceChart');
   }
 
   Widget getFinancialMetrics(String ticker, String language) {

@@ -5,7 +5,7 @@ import '../models/browse_history.dart';
 class BrowseHistoryService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  static const int maxHistoryRecords = 50;
+  static const int maxHistoryRecords = 30;
 
   Future<void> addHistory({
     required String companyName,

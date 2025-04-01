@@ -182,6 +182,12 @@ class AgentService {
         forceRefresh, "shareholder-chart");
   }
 
+  Future<Map<String, dynamic>> getEPSvsStockPriceChart(
+      String ticker, String language, bool forceRefresh) {
+    return getOutput("/charts-advanced/eps-vs-stock-price-chart", ticker,
+        language, forceRefresh, "eps-vs-stock-price-chart");
+  }
+
   Future<Map<String, dynamic>> getFinancialMetrics(
       String ticker, String language, bool forceRefresh) {
     return getOutput("/tables-advanced/financial-metrics", ticker, language,
