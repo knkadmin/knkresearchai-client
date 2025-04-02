@@ -2,6 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../auth_service.dart';
 import '../services/firestore_service.dart';
+import '../gradient_text.dart';
+
+// Pricing constants
+const int kFreePrice = 0;
+const int kStarterRegularPrice = 30;
+const int kStarterEarlyBirdPrice = 20;
+const int kStarterYearlyRegularPrice = 259;
+const int kStarterYearlyEarlyBirdPrice = 200;
+const int kProPrice = 99;
+const double kYearlyDiscount = 0.8; // 20% discount for yearly plans
 
 class PricingPage extends StatefulWidget {
   const PricingPage({super.key});
@@ -12,10 +22,13 @@ class PricingPage extends StatefulWidget {
 
 class _PricingPageState extends State<PricingPage> {
   String? selectedPlan;
+  bool isYearly = true;
+  bool isOneTime = false;
 
   @override
   void initState() {
     super.initState();
+    isYearly = true;
     _checkUserSubscription();
   }
 
@@ -64,6 +77,23 @@ class _PricingPageState extends State<PricingPage> {
     }
   }
 
+  String _formatPrice(int price) {
+    return '\$$price';
+  }
+
+  String _getPeriod() {
+    if (isOneTime) return 'one-time';
+    return isYearly ? 'year' : 'month';
+  }
+
+  int _getStarterPrice() {
+    if (isOneTime) return kStarterYearlyRegularPrice;
+    if (isYearly) {
+      return kStarterYearlyEarlyBirdPrice;
+    }
+    return kStarterEarlyBirdPrice;
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
@@ -102,7 +132,7 @@ class _PricingPageState extends State<PricingPage> {
             ),
             // Pricing Content
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 60),
+              padding: const EdgeInsets.symmetric(vertical: 40),
               child: Column(
                 children: [
                   const Text(
@@ -113,7 +143,7 @@ class _PricingPageState extends State<PricingPage> {
                       color: Color(0xFF1E293B),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   const Text(
                     'Select the plan that best fits your needs',
                     style: TextStyle(
@@ -121,7 +151,80 @@ class _PricingPageState extends State<PricingPage> {
                       color: Color(0xFF64748B),
                     ),
                   ),
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 40),
+                  // Billing Toggle
+                  Container(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Column(
+                      children: [
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(
+                              value: 'monthly',
+                              label: Text('Monthly'),
+                              icon: Icon(Icons.calendar_month),
+                            ),
+                            ButtonSegment(
+                              value: 'yearly',
+                              label: Text('Yearly'),
+                              icon: Icon(Icons.calendar_today),
+                            ),
+                            ButtonSegment(
+                              value: 'one-time',
+                              label: Text('One-time'),
+                              icon: Icon(Icons.payments),
+                            ),
+                          ],
+                          selected: {
+                            isOneTime
+                                ? 'one-time'
+                                : (isYearly ? 'yearly' : 'monthly')
+                          },
+                          onSelectionChanged: (Set<String> newSelection) {
+                            setState(() {
+                              final selected = newSelection.first;
+                              isYearly = selected == 'yearly';
+                              isOneTime = selected == 'one-time';
+                            });
+                          },
+                          style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
+                              (Set<MaterialState> states) {
+                                if (states.contains(MaterialState.selected)) {
+                                  return const Color(0xFF1E3A8A)
+                                      .withOpacity(0.1);
+                                }
+                                return Colors.white;
+                              },
+                            ),
+                            foregroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
+                              (Set<MaterialState> states) {
+                                if (states.contains(MaterialState.selected)) {
+                                  return const Color(0xFF1E3A8A);
+                                }
+                                return const Color(0xFF64748B);
+                              },
+                            ),
+                            side: MaterialStateProperty.all(
+                              BorderSide(
+                                color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                                width: 1,
+                              ),
+                            ),
+                            padding: MaterialStateProperty.all(
+                              const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 12),
+                            ),
+                          ),
+                        ),
+                        if (isYearly && !isOneTime) ...[
+                          const SizedBox(height: 8),
+                        ],
+                      ],
+                    ),
+                  ),
                   // Pricing Cards
                   Center(
                     child: Wrap(
@@ -130,65 +233,86 @@ class _PricingPageState extends State<PricingPage> {
                       alignment: WrapAlignment.center,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        _buildPricingCard(
-                          title: 'Free',
-                          price: '\$0',
-                          period: 'month',
-                          features: [
-                            'Access to basic company reports',
-                            'Limited to 5 reports per day',
-                            'Basic market data',
-                            'Standard support',
-                          ],
-                          isPopular: false,
-                          isSelected: selectedPlan == 'free',
-                          onSelect: () {
-                            setState(() {
-                              selectedPlan = 'free';
-                            });
-                            _updateSubscription('free');
-                          },
-                        ),
-                        _buildPricingCard(
-                          title: 'Basic',
-                          price: '\$29',
-                          period: 'month',
-                          features: [
-                            'Unlimited company reports',
-                            'Advanced market data',
-                            'Priority support',
-                            'Custom watchlists',
-                            'Email notifications',
-                          ],
-                          isPopular: true,
-                          isSelected: selectedPlan == 'basic',
-                          onSelect: () {
-                            setState(() {
-                              selectedPlan = 'basic';
-                            });
-                            _updateSubscription('basic');
-                          },
-                        ),
+                        if (!isOneTime) ...[
+                          _buildPricingCard(
+                            title: 'Free',
+                            price: _formatPrice(kFreePrice),
+                            period: _getPeriod(),
+                            features: [
+                              'Access to basic company reports',
+                              'Limited to 5 reports per day',
+                              'Basic market data',
+                              'Standard support',
+                            ],
+                            isPopular: false,
+                            isSelected: selectedPlan == 'free',
+                            onSelect: () {
+                              setState(() {
+                                selectedPlan = 'free';
+                              });
+                              _updateSubscription('free');
+                            },
+                          ),
+                          _buildPricingCard(
+                            title: 'Starter',
+                            price: _formatPrice(_getStarterPrice()),
+                            period: _getPeriod(),
+                            features: [
+                              'Includes a 7-day free trial',
+                              'Unlimited company reports',
+                              'Advanced market data',
+                              'Priority support',
+                              'Custom watchlists',
+                              'Email notifications',
+                              if (isYearly) ...[
+                                'One-time payment for the year',
+                              ] else ...[
+                                'Early bird offer: \$$kStarterEarlyBirdPrice/month',
+                              ],
+                            ],
+                            isPopular: true,
+                            isSelected: selectedPlan == 'starter',
+                            onSelect: () {
+                              setState(() {
+                                selectedPlan = 'starter';
+                              });
+                              _updateSubscription('starter');
+                            },
+                          ),
+                        ],
+                        if (isOneTime)
+                          _buildPricingCard(
+                            title: 'Starter',
+                            price: _formatPrice(kStarterYearlyRegularPrice),
+                            period: 'one-time',
+                            features: [
+                              'One-time payment for the year',
+                              'Unlimited company reports',
+                              'Advanced market data',
+                              'Priority support',
+                              'Custom watchlists',
+                              'Email notifications',
+                            ],
+                            isPopular: false,
+                            isSelected: selectedPlan == 'yearly',
+                            onSelect: () {
+                              setState(() {
+                                selectedPlan = 'yearly';
+                              });
+                              _updateSubscription('yearly');
+                            },
+                          ),
                         _buildPricingCard(
                           title: 'Pro',
-                          price: '\$99',
-                          period: 'month',
+                          price: _formatPrice(kProPrice),
+                          period: _getPeriod(),
                           features: [
-                            'Everything in Basic',
-                            'Real-time market data',
-                            'Advanced analytics',
-                            'API access',
-                            'Dedicated support',
-                            'Custom reports',
+                            'More advanced features coming soon for pro users - please stay tuned.',
                           ],
                           isPopular: false,
                           isSelected: selectedPlan == 'pro',
-                          onSelect: () {
-                            setState(() {
-                              selectedPlan = 'pro';
-                            });
-                            _updateSubscription('pro');
-                          },
+                          onSelect: null,
+                          isConstruction: true,
                         ),
                       ],
                     ),
@@ -209,13 +333,16 @@ class _PricingPageState extends State<PricingPage> {
     required List<String> features,
     required bool isPopular,
     required bool isSelected,
-    required VoidCallback onSelect,
+    VoidCallback? onSelect,
+    bool isConstruction = false,
   }) {
     return Stack(
       children: [
         Container(
           width: isPopular ? 360 : 320,
-          height: isPopular ? 560 : 520,
+          height: (title == 'Starter' && !isYearly && !isOneTime)
+              ? null
+              : (isPopular ? 520 : 480),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: isPopular ? Colors.white : Colors.white,
@@ -248,9 +375,12 @@ class _PricingPageState extends State<PricingPage> {
                   ],
           ),
           child: Column(
+            mainAxisSize: (title == 'Starter' && !isYearly && !isOneTime)
+                ? MainAxisSize.min
+                : MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isPopular) ...[
+              if (isPopular && (title != 'Starter' || isYearly)) ...[
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -258,18 +388,20 @@ class _PricingPageState extends State<PricingPage> {
                     color: const Color(0xFF1E3A8A).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        Icons.star,
+                        title == 'Starter' ? Icons.local_offer : Icons.star,
                         size: 16,
-                        color: Color(0xFF1E3A8A),
+                        color: const Color(0xFF1E3A8A),
                       ),
-                      SizedBox(width: 4),
+                      const SizedBox(width: 4),
                       Text(
-                        'Most Popular',
-                        style: TextStyle(
+                        title == 'Starter'
+                            ? 'Early Bird Offer'
+                            : 'Most Popular',
+                        style: const TextStyle(
                           color: Color(0xFF1E3A8A),
                           fontWeight: FontWeight.bold,
                         ),
@@ -279,108 +411,291 @@ class _PricingPageState extends State<PricingPage> {
                 ),
                 const SizedBox(height: 16),
               ],
-              Text(
+              if (isConstruction) ...[
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFA500).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.construction,
+                        size: 16,
+                        color: Color(0xFFFFA500),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Coming Soon',
+                        style: TextStyle(
+                          color: const Color(0xFFFFA500),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+              GradientText(
                 title,
                 style: TextStyle(
                   fontSize: isPopular ? 28 : 24,
                   fontWeight: FontWeight.bold,
-                  color: const Color(0xFF1E293B),
+                ),
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF1E3A8A),
+                    Color(0xFF3B82F6),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                children: [
-                  Text(
-                    price,
-                    style: TextStyle(
-                      fontSize: isPopular ? 56 : 48,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1E293B),
+              const SizedBox(height: 8),
+              if (onSelect != null) ...[
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (title == 'Starter' && !isYearly && !isOneTime) ...[
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.baseline,
+                        textBaseline: TextBaseline.alphabetic,
+                        children: [
+                          Text(
+                            _formatPrice(kStarterRegularPrice),
+                            style: TextStyle(
+                              fontSize: isPopular ? 32 : 28,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1E293B).withOpacity(0.5),
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '/$period',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: const Color(0xFF64748B).withOpacity(0.5),
+                              decoration: TextDecoration.lineThrough,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                    ],
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          price,
+                          style: TextStyle(
+                            fontSize: isPopular ? 56 : 48,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1E293B),
+                          ),
+                        ),
+                        if (!isOneTime) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            '/$period',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '/$period',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Expanded(
-                child: Column(
+                    if (title == 'Starter' && !isYearly && !isOneTime) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text(
+                          'Early Bird Offer',
+                          style: TextStyle(
+                            color: Color(0xFF1E3A8A),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
+              if (title == 'Starter' && !isYearly && !isOneTime)
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ...features.map((feature) => Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.only(bottom: 8),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.check_circle,
-                                color: isPopular
-                                    ? const Color(0xFF1E3A8A)
-                                    : const Color(0xFF1E3A8A).withOpacity(0.8),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
+                              if (onSelect != null) ...[
+                                Icon(
+                                  Icons.check_circle,
+                                  color: isPopular
+                                      ? const Color(0xFF1E3A8A)
+                                      : const Color(0xFF1E3A8A)
+                                          .withOpacity(0.8),
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 6),
+                              ],
                               Expanded(
                                 child: Text(
                                   feature,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    color: Color(0xFF1E293B),
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: onSelect == null
+                                        ? const Color(0xFF1E293B)
+                                            .withOpacity(0.6)
+                                        : const Color(0xFF1E293B),
                                   ),
                                 ),
                               ),
                             ],
                           ),
                         )),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: isSelected ? null : onSelect,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isPopular
+                              ? const Color(0xFF1E3A8A)
+                              : isSelected
+                                  ? const Color(0xFF64748B)
+                                  : Colors.white,
+                          foregroundColor: isPopular || isSelected
+                              ? Colors.white
+                              : const Color(0xFF1E3A8A),
+                          padding: EdgeInsets.symmetric(
+                            vertical: isPopular ? 18 : 16,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: isPopular || isSelected
+                                ? BorderSide.none
+                                : const BorderSide(
+                                    color: Color(0xFF1E3A8A),
+                                    width: 1,
+                                  ),
+                          ),
+                        ),
+                        child: Text(
+                          isSelected
+                              ? 'Your current plan'
+                              : onSelect == null
+                                  ? 'Not Available'
+                                  : title == 'Starter' && isOneTime
+                                      ? 'Buy now'
+                                      : 'Select ${isPopular ? 'Starter' : title} Plan',
+                          style: TextStyle(
+                            fontSize: isPopular ? 18 : 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: isSelected ? null : onSelect,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isPopular
-                        ? const Color(0xFF1E3A8A)
-                        : isSelected
-                            ? const Color(0xFF64748B)
-                            : Colors.white,
-                    foregroundColor: isPopular || isSelected
-                        ? Colors.white
-                        : const Color(0xFF1E3A8A),
-                    padding: EdgeInsets.symmetric(
-                      vertical: isPopular ? 18 : 16,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                      side: isPopular || isSelected
-                          ? BorderSide.none
-                          : const BorderSide(
-                              color: Color(0xFF1E3A8A),
-                              width: 1,
+                )
+              else
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...features.map((feature) => Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (onSelect != null) ...[
+                                  Icon(
+                                    Icons.check_circle,
+                                    color: isPopular
+                                        ? const Color(0xFF1E3A8A)
+                                        : const Color(0xFF1E3A8A)
+                                            .withOpacity(0.8),
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 6),
+                                ],
+                                Expanded(
+                                  child: Text(
+                                    feature,
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: onSelect == null
+                                          ? const Color(0xFF1E293B)
+                                              .withOpacity(0.6)
+                                          : const Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                    ),
-                  ),
-                  child: Text(
-                    isSelected
-                        ? 'Your current plan'
-                        : 'Select ${isPopular ? 'Basic' : title} Plan',
-                    style: TextStyle(
-                      fontSize: isPopular ? 18 : 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                          )),
+                      const Spacer(),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: isSelected ? null : onSelect,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isPopular
+                                ? const Color(0xFF1E3A8A)
+                                : isSelected
+                                    ? const Color(0xFF64748B)
+                                    : Colors.white,
+                            foregroundColor: isPopular || isSelected
+                                ? Colors.white
+                                : const Color(0xFF1E3A8A),
+                            padding: EdgeInsets.symmetric(
+                              vertical: isPopular ? 18 : 16,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: isPopular || isSelected
+                                  ? BorderSide.none
+                                  : const BorderSide(
+                                      color: Color(0xFF1E3A8A),
+                                      width: 1,
+                                    ),
+                            ),
+                          ),
+                          child: Text(
+                            isSelected
+                                ? 'Your current plan'
+                                : onSelect == null
+                                    ? 'Not Available'
+                                    : title == 'Starter' && isOneTime
+                                        ? 'Buy now'
+                                        : 'Select ${isPopular ? 'Starter' : title} Plan',
+                            style: TextStyle(
+                              fontSize: isPopular ? 18 : 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
             ],
           ),
         ),

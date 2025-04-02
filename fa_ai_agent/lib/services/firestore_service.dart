@@ -29,14 +29,9 @@ class FirestoreService {
   Future<bool> checkConnection() async {
     try {
       print('Attempting to connect to Firestore...');
-      print('Current Firestore settings: ${_firestore.settings}');
 
       // Check authentication state
       final user = _auth.currentUser;
-      print('Current user: ${user?.uid}');
-      print('User email: ${user?.email}');
-      print('User email verified: ${user?.emailVerified}');
-
       if (user == null) {
         print('No authenticated user found');
         return false;
@@ -46,23 +41,21 @@ class FirestoreService {
       try {
         final userDoc =
             await _firestore.collection('users').doc(user.uid).get();
-        print('Successfully read user document');
-        print('Document exists: ${userDoc.exists}');
-        print('Document data: ${userDoc.data()}');
+        if (!userDoc.exists) {
+          print('User document does not exist');
+          return false;
+        }
       } catch (e) {
         print('Error reading user document: $e');
-        print('Error type: ${e.runtimeType}');
+        return false;
       }
 
       // Try a simple query
       final result = await _firestore.collection('users').limit(1).get();
       print('Successfully connected to Firestore');
-      print('Collection exists: ${result.docs.isNotEmpty}');
       return true;
     } catch (e, stackTrace) {
       print('Firestore connection check failed: $e');
-      print('Stack trace: $stackTrace');
-      print('Error type: ${e.runtimeType}');
       return false;
     }
   }
