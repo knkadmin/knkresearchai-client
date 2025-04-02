@@ -25,8 +25,16 @@ import 'services/section_visibility_manager.dart';
 import 'auth_service.dart';
 import 'services/firestore_service.dart';
 import 'models/subscription_type.dart';
+import 'services/public_user_last_viewed_report_tracker.dart';
+import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class ResultAdvancedPage extends StatefulWidget {
+  final String tickerCode;
+  final String companyName;
+  final Language language;
+  final String sector;
+
   ResultAdvancedPage({
     super.key,
     required this.tickerCode,
@@ -35,10 +43,6 @@ class ResultAdvancedPage extends StatefulWidget {
     required this.sector,
   });
 
-  final String tickerCode;
-  final String companyName;
-  final String sector;
-  final Language language;
   final AgentService service = AgentService();
   final BehaviorSubject cacheTimeSubject = BehaviorSubject();
   final BehaviorSubject<String> sectorSubject = BehaviorSubject<String>();
@@ -48,24 +52,24 @@ class ResultAdvancedPage extends StatefulWidget {
 }
 
 class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
-  bool forceRefresh = false;
-  bool _isRefreshing = false;
-  Widget? _cachedMetricsTable;
+  final ScrollController _scrollController = ScrollController();
+  final ValueNotifier<String> _currentSection = ValueNotifier<String>('');
+  final PublicUserLastViewedReportTracker _cacheManager =
+      PublicUserLastViewedReportTracker();
+  late Future<bool> _isMag7CompanyFuture;
   final Map<String, Widget> _imageCache = {};
   final Map<String, String> _encodedImageCache = {};
   final Map<String, Widget> _sectionCache = {};
   final Map<String, Future<Map<String, dynamic>>> _futureCache = {};
   final Map<String, bool> _sectionLoadingStates = {};
-  final ScrollController _scrollController = ScrollController();
   final ValueNotifier<bool> _showCompanyNameInTitle =
       ValueNotifier<bool>(false);
   final ValueNotifier<double> _navigationTop = ValueNotifier<double>(200);
-  final ValueNotifier<String> _currentSection = ValueNotifier<String>('');
   Map<String, GlobalKey> _sectionKeys = {};
   final Map<String, ValueNotifier<bool>> _tickAnimationStates = {};
   final WatchlistService _watchlistService = WatchlistService();
   bool _isHovered = false;
-  late final Future<bool> _isMag7CompanyFuture;
+  bool forceRefresh = false;
 
   // Add mapping between section titles and their cache keys
   final Map<String, String> _sectionToCacheKey = {
@@ -211,16 +215,18 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
     // Initialize the Mag 7 company check future
     _isMag7CompanyFuture = _checkIfMag7Company();
+
+    // Save last viewed report for non-authenticated users
+    if (AuthService().currentUser == null) {
+      _cacheManager.saveLastViewedReport(widget.tickerCode);
+    }
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _showCompanyNameInTitle.dispose();
-    _navigationTop.dispose();
     _currentSection.dispose();
-    _cachedMetricsTable = null;
+    widget.sectorSubject.close();
     _imageCache.clear();
     _sectionCache.clear();
     _futureCache.clear();
@@ -343,6 +349,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                             if (isAuthenticated) {
                               context.push('/pricing');
                             } else {
+                              _cacheManager.pendingWatchlistAddition = true;
                               context.go('/signup');
                             }
                           },
@@ -363,11 +370,16 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   }
 
   Widget getMetricsTable(bool isNarrow) {
-    _cachedMetricsTable ??=
-        getFinancialMetrics(widget.tickerCode, widget.language.value);
+    final cachedMetricsTable = _sectionCache['financialMetrics'];
+    if (cachedMetricsTable == null) {
+      _sectionCache['financialMetrics'] = getFinancialMetrics(
+        widget.tickerCode,
+        widget.language.value,
+      );
+    }
     return SizedBox(
       width: isNarrow ? double.infinity : 280,
-      child: _cachedMetricsTable,
+      child: _sectionCache['financialMetrics'] ?? const SizedBox.shrink(),
     );
   }
 
@@ -384,12 +396,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
   void _handleRefresh() async {
     setState(() {
-      _isRefreshing = true;
-      forceRefresh = true;
-      _cachedMetricsTable = null;
-      _imageCache.clear();
-      _sectionCache.clear();
-      _futureCache.clear();
       _sectionLoadingStates.clear();
       for (var notifier in _tickAnimationStates.values) {
         notifier.dispose();
@@ -429,17 +435,11 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       }));
 
       if (mounted) {
-        setState(() {
-          _isRefreshing = false;
-          forceRefresh = false;
-        });
+        setState(() {});
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isRefreshing = false;
-          forceRefresh = false;
-        });
+        setState(() {});
       }
       print('Error refreshing report: $e');
     }
@@ -452,7 +452,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
         final loadingStates = snapshot.data ?? {};
         final isAnySectionLoading =
             loadingStates.values.any((isLoading) => isLoading);
-        final isRefreshing = _isRefreshing || isAnySectionLoading;
+        final isRefreshing = isAnySectionLoading;
 
         return StatefulBuilder(
           builder: (context, setState) {
@@ -992,7 +992,14 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
               : SubscriptionType.free;
 
           // Determine if metrics table should be shown
-          final shouldShowMetrics = isMag7Company || subscriptionType.isPaid;
+          final shouldShowMetrics = isMag7Company ||
+              (isAuthenticated && subscriptionType != SubscriptionType.free);
+
+          print('Metrics visibility check:');
+          print('isMag7Company: $isMag7Company');
+          print('isAuthenticated: $isAuthenticated');
+          print('subscriptionType: $subscriptionType');
+          print('shouldShowMetrics: $shouldShowMetrics');
 
           return Stack(
             children: [
@@ -1236,18 +1243,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                           children: [
                             Row(
                               children: [
-                                if (user == null)
-                                  IconButton(
-                                    onPressed: () {
-                                      context.go('/');
-                                    },
-                                    icon: const Icon(
-                                      Icons.home,
-                                      color: Colors.white,
-                                      size: 24,
-                                    ),
-                                    tooltip: 'Home',
-                                  ),
                                 Expanded(
                                   child: Text(
                                     companyName,

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../auth_service.dart';
 import '../agent_service.dart';
 import '../services/browse_history_service.dart';
@@ -16,6 +17,7 @@ import 'package:fa_ai_agent/widgets/search_bar.dart' show CustomSearchBar;
 import 'package:quickalert/quickalert.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fa_ai_agent/constants/company_data.dart';
+import '../services/public_user_last_viewed_report_tracker.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -34,6 +36,8 @@ class _DashboardPageState extends State<DashboardPage> {
   OverlayEntry? _overlayEntry;
   final AgentService service = AgentService();
   final BrowseHistoryService _historyService = BrowseHistoryService();
+  final PublicUserLastViewedReportTracker _cacheManager =
+      PublicUserLastViewedReportTracker();
   final GlobalKey _searchBarKey = GlobalKey(debugLabel: 'search_bar');
   final GlobalKey _searchCardKey = GlobalKey(debugLabel: 'search_card');
   Widget? _reportPage;
@@ -42,6 +46,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final TextEditingController feedbackController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   List<Map<String, String>> _mega7Companies = [];
+  late final StreamSubscription<User?> _authStateSubscription;
 
   @override
   void initState() {
@@ -51,6 +56,18 @@ class _DashboardPageState extends State<DashboardPage> {
     _loadBrowseHistory();
     _loadMega7Companies();
     RawKeyboard.instance.addListener(_handleKeyEvent);
+    _cacheManager.init();
+
+    // Set up auth state listener
+    _authStateSubscription = AuthService().authStateChanges.listen((user) {
+      print('Auth state changed: ${user?.uid ?? 'null'}');
+      print(
+          'Pending watchlist addition: ${_cacheManager.pendingWatchlistAddition}');
+      if (user != null && _cacheManager.pendingWatchlistAddition) {
+        print('Handling post-registration');
+        _handlePostRegistration();
+      }
+    });
 
     // Check for route parameters first
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -58,9 +75,6 @@ class _DashboardPageState extends State<DashboardPage> {
       if (state.uri.path.startsWith('/report/')) {
         final ticker = state.uri.path.split('/report/')[1];
         _navigateToReport(ticker, ticker);
-      } else {
-        // Only load most recent report if no ticker in URL
-        _loadMostRecentReport();
       }
     });
   }
@@ -87,33 +101,53 @@ class _DashboardPageState extends State<DashboardPage> {
     }
   }
 
+  Future<void> _handlePostRegistration() async {
+    try {
+      // Get the last viewed report from cache
+      final lastViewedReport = _cacheManager.getLastViewedReport();
+      print('Last viewed report from cache: $lastViewedReport');
+
+      // Clear the cache
+      await _cacheManager.clearLastViewedReport();
+      print('Cleared last viewed report cache');
+
+      // Reset the pending flag
+      _cacheManager.pendingWatchlistAddition = false;
+
+      // Navigate to dashboard first
+      if (context.mounted) {
+        context.go('/');
+
+        // Wait for a short delay to ensure dashboard is loaded
+        await Future.delayed(const Duration(milliseconds: 500));
+
+        // If we have a last viewed report, navigate to it
+        if (lastViewedReport != null) {
+          print('Navigating to last viewed report: $lastViewedReport');
+          _navigateToReport(lastViewedReport, lastViewedReport);
+
+          // Wait for a short delay to ensure report is loaded
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+
+        // Finally, navigate to pricing page
+        print('Navigating to pricing page');
+        context.push('/pricing');
+      }
+    } catch (e) {
+      print('Error in post-registration flow: $e');
+      if (context.mounted) {
+        context.go('/');
+      }
+    }
+  }
+
   void _loadBrowseHistory() {
     _historyService.getHistory().listen((history) {
       setState(() {
         _browseHistory = history;
       });
     });
-  }
-
-  Future<void> _loadMostRecentReport() async {
-    final user = AuthService().currentUser;
-    if (user == null) return;
-
-    // Check if there's a ticker in the URL
-    final state = GoRouterState.of(context);
-    if (state.uri.path.startsWith('/report/')) {
-      final urlTicker = state.uri.path.split('/report/')[1];
-
-      // If there's a ticker in URL, load that report instead of history
-      _navigateToReport(urlTicker, urlTicker);
-      return;
-    }
-
-    // If no ticker in URL, load most recent history
-    final history = await _historyService.getMostRecentHistory();
-    if (history != null) {
-      _navigateToReport(history.companyTicker, history.companyName);
-    }
   }
 
   Future<void> _loadMega7Companies() async {
@@ -132,6 +166,7 @@ class _DashboardPageState extends State<DashboardPage> {
     _overlayEntry?.remove();
     searchController.dispose();
     RawKeyboard.instance.removeListener(_handleKeyEvent);
+    _authStateSubscription.cancel();
     super.dispose();
   }
 
@@ -590,7 +625,11 @@ class _DashboardPageState extends State<DashboardPage> {
                         children: [
                           if (user == null)
                             IconButton(
-                              onPressed: () {
+                              onPressed: () async {
+                                print('Clearing public report cache...');
+                                await _cacheManager.clearLastViewedReport();
+                                print(
+                                    'Public report cache cleared successfully');
                                 setState(() {
                                   _reportPage = null;
                                   searchController.clear();
