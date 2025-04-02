@@ -19,6 +19,7 @@ import 'package:fa_ai_agent/widgets/tick_animation.dart';
 import 'package:fa_ai_agent/widgets/trading_view_chart.dart';
 import 'package:fa_ai_agent/widgets/alert_report_builder.dart';
 import 'services/watchlist_service.dart';
+import 'services/section_visibility_manager.dart';
 import 'auth_service.dart';
 
 class ResultAdvancedPage extends StatefulWidget {
@@ -270,6 +271,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
   Widget _buildSection(Section section) {
     final user = AuthService().currentUser;
+    final isAuthenticated = user != null;
+
     // Make all sections from Accounting Red Flags onwards full width
     final bool isFullWidth = sections.indexOf(section) >=
         sections.indexWhere((s) => s.title == 'Accounting Red Flags');
@@ -290,139 +293,26 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     );
 
     // For non-authenticated users, handle section visibility
-    if (user == null) {
-      // Check if this is a Mag 7 company
+    if (!isAuthenticated) {
       return FutureBuilder<bool>(
         future: _isMag7CompanyFuture,
         builder: (context, snapshot) {
-          // Show loading state while checking
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const SizedBox.shrink();
           }
 
-          // For Mag 7 companies, show all sections without restrictions
-          if (snapshot.data == true) {
-            return sectionContent;
-          }
+          final isMag7Company = snapshot.data ?? false;
+          final cacheKey = _sectionToCacheKey[section.title];
 
-          // List of sections that are free for non-authenticated users
-          final freeSections = [
-            'Price Target',
-            'Company Overview',
-            'Financial Metrics'
-          ];
-
-          // Special handling for Financial Performance section
-          if (section.title == 'Financial Performance') {
-            final cacheKey = _sectionToCacheKey[section.title];
-            return StreamBuilder<Map<String, bool>>(
-              stream: widget.service.loadingStateSubject.stream,
-              builder: (context, snapshot) {
-                final loadingStates = snapshot.data ?? {};
-                final isLoading =
-                    cacheKey != null && loadingStates[cacheKey] == true;
-
-                if (isLoading) {
-                  return sectionContent;
-                }
-
-                return Stack(
-                  children: [
-                    IgnorePointer(
-                      child: sectionContent,
-                    ),
-                    Positioned.fill(
-                      child: Stack(
-                        children: [
-                          ClipRect(
-                            child: BackdropFilter(
-                              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                              child: Container(),
-                            ),
-                          ),
-                          Container(
-                            child: Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 24, vertical: 16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.9),
-                                      borderRadius: BorderRadius.circular(12),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      children: [
-                                        const Text(
-                                          'Unlock Premium Insights',
-                                          style: TextStyle(
-                                            fontSize: 24,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF1E3A8A),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'Get access to detailed analysis and exclusive content',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            color: Colors.grey.shade700,
-                                          ),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  ElevatedButton(
-                                    onPressed: () => context.go('/signup'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: const Color(0xFF1E3A8A),
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 32,
-                                        vertical: 16,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      elevation: 2,
-                                    ),
-                                    child: const Text(
-                                      'Sign Up Now',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-          }
-
-          // Return null for non-free sections
-          if (freeSections.contains(section.title)) {
-            return sectionContent;
-          }
-
-          return const SizedBox.shrink();
+          return SectionVisibilityManager.buildSectionContent(
+            section,
+            sectionContent,
+            isAuthenticated,
+            isMag7Company,
+            context,
+            cacheKey ?? '',
+            widget.service.loadingStateSubject.stream,
+          );
         },
       );
     }
@@ -467,17 +357,13 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
     try {
       final user = AuthService().currentUser;
-      final freeSections = [
-        'Price Target',
-        'Company Overview',
-        'Financial Metrics'
-      ];
 
       // Get the list of visible sections based on authentication status
       final visibleSections = user != null
           ? sections
           : sections
-              .where((section) => freeSections.contains(section.title))
+              .where((section) =>
+                  SectionVisibilityManager.freeSections.contains(section.title))
               .toList();
 
       // Create a list of sections to refresh
@@ -991,32 +877,21 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
-    // Filter sections based on authentication status and Mag 7 status
+    final isAuthenticated = user != null;
+
     return FutureBuilder<bool>(
       future: _isMag7CompanyFuture,
       builder: (context, snapshot) {
-        // Show loading state while checking
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildScaffold(sections);
         }
 
-        // For Mag 7 companies, show all sections
-        if (snapshot.data == true) {
-          return _buildScaffold(sections);
-        }
-
-        // For non-Mag 7 companies, show only free sections for non-authenticated users
-        final filteredSections = user != null
-            ? sections
-            : sections.where((section) {
-                final freeSections = [
-                  'Price Target',
-                  'Company Overview',
-                  'Financial Metrics',
-                  'Financial Performance'
-                ];
-                return freeSections.contains(section.title);
-              }).toList();
+        final isMag7Company = snapshot.data ?? false;
+        final filteredSections = SectionVisibilityManager.filterSections(
+          sections,
+          isAuthenticated,
+          isMag7Company,
+        );
 
         return _buildScaffold(filteredSections);
       },
