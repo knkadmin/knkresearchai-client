@@ -996,8 +996,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
   Widget _buildScaffold(List<Section> sections, bool isAuthenticated,
       bool isMag7Company, String? userSubscriptionType) {
-    final user = AuthService().currentUser;
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
