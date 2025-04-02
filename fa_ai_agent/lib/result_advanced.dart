@@ -78,12 +78,13 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   // Add mapping between section titles and their cache keys
   final Map<String, String> _sectionToCacheKey = {
     'Price Target': 'stock-price-target',
-    'Overview': 'business-overview',
+    'Company Overview': 'business-overview',
+    'EPS vs Stock Price': 'eps-vs-stock-price-chart',
     'Financial Performance': 'combined-charts',
     'Accounting Red Flags': 'accounting-redflags',
     'Cash Flow': 'cash-flow-chart',
     'Recent News': 'recent-news',
-    'Competitors': 'competitor-landscape',
+    'Competitive Landscape': 'competitor-landscape',
     'Sector Stocks': 'sector-stocks',
     'Sector Comparison': 'sector-comparison',
     'PE/PB Ratio': 'pe-pb-ratio-band',
