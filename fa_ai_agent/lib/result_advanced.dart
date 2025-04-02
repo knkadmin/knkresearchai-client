@@ -327,8 +327,9 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                 final subscriptionType =
                     subscriptionSnapshot.data ?? SubscriptionType.free;
 
-                if (!isAuthenticated ||
-                    subscriptionType == SubscriptionType.free) {
+                if (!isMag7Company &&
+                    (!isAuthenticated ||
+                        subscriptionType == SubscriptionType.free)) {
                   // For Price Target and Financial Performance, show blur cover with action button
                   if (section.title == 'Price Target' ||
                       section.title == 'Financial Performance') {
