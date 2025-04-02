@@ -419,48 +419,12 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
         notifier.dispose();
       }
       _tickAnimationStates.clear();
+      _futureCache.clear(); // Clear the future cache to force new requests
+      _imageCache.clear(); // Clear image cache
+      _encodedImageCache.clear(); // Clear encoded image cache
+      _sectionCache.clear(); // Clear section cache
+      forceRefresh = true; // Set force refresh flag
     });
-
-    try {
-      final user = AuthService().currentUser;
-
-      // Get the list of visible sections based on authentication status
-      final visibleSections = user != null
-          ? sections
-          : sections
-              .where((section) =>
-                  SectionVisibilityManager.freeSections.contains(section.title))
-              .toList();
-
-      // Create a list of sections to refresh
-      final sectionsToRefresh = visibleSections.where((section) {
-        final cacheKey = _sectionToCacheKey[section.title];
-        return cacheKey != null;
-      }).toList();
-
-      // Wait for all sections to load
-      await Future.wait(sectionsToRefresh.map((section) async {
-        final cacheKey = _sectionToCacheKey[section.title];
-        if (cacheKey != null) {
-          await widget.service.getOutput(
-            "/report-advanced/$cacheKey",
-            widget.tickerCode,
-            widget.language.value,
-            true,
-            cacheKey,
-          );
-        }
-      }));
-
-      if (mounted) {
-        setState(() {});
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {});
-      }
-      print('Error refreshing report: $e');
-    }
   }
 
   Widget _buildRefreshButton(bool isHovered) {
