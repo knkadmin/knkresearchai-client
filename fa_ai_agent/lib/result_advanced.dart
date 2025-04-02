@@ -126,7 +126,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
           getRecentNews(widget.tickerCode, widget.language.value),
     ),
     Section(
-      title: 'Competitors',
+      title: 'Competitive Landscape',
       icon: Icons.people,
       buildContent: () =>
           getCompetitorLandscape(widget.tickerCode, widget.language.value),
@@ -270,15 +270,17 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
   Widget _buildSection(Section section) {
     final user = AuthService().currentUser;
+    // Make all sections from Accounting Red Flags onwards full width
     final bool isFullWidth = sections.indexOf(section) >=
-        sections.indexWhere((s) => s.title == 'Cash Flow');
+        sections.indexWhere((s) => s.title == 'Accounting Red Flags');
 
     Widget sectionContent = Column(
       key: _sectionKeys[section.title],
       children: [
         if (isFullWidth)
-          SizedBox(
+          Container(
             width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 32),
             child: section.buildContent(),
           )
         else
@@ -289,28 +291,29 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
     // For non-authenticated users, handle section visibility
     if (user == null) {
-      // List of sections that are free for non-authenticated users
-      final freeSections = [
-        'Price Target',
-        'Company Overview',
-        'Financial Metrics'
-      ];
+      // Check if this is a Mag 7 company
+      return FutureBuilder<bool>(
+        future: _isMag7CompanyFuture,
+        builder: (context, snapshot) {
+          // Show loading state while checking
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox.shrink();
+          }
 
-      // Special handling for Combined Charts section
-      if (section.title == 'Combined Charts') {
-        return FutureBuilder<bool>(
-          future: _isMag7CompanyFuture,
-          builder: (context, snapshot) {
-            // Show loading state while checking
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return sectionContent;
-            }
+          // For Mag 7 companies, show all sections without restrictions
+          if (snapshot.data == true) {
+            return sectionContent;
+          }
 
-            // For Mag 7 companies, show the content without blur
-            if (snapshot.data == true) {
-              return sectionContent;
-            }
+          // List of sections that are free for non-authenticated users
+          final freeSections = [
+            'Price Target',
+            'Company Overview',
+            'Financial Metrics'
+          ];
 
+          // Special handling for Financial Performance section
+          if (section.title == 'Financial Performance') {
             final cacheKey = _sectionToCacheKey[section.title];
             return StreamBuilder<Map<String, bool>>(
               stream: widget.service.loadingStateSubject.stream,
@@ -412,21 +415,10 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                 );
               },
             );
-          },
-        );
-      }
-
-      // Return null for non-free sections
-      return FutureBuilder<bool>(
-        future: _isMag7CompanyFuture,
-        builder: (context, snapshot) {
-          // Show loading state while checking
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox.shrink();
           }
 
-          // Show content for free sections or Mag 7 companies
-          if (freeSections.contains(section.title) || snapshot.data == true) {
+          // Return null for non-free sections
+          if (freeSections.contains(section.title)) {
             return sectionContent;
           }
 
@@ -999,28 +991,39 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
-    // Filter sections based on authentication status
-    final List<Section> visibleSections = user != null
-        ? sections
-        : sections.where((section) {
-            final freeSections = [
-              'Price Target',
-              'Company Overview',
-              'Combined Charts',
-              'Financial Metrics'
-            ];
-            final bool isMag7Company = [
-              'GOOGL', // Alphabet
-              'AMZN', // Amazon
-              'AAPL', // Apple
-              'META', // Meta
-              'MSFT', // Microsoft
-              'NVDA', // Nvidia
-              'TSLA', // Tesla
-            ].contains(widget.tickerCode);
-            return freeSections.contains(section.title) || isMag7Company;
-          }).toList();
+    // Filter sections based on authentication status and Mag 7 status
+    return FutureBuilder<bool>(
+      future: _isMag7CompanyFuture,
+      builder: (context, snapshot) {
+        // Show loading state while checking
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return _buildScaffold(sections);
+        }
 
+        // For Mag 7 companies, show all sections
+        if (snapshot.data == true) {
+          return _buildScaffold(sections);
+        }
+
+        // For non-Mag 7 companies, show only free sections for non-authenticated users
+        final filteredSections = user != null
+            ? sections
+            : sections.where((section) {
+                final freeSections = [
+                  'Price Target',
+                  'Company Overview',
+                  'Financial Metrics',
+                  'Financial Performance'
+                ];
+                return freeSections.contains(section.title);
+              }).toList();
+
+        return _buildScaffold(filteredSections);
+      },
+    );
+  }
+
+  Widget _buildScaffold(List<Section> sections) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -1050,92 +1053,93 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                   (widget as SizedBox).width != 0)
                               .toList();
 
-                          final keyMetricsSection = Container(
-                            color: Colors.white,
-                            child: isNarrow
-                                ? Padding(
-                                    padding: const EdgeInsets.all(32),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        metricsTable,
-                                        const SizedBox(height: 48),
-                                        ...contentSections
-                                            .take(contentSections.length),
-                                      ],
-                                    ),
-                                  )
-                                : Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (contentSections.isNotEmpty)
-                                        contentSections[0], // Price Target
-                                      const SizedBox(height: 8),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 32),
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  if (contentSections.length >
-                                                      1)
-                                                    contentSections[
-                                                        1], // Overview
-                                                  const SizedBox(height: 48),
-                                                  if (contentSections.length >
-                                                      2)
-                                                    contentSections[
-                                                        2], // Combined Charts
-                                                  const SizedBox(height: 48),
-                                                  if (contentSections.length >
-                                                      3)
-                                                    contentSections[
-                                                        3], // Financial Performance
-                                                ],
-                                              ),
-                                            ),
-                                            const SizedBox(width: 24),
-                                            SizedBox(
-                                              width: 280,
-                                              child: metricsTable,
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          );
-
-                          final remainingSection = Container(
-                            padding: const EdgeInsets.all(32),
-                            color: Colors.white,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (contentSections.length > 4) ...[
-                                  ...contentSections.skip(4).take(4),
-                                  const SizedBox(height: 24),
-                                  ...contentSections.skip(8),
-                                ],
-                              ],
-                            ),
-                          );
+                          // Find the index of Accounting Red Flags section
+                          final accountingRedFlagsIndex = sections.indexWhere(
+                              (s) => s.title == 'Accounting Red Flags');
 
                           return Column(
                             children: [
                               headerView(widget.companyName),
                               const SizedBox(height: 24),
-                              keyMetricsSection,
-                              const SizedBox(height: 24),
-                              remainingSection,
+                              Container(
+                                color: Colors.white,
+                                child: isNarrow
+                                    ? Padding(
+                                        padding: const EdgeInsets.all(32),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            metricsTable,
+                                            const SizedBox(height: 48),
+                                            ...contentSections,
+                                          ],
+                                        ),
+                                      )
+                                    : Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          if (contentSections.isNotEmpty)
+                                            contentSections[0],
+                                          const SizedBox(height: 8),
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 32),
+                                            child: Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      if (contentSections
+                                                              .length >
+                                                          1)
+                                                        contentSections[1],
+                                                      const SizedBox(
+                                                          height: 48),
+                                                      if (contentSections
+                                                              .length >
+                                                          2)
+                                                        contentSections[2],
+                                                      const SizedBox(
+                                                          height: 48),
+                                                      if (contentSections
+                                                              .length >
+                                                          3)
+                                                        contentSections[3],
+                                                      const SizedBox(
+                                                          height: 48),
+                                                      // First four sections are in the left column
+                                                      if (accountingRedFlagsIndex >
+                                                          4)
+                                                        ...contentSections
+                                                            .skip(4)
+                                                            .take(
+                                                                accountingRedFlagsIndex -
+                                                                    4),
+                                                    ],
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 24),
+                                                SizedBox(
+                                                  width: 280,
+                                                  child: metricsTable,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          // Sections from Accounting Red Flags onwards are full width
+                                          if (accountingRedFlagsIndex >= 0)
+                                            ...contentSections
+                                                .skip(accountingRedFlagsIndex),
+                                        ],
+                                      ),
+                              ),
                             ],
                           );
                         },
@@ -1168,7 +1172,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                           child: Container(
                             height: MediaQuery.of(context).size.height,
                             padding: const EdgeInsets.only(right: 24),
-                            child: _buildNavigationList(visibleSections),
+                            child: _buildNavigationList(sections),
                           ),
                         ),
                         const Expanded(child: SizedBox()),
