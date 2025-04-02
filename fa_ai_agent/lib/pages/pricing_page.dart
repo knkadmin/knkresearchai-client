@@ -68,7 +68,11 @@ class _PricingPageState extends State<PricingPage> {
 
         await firestoreService.updateUserProfile(updateData);
         if (mounted) {
-          context.pop();
+          if (context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/');
+          }
         }
       } catch (e) {
         if (mounted) {
@@ -117,7 +121,13 @@ class _PricingPageState extends State<PricingPage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   IconButton(
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/');
+                      }
+                    },
                     icon: const Icon(
                       Icons.close,
                       size: 24,

@@ -10,28 +10,20 @@ import 'package:rxdart/subjects.dart';
 
 class SectionVisibilityManager {
   static final List<String> freeSections = [
-    'Price Target',
     'Company Overview',
-    'EPS vs Stock Price',
     'Financial Performance',
   ];
 
   /// Helper method to check if a user has access to all sections
   static Future<bool> _hasFullAccess(String? userId, bool isMag7Company) async {
-    // If it's a Mag 7 company, always grant full access
-    if (isMag7Company) {
-      return true;
-    }
+    // If it's a Mag 7 company, always return true regardless of user status
+    if (isMag7Company) return true;
 
-    // If no user ID (non-authenticated) or no user data (free user), return false
-    if (userId == null) {
-      return false;
-    }
+    // For non-authenticated users, return false
+    if (userId == null) return false;
 
-    // Check user's subscription status
-    final firestoreService = FirestoreService();
-    final userData = await firestoreService.getUserData(userId);
-
+    // For authenticated users, check subscription
+    final userData = await FirestoreService().getUserData(userId);
     final subscriptionType =
         SubscriptionType.fromString(userData?['subscription']);
     return subscriptionType.isPaid;
@@ -77,6 +69,9 @@ class SectionVisibilityManager {
     bool isAuthenticated,
     bool isMag7Company,
   ) {
+    // If it's a Mag 7 company, always return true regardless of user status
+    if (isMag7Company) return Stream.value(true);
+
     final user = AuthService().currentUser;
     if (user == null) {
       return Stream.value(freeSections.contains(sectionTitle));
@@ -84,8 +79,6 @@ class SectionVisibilityManager {
 
     final firestoreService = FirestoreService();
     return firestoreService.streamUserData(user.uid).map((userData) {
-      if (isMag7Company) return true;
-
       final subscriptionType =
           SubscriptionType.fromString(userData?['subscription']);
       if (subscriptionType.isPaid) return true;
