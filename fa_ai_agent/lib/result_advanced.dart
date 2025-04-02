@@ -66,8 +66,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   final Map<String, String> _sectionToCacheKey = {
     'Price Target': 'stock-price-target',
     'Overview': 'business-overview',
-    'Combined Charts': 'combined-charts',
-    'Financial Performance': 'financial-performance',
+    'Financial Performance': 'combined-charts',
     'Accounting Red Flags': 'accounting-redflags',
     'Cash Flow': 'cash-flow-chart',
     'Recent News': 'recent-news',
@@ -103,16 +102,10 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
           getEPSvsStockPriceChart(widget.tickerCode, widget.language.value),
     ),
     Section(
-      title: 'Combined Charts',
-      icon: Icons.show_chart,
-      buildContent: () =>
-          getCombinedCharts(widget.tickerCode, widget.language.value),
-    ),
-    Section(
       title: 'Financial Performance',
       icon: Icons.assessment,
       buildContent: () =>
-          getFinancialPerformance(widget.tickerCode, widget.language.value),
+          getCombinedCharts(widget.tickerCode, widget.language.value),
     ),
     Section(
       title: 'Accounting Red Flags',
@@ -192,12 +185,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       buildContent: () =>
           getCandleStickChart(widget.tickerCode, widget.language.value),
     ),
-    // Section(
-    //   title: 'Interactive Chart',
-    //   icon: Icons.timeline,
-    //   buildContent: () =>
-    //       getTradingViewChart(widget.tickerCode, widget.companyName),
-    // ),
   ];
 
   @override
@@ -1365,7 +1352,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             'epsVsStockPriceChart',
             () => widget.service
                 .getEPSvsStockPriceChart(ticker, language, forceRefresh)),
-        'epsVsStockPriceChart');
+        'epsVsStockPriceChart',
+        title: 'EPS vs Stock Price');
   }
 
   Widget getFinancialMetrics(String ticker, String language) {
@@ -1447,7 +1435,9 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             'stockPriceTarget',
             () => widget.service
                 .getStockPriceTarget(ticker, language, forceRefresh)),
-        'stockPriceTarget');
+        'stockPriceTarget',
+        title: 'Price Target',
+        showTitle: false);
   }
 
   Widget getInsiderTrading(String ticker, String language) {
@@ -1456,7 +1446,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             'insiderTrading',
             () => widget.service
                 .getInsiderTrading(ticker, language, forceRefresh)),
-        'insiderTrading');
+        'insiderTrading',
+        title: 'Insider Trading');
   }
 
   Widget getPEPBRatioBandChart(String ticker, String language) {
@@ -1465,7 +1456,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             'pbRatioBand',
             () => widget.service
                 .getPEPBRatioBand(ticker, language, forceRefresh)),
-        'pbRatioBand');
+        'pbRatioBand',
+        title: 'PE/PB Ratio');
   }
 
   Widget getSectorStocksChart(String ticker, String language) {
@@ -1474,7 +1466,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             'sectorStocks',
             () =>
                 widget.service.getSectorStocks(ticker, language, forceRefresh)),
-        'sectorStocks');
+        'sectorStocks',
+        title: 'Sector Stocks');
   }
 
   Widget getCandleStickChart(String ticker, String language) {
@@ -1483,16 +1476,33 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             'candleStickChart',
             () => widget.service
                 .getCandleStickChart(ticker, language, forceRefresh)),
-        'candleStickChart');
+        'candleStickChart',
+        title: 'Technical Analysis');
   }
 
   Widget getCombinedCharts(String ticker, String language) {
-    return getChart(
-        _getCachedFuture(
-            'combinedCharts',
-            () => widget.service
-                .getCombinedCharts(ticker, language, forceRefresh)),
-        'combinedCharts');
+    return Column(
+      children: [
+        getChart(
+          _getCachedFuture(
+              'combinedCharts',
+              () => widget.service
+                  .getCombinedCharts(ticker, language, forceRefresh)),
+          'combinedCharts',
+          title: 'Financial Performance',
+        ),
+        const SizedBox(height: 24),
+        getReport(
+          _getCachedFuture(
+              'financialPerformance',
+              () => widget.service
+                  .getFinancialPerformance(ticker, language, forceRefresh)),
+          "Financial Performance",
+          "financialReport",
+          showTitle: false,
+        ),
+      ],
+    );
   }
 
   Widget getCashFlowChart(String ticker, String language) {
@@ -1501,7 +1511,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             'cashFlowChart',
             () => widget.service
                 .getCashFlowChart(ticker, language, forceRefresh)),
-        'cashFlowChart');
+        'cashFlowChart',
+        title: 'Cash Flow');
   }
 
   Widget getIndustrialRelationship(String ticker, String language) {
@@ -1510,7 +1521,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             'industrialRelationship',
             () => widget.service
                 .getIndustrialRelationship(ticker, language, forceRefresh)),
-        'industrialRelationship');
+        'industrialRelationship',
+        title: 'Industrial Relations');
   }
 
   Widget getSectorComparison(String ticker, String language) {
@@ -1519,7 +1531,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             'sectorComparison',
             () => widget.service
                 .getSectorComparison(ticker, language, forceRefresh)),
-        'sectorComparison');
+        'sectorComparison',
+        title: 'Sector Comparison');
   }
 
   Widget getShareholderChart(String ticker, String language) {
@@ -1528,10 +1541,12 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             'shareholderChart',
             () => widget.service
                 .getShareholderChart(ticker, language, forceRefresh)),
-        'shareholderChart');
+        'shareholderChart',
+        title: 'Shareholders');
   }
 
-  Widget getChart(Future<Map<String, dynamic>> future, String key) {
+  Widget getChart(Future<Map<String, dynamic>> future, String key,
+      {required String title, bool showTitle = true}) {
     return ChartBuilder(
       future: future,
       chartKey: key,
@@ -1545,6 +1560,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
         _imageCache[key] = image;
         _encodedImageCache[key] = encodedImage;
       },
+      title: title,
+      showTitle: showTitle,
     );
   }
 

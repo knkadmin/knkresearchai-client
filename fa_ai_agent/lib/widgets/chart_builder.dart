@@ -6,6 +6,7 @@ import 'package:fa_ai_agent/widgets/image_viewer.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:convert' as convert;
+import 'package:fa_ai_agent/gradient_text.dart';
 
 class ChartBuilder extends StatelessWidget {
   final Future<Map<String, dynamic>> future;
@@ -13,6 +14,8 @@ class ChartBuilder extends StatelessWidget {
   final Widget? cachedImage;
   final String? cachedEncodedImage;
   final Function(Widget, String) onImageCached;
+  final String title;
+  final bool showTitle;
 
   const ChartBuilder({
     super.key,
@@ -21,6 +24,8 @@ class ChartBuilder extends StatelessWidget {
     this.cachedImage,
     this.cachedEncodedImage,
     required this.onImageCached,
+    required this.title,
+    this.showTitle = true,
   });
 
   @override
@@ -43,10 +48,67 @@ class ChartBuilder extends StatelessWidget {
                   ),
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (showTitle) ...[
+                      gradientTitle(title, 35),
+                      const SizedBox(height: 16),
+                    ],
                     ChartImage(
                       image: cachedImage!,
                       encodedImage: cachedEncodedImage!,
+                    ),
+                    const SizedBox(height: 16),
+                    FutureBuilder(
+                      future: future,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.done) {
+                          final Map<String, dynamic> data = snapshot.data ?? {};
+                          final Map<String, dynamic> payload = data[chartKey];
+                          final String? markdown = payload['md'];
+
+                          if (markdown != null && markdown.isNotEmpty) {
+                            return Container(
+                              width: double.infinity,
+                              constraints: const BoxConstraints(minHeight: 50),
+                              child: MarkdownBody(
+                                data: markdown,
+                                styleSheet: MarkdownStyleSheet(
+                                  p: const TextStyle(
+                                    fontSize: 15,
+                                    color: Color(0xFF475569),
+                                    height: 1.6,
+                                  ),
+                                  strong: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                  em: const TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  blockquote: const TextStyle(
+                                    color: Color(0xFF64748B),
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                  code: const TextStyle(
+                                    backgroundColor: Color(0xFFF8FAFC),
+                                    fontFamily: 'monospace',
+                                    fontSize: 14,
+                                  ),
+                                  codeblockDecoration: BoxDecoration(
+                                    color: const Color(0xFFF8FAFC),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: const Color(0xFFE5E7EB),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }
+                        }
+                        return const SizedBox.shrink();
+                      },
                     ),
                   ],
                 ),
@@ -108,7 +170,12 @@ class ChartBuilder extends StatelessWidget {
                       ),
                     ),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        if (showTitle) ...[
+                          gradientTitle(title, 35),
+                          const SizedBox(height: 16),
+                        ],
                         ChartImage(
                           image: image,
                           encodedImage: imageEncodedString,
@@ -117,6 +184,7 @@ class ChartBuilder extends StatelessWidget {
                           const SizedBox(height: 16),
                           Container(
                             width: double.infinity,
+                            constraints: const BoxConstraints(minHeight: 50),
                             child: MarkdownBody(
                               data: markdown,
                               styleSheet: MarkdownStyleSheet(
