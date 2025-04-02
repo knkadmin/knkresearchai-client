@@ -7,8 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Pricing constants
 const int kFreePrice = 0;
-const int kStarterRegularPrice = 30;
-const int kStarterEarlyBirdPrice = 20;
+const int kStarterRegularPrice = 20;
+const int kStarterEarlyBirdPrice = 15;
 const int kStarterYearlyRegularPrice = 259;
 const int kStarterYearlyEarlyBirdPrice = 200;
 const int kProPrice = 99;
@@ -29,7 +29,6 @@ class _PricingPageState extends State<PricingPage> {
   @override
   void initState() {
     super.initState();
-    isYearly = false;
     _checkUserSubscription();
   }
 
@@ -66,15 +65,7 @@ class _PricingPageState extends State<PricingPage> {
 
         // Add payment method only for paid plans
         if (plan != 'free') {
-          String paymentMethod;
-          if (isOneTime) {
-            paymentMethod = 'one-time';
-          } else if (isYearly) {
-            paymentMethod = 'yearly';
-          } else {
-            paymentMethod = 'monthly';
-          }
-          updateData['paymentMethod'] = paymentMethod;
+          updateData['paymentMethod'] = 'monthly';
         } else {
           // Remove paymentMethod field for free plan
           updateData['paymentMethod'] = FieldValue.delete();
@@ -101,16 +92,7 @@ class _PricingPageState extends State<PricingPage> {
     return '\$$price';
   }
 
-  String _getPeriod() {
-    if (isOneTime) return 'one-time';
-    return isYearly ? 'year' : 'month';
-  }
-
   int _getStarterPrice() {
-    if (isOneTime) return kStarterYearlyRegularPrice;
-    if (isYearly) {
-      return kStarterYearlyEarlyBirdPrice;
-    }
     return kStarterEarlyBirdPrice;
   }
 
@@ -171,118 +153,16 @@ class _PricingPageState extends State<PricingPage> {
                       color: Color(0xFF64748B),
                     ),
                   ),
-                  const SizedBox(height: 40),
-                  // Billing Toggle
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Column(
-                      children: [
-                        SegmentedButton<String>(
-                          showSelectedIcon: false,
-                          segments: [
-                            ButtonSegment(
-                              value: 'monthly',
-                              label: const Text('Monthly'),
-                            ),
-                            ButtonSegment(
-                              value: 'yearly',
-                              label: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFFF6B6B)
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    child: const Icon(
-                                      Icons.local_fire_department,
-                                      size: 16,
-                                      color: Color(0xFFFF6B6B),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  const Text('Yearly'),
-                                ],
-                              ),
-                            ),
-                            ButtonSegment(
-                              value: 'one-time',
-                              label: const Text('One-time'),
-                            ),
-                          ],
-                          selected: {
-                            isOneTime
-                                ? 'one-time'
-                                : (isYearly ? 'yearly' : 'monthly')
-                          },
-                          onSelectionChanged: (Set<String> newSelection) {
-                            setState(() {
-                              final selected = newSelection.first;
-                              isYearly = selected == 'yearly';
-                              isOneTime = selected == 'one-time';
-                            });
-                          },
-                          style: ButtonStyle(
-                            backgroundColor:
-                                MaterialStateProperty.resolveWith<Color>(
-                              (Set<MaterialState> states) {
-                                if (states.contains(MaterialState.selected)) {
-                                  return const Color(0xFF1E3A8A);
-                                }
-                                return Colors.white;
-                              },
-                            ),
-                            foregroundColor:
-                                MaterialStateProperty.resolveWith<Color>(
-                              (Set<MaterialState> states) {
-                                if (states.contains(MaterialState.selected)) {
-                                  return Colors.white;
-                                }
-                                return const Color(0xFF64748B);
-                              },
-                            ),
-                            side: MaterialStateProperty.all(
-                              BorderSide(
-                                color: const Color(0xFF1E3A8A).withOpacity(0.2),
-                                width: 1,
-                              ),
-                            ),
-                            padding: MaterialStateProperty.all(
-                              const EdgeInsets.symmetric(
-                                  horizontal: 32, vertical: 16),
-                            ),
-                            shape: MaterialStateProperty.all(
-                              RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            elevation:
-                                MaterialStateProperty.resolveWith<double>(
-                              (Set<MaterialState> states) {
-                                if (states.contains(MaterialState.selected)) {
-                                  return 2;
-                                }
-                                return 0;
-                              },
-                            ),
-                            textStyle: MaterialStateProperty.all(
-                              const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            iconSize: MaterialStateProperty.all(24),
-                          ),
-                        ),
-                        if (isYearly && !isOneTime) ...[
-                          const SizedBox(height: 8),
-                        ],
-                      ],
+                  const SizedBox(height: 4),
+                  const Text(
+                    'All prices are in USD',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF64748B),
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
+                  const SizedBox(height: 40),
                   // Pricing Cards
                   Center(
                     child: Wrap(
@@ -291,72 +171,48 @@ class _PricingPageState extends State<PricingPage> {
                       alignment: WrapAlignment.center,
                       crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        if (!isOneTime) ...[
-                          _buildPricingCard(
-                            title: 'Free',
-                            price: _formatPrice(kFreePrice),
-                            period: _getPeriod(),
-                            features: [
-                              'Complete access to reports for Mag 7 companies',
-                              'Unlimited report refreshes',
-                              'Add companies to watchlist',
-                            ],
-                            isPopular: false,
-                            isSelected: selectedPlan == 'free',
-                            onSelect: () {
-                              setState(() {
-                                selectedPlan = 'free';
-                              });
-                              _updateSubscription('free');
-                            },
-                          ),
-                          _buildPricingCard(
-                            title: 'Starter',
-                            price: _formatPrice(_getStarterPrice()),
-                            period: _getPeriod(),
-                            features: [
-                              'Everything in Free plan',
-                              'Unlimited access to reports for all U.S listed companies',
-                              'Advanced financial data and industry insights',
-                              'Accounting Irregularities detection included',
-                              'Insider trading data included',
-                            ],
-                            isPopular: true,
-                            isSelected: selectedPlan == 'starter',
-                            onSelect: () {
-                              setState(() {
-                                selectedPlan = 'starter';
-                              });
-                              _updateSubscription('starter');
-                            },
-                          ),
-                        ],
-                        if (isOneTime)
-                          _buildPricingCard(
-                            title: 'Starter',
-                            price: _formatPrice(kStarterYearlyRegularPrice),
-                            period: 'one-time',
-                            features: [
-                              'Everything in Free plan',
-                              '1 year access to reports for all U.S listed companies',
-                              'Advanced financial data and industry insights',
-                              'Accounting Irregularities detection included',
-                              'Insider trading data included',
-                            ],
-                            isPopular: false,
-                            isSelected: selectedPlan == 'starter',
-                            onSelect: () {
-                              setState(() {
-                                selectedPlan = 'starter';
-                              });
-                              _updateSubscription('starter');
-                            },
-                            additionalText: 'for a year',
-                          ),
+                        _buildPricingCard(
+                          title: 'Free',
+                          price: _formatPrice(kFreePrice),
+                          period: 'month',
+                          features: [
+                            'Complete access to reports for Mag 7 companies',
+                            'Unlimited report refreshes',
+                            'Add companies to watchlist',
+                          ],
+                          isPopular: false,
+                          isSelected: selectedPlan == 'free',
+                          onSelect: () {
+                            setState(() {
+                              selectedPlan = 'free';
+                            });
+                            _updateSubscription('free');
+                          },
+                        ),
+                        _buildPricingCard(
+                          title: 'Starter',
+                          price: _formatPrice(_getStarterPrice()),
+                          period: 'month',
+                          features: [
+                            'Everything in Free plan',
+                            'Unlimited access to reports for all U.S listed companies',
+                            'Advanced financial data and industry insights',
+                            'Accounting Irregularities detection included',
+                            'Insider trading data included',
+                          ],
+                          isPopular: true,
+                          isSelected: selectedPlan == 'starter',
+                          onSelect: () {
+                            setState(() {
+                              selectedPlan = 'starter';
+                            });
+                            _updateSubscription('starter');
+                          },
+                        ),
                         _buildPricingCard(
                           title: 'Pro',
                           price: _formatPrice(kProPrice),
-                          period: _getPeriod(),
+                          period: 'month',
                           features: [
                             'More advanced features coming soon for pro users - please stay tuned.',
                           ],
@@ -392,9 +248,7 @@ class _PricingPageState extends State<PricingPage> {
       children: [
         Container(
           width: isPopular ? 360 : 320,
-          height: (title == 'Starter' && !isOneTime)
-              ? null
-              : (isPopular ? 520 : 480),
+          height: (title == 'Starter') ? null : (isPopular ? 520 : 480),
           padding: const EdgeInsets.all(24),
           decoration: BoxDecoration(
             color: isPopular ? Colors.white : Colors.white,
@@ -427,9 +281,8 @@ class _PricingPageState extends State<PricingPage> {
                   ],
           ),
           child: Column(
-            mainAxisSize: (title == 'Starter' && !isOneTime)
-                ? MainAxisSize.min
-                : MainAxisSize.max,
+            mainAxisSize:
+                (title == 'Starter') ? MainAxisSize.min : MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (isPopular && (title != 'Starter' || isYearly)) ...[
@@ -512,64 +365,95 @@ class _PricingPageState extends State<PricingPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (title == 'Starter' && !isYearly && !isOneTime) ...[
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.baseline,
-                        textBaseline: TextBaseline.alphabetic,
+                    if (title == 'Starter') ...[
+                      Stack(
                         children: [
-                          Text(
-                            _formatPrice(kStarterRegularPrice),
-                            style: TextStyle(
-                              fontSize: isPopular ? 32 : 28,
-                              fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1E293B).withOpacity(0.5),
-                              decoration: TextDecoration.lineThrough,
+                          Padding(
+                            padding: EdgeInsets.only(left: isPopular ? 14 : 12),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.baseline,
+                              textBaseline: TextBaseline.alphabetic,
+                              children: [
+                                Text(
+                                  '${kStarterRegularPrice}',
+                                  style: TextStyle(
+                                    fontSize: isPopular ? 32 : 28,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF1E293B)
+                                        .withOpacity(0.5),
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'USD/month',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: const Color(0xFF64748B)
+                                        .withOpacity(0.5),
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            '/$period',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: const Color(0xFF64748B).withOpacity(0.5),
-                              decoration: TextDecoration.lineThrough,
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            child: Text(
+                              '\$',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF1E293B).withOpacity(0.5),
+                                decoration: TextDecoration.lineThrough,
+                              ),
                             ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
                     ],
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
+                    Stack(
                       children: [
-                        Text(
-                          price,
-                          style: TextStyle(
-                            fontSize: isPopular ? 56 : 48,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF1E293B),
+                        Padding(
+                          padding: EdgeInsets.only(left: isPopular ? 16 : 14),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.baseline,
+                            textBaseline: TextBaseline.alphabetic,
+                            children: [
+                              Text(
+                                price.substring(
+                                    1), // Remove the dollar sign from the original price
+                                style: TextStyle(
+                                  fontSize: isPopular ? 56 : 48,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1E293B),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'USD/month',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF64748B),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        if (!isOneTime) ...[
-                          const SizedBox(width: 4),
-                          Text(
-                            '/$period',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF64748B),
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          child: Text(
+                            '\$',
+                            style: TextStyle(
+                              fontSize: isPopular ? 24 : 20,
+                              fontWeight: FontWeight.bold,
+                              color: const Color(0xFF1E293B),
                             ),
                           ),
-                        ] else if (additionalText != null) ...[
-                          const SizedBox(width: 4),
-                          Text(
-                            additionalText,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF64748B),
-                            ),
-                          ),
-                        ],
+                        ),
                       ],
                     ),
                     if (title == 'Starter' && isYearly && !isOneTime) ...[

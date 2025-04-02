@@ -235,7 +235,34 @@ class FirestoreService {
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        await _firestore.collection('users').doc(user.uid).update(data);
+        // Convert any FieldValue.delete() to a proper Firestore delete operation
+        final Map<String, dynamic> processedData = Map.from(data);
+        processedData.removeWhere((key, value) => value == FieldValue.delete());
+
+        // If there are any FieldValue.delete() values, we need to handle them separately
+        final deleteFields = data.entries
+            .where((entry) => entry.value == FieldValue.delete())
+            .map((entry) => entry.key)
+            .toList();
+
+        if (deleteFields.isNotEmpty) {
+          // Create a map with FieldValue.delete() for the fields to delete
+          final deleteData = {
+            for (var field in deleteFields) field: FieldValue.delete()
+          };
+
+          // Update with both the regular data and the delete operations
+          await _firestore.collection('users').doc(user.uid).update({
+            ...processedData,
+            ...deleteData,
+          });
+        } else {
+          // If no fields to delete, just update normally
+          await _firestore
+              .collection('users')
+              .doc(user.uid)
+              .update(processedData);
+        }
       }
     } catch (e) {
       print('Error updating user profile: $e');

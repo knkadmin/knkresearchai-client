@@ -22,6 +22,7 @@ import 'package:fa_ai_agent/widgets/marquee_text.dart';
 import 'services/watchlist_service.dart';
 import 'services/section_visibility_manager.dart';
 import 'auth_service.dart';
+import 'services/firestore_service.dart';
 
 class ResultAdvancedPage extends StatefulWidget {
   ResultAdvancedPage({
@@ -293,7 +294,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       ],
     );
 
-    // For non-authenticated users, handle section visibility
+    // For non-authenticated users or free authenticated users, handle section visibility
     if (!isAuthenticated) {
       return FutureBuilder<bool>(
         future: _isMag7CompanyFuture,
@@ -305,20 +306,121 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
           final isMag7Company = snapshot.data ?? false;
           final cacheKey = _sectionToCacheKey[section.title];
 
-          return SectionVisibilityManager.buildSectionContent(
-            section,
-            sectionContent,
-            isAuthenticated,
-            isMag7Company,
-            context,
-            cacheKey ?? '',
-            widget.service.loadingStateSubject.stream,
-          );
+          // If it's a Mag 7 company, show the content directly
+          if (isMag7Company) {
+            return sectionContent;
+          }
+
+          // For non-Mag 7 companies, show only free sections
+          if (!SectionVisibilityManager.freeSections.contains(section.title)) {
+            return _buildUpgradePrompt(section.title);
+          }
+
+          return sectionContent;
         },
       );
     }
 
-    return sectionContent;
+    // For authenticated users, check subscription status
+    return FutureBuilder<bool>(
+      future: _isMag7CompanyFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+
+        final isMag7Company = snapshot.data ?? false;
+
+        // If it's a Mag 7 company, show the content directly
+        if (isMag7Company) {
+          return sectionContent;
+        }
+
+        // For non-Mag 7 companies, check subscription status
+        return FutureBuilder<Map<String, dynamic>?>(
+          future: FirestoreService().getUserData(user!.uid),
+          builder: (context, userSnapshot) {
+            if (userSnapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox.shrink();
+            }
+
+            final userData = userSnapshot.data;
+            final hasPaidSubscription = userData != null &&
+                userData['subscription'] != null &&
+                userData['subscription'] != 'free';
+
+            // If user has paid subscription, show all sections
+            if (hasPaidSubscription) {
+              return sectionContent;
+            }
+
+            // For free users, show only free sections
+            if (!SectionVisibilityManager.freeSections
+                .contains(section.title)) {
+              return _buildUpgradePrompt(section.title);
+            }
+
+            return sectionContent;
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildUpgradePrompt(String sectionTitle) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            sectionTitle,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Upgrade to Starter Plan to access this section',
+            style: TextStyle(
+              fontSize: 16,
+              color: Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, '/pricing');
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E3A8A),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Upgrade Now',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget getMetricsTable(bool isNarrow) {
@@ -520,6 +622,62 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
   Widget _buildNavigationList(List<Section> sections) {
     final user = AuthService().currentUser;
+    final isAuthenticated = user != null;
+
+    return FutureBuilder<bool>(
+      future: _isMag7CompanyFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+
+        final isMag7Company = snapshot.data ?? false;
+
+        // If it's a Mag 7 company, show all sections
+        if (isMag7Company) {
+          return _buildNavigationListContent(sections);
+        }
+
+        // For non-Mag 7 companies, check subscription status
+        if (isAuthenticated) {
+          return FutureBuilder<Map<String, dynamic>?>(
+            future: FirestoreService().getUserData(user!.uid),
+            builder: (context, userSnapshot) {
+              if (userSnapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox.shrink();
+              }
+
+              final userData = userSnapshot.data;
+              final hasPaidSubscription = userData != null &&
+                  userData['subscription'] != null &&
+                  userData['subscription'] != 'free';
+
+              // If user has paid subscription, show all sections
+              if (hasPaidSubscription) {
+                return _buildNavigationListContent(sections);
+              }
+
+              // For free users, show only free sections
+              final filteredSections = sections
+                  .where((section) => SectionVisibilityManager.freeSections
+                      .contains(section.title))
+                  .toList();
+              return _buildNavigationListContent(filteredSections);
+            },
+          );
+        }
+
+        // For non-authenticated users, show only free sections
+        final filteredSections = sections
+            .where((section) =>
+                SectionVisibilityManager.freeSections.contains(section.title))
+            .toList();
+        return _buildNavigationListContent(filteredSections);
+      },
+    );
+  }
+
+  Widget _buildNavigationListContent(List<Section> sections) {
     return Container(
       width: 280,
       decoration: BoxDecoration(
@@ -542,7 +700,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (user != null && showCompanyName)
+                          if (AuthService().currentUser != null &&
+                              showCompanyName)
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
@@ -602,8 +761,12 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                               ),
                             ),
                           SizedBox(
-                              height: user != null && showCompanyName ? 12 : 0),
-                          if (user != null && showCompanyName)
+                              height: AuthService().currentUser != null &&
+                                      showCompanyName
+                                  ? 12
+                                  : 0),
+                          if (AuthService().currentUser != null &&
+                              showCompanyName)
                             Padding(
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
@@ -674,7 +837,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                                       ],
                                     ),
                                   ),
-                                  if (user != null) ...[
+                                  if (AuthService().currentUser != null) ...[
                                     const SizedBox(height: 4),
                                     SizedBox(
                                       width: double.infinity,
@@ -884,22 +1047,17 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       future: _isMag7CompanyFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildScaffold(sections);
+          return _buildScaffold(sections, isAuthenticated, false);
         }
 
         final isMag7Company = snapshot.data ?? false;
-        final filteredSections = SectionVisibilityManager.filterSections(
-          sections,
-          isAuthenticated,
-          isMag7Company,
-        );
-
-        return _buildScaffold(filteredSections);
+        return _buildScaffold(sections, isAuthenticated, isMag7Company);
       },
     );
   }
 
-  Widget _buildScaffold(List<Section> sections) {
+  Widget _buildScaffold(
+      List<Section> sections, bool isAuthenticated, bool isMag7Company) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -922,7 +1080,15 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                         builder:
                             (BuildContext context, BoxConstraints constraints) {
                           final metricsTable = getMetricsTable(isNarrow);
-                          final contentSections = sections
+                          final filteredSections = isMag7Company
+                              ? sections
+                              : sections
+                                  .where((section) => SectionVisibilityManager
+                                      .freeSections
+                                      .contains(section.title))
+                                  .toList();
+
+                          final contentSections = filteredSections
                               .map((section) => _buildSection(section))
                               .where((widget) =>
                                   widget is! SizedBox ||
@@ -930,8 +1096,9 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                               .toList();
 
                           // Find the index of Accounting Red Flags section
-                          final accountingRedFlagsIndex = sections.indexWhere(
-                              (s) => s.title == 'Accounting Red Flags');
+                          final accountingRedFlagsIndex =
+                              filteredSections.indexWhere(
+                                  (s) => s.title == 'Accounting Red Flags');
 
                           return Column(
                             children: [
