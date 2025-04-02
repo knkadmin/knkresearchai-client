@@ -239,6 +239,15 @@ class FirestoreService {
         .map((doc) => doc.data());
   }
 
+  // Stream only the subscription field from user document
+  Stream<String?> streamUserSubscription(String userId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .snapshots()
+        .map((doc) => doc.data()?['subscription'] as String?);
+  }
+
   // Update user profile
   Future<void> updateUserProfile(Map<String, dynamic> data) async {
     try {
