@@ -57,10 +57,26 @@ class _PricingPageState extends State<PricingPage> {
     if (user != null) {
       final firestoreService = FirestoreService();
       try {
-        await firestoreService.updateUserProfile({
+        // Only determine payment method for paid plans
+        Map<String, dynamic> updateData = {
           'subscription': plan,
           'subscriptionUpdatedAt': DateTime.now().toIso8601String(),
-        });
+        };
+
+        // Add payment method only for paid plans
+        if (plan != 'free') {
+          String paymentMethod;
+          if (isOneTime) {
+            paymentMethod = 'one-time';
+          } else if (isYearly) {
+            paymentMethod = 'yearly';
+          } else {
+            paymentMethod = 'monthly';
+          }
+          updateData['paymentMethod'] = paymentMethod;
+        }
+
+        await firestoreService.updateUserProfile(updateData);
         if (mounted) {
           context.go('/');
         }
@@ -239,10 +255,9 @@ class _PricingPageState extends State<PricingPage> {
                             price: _formatPrice(kFreePrice),
                             period: _getPeriod(),
                             features: [
-                              'Access to basic company reports',
-                              'Limited to 5 reports per day',
-                              'Basic market data',
-                              'Standard support',
+                              'Complete access to reports for Mag 7 companies',
+                              'Unlimited report refreshes',
+                              'Add companies to watchlist',
                             ],
                             isPopular: false,
                             isSelected: selectedPlan == 'free',
@@ -258,17 +273,11 @@ class _PricingPageState extends State<PricingPage> {
                             price: _formatPrice(_getStarterPrice()),
                             period: _getPeriod(),
                             features: [
-                              'Includes a 7-day free trial',
-                              'Unlimited company reports',
-                              'Advanced market data',
-                              'Priority support',
-                              'Custom watchlists',
-                              'Email notifications',
-                              if (isYearly) ...[
-                                'One-time payment for the year',
-                              ] else ...[
-                                'Early bird offer: \$$kStarterEarlyBirdPrice/month',
-                              ],
+                              'Everything in Free plan',
+                              'Unlimited access to reports for all U.S listed companies',
+                              'Advanced financial data and industry insights',
+                              'Accounting Irregularities detection included',
+                              'Insider trading data included',
                             ],
                             isPopular: true,
                             isSelected: selectedPlan == 'starter',
@@ -286,21 +295,21 @@ class _PricingPageState extends State<PricingPage> {
                             price: _formatPrice(kStarterYearlyRegularPrice),
                             period: 'one-time',
                             features: [
-                              'One-time payment for the year',
-                              'Unlimited company reports',
-                              'Advanced market data',
-                              'Priority support',
-                              'Custom watchlists',
-                              'Email notifications',
+                              'Everything in Free plan',
+                              '1 year access to reports for all U.S listed companies',
+                              'Advanced financial data and industry insights',
+                              'Accounting Irregularities detection included',
+                              'Insider trading data included',
                             ],
                             isPopular: false,
-                            isSelected: selectedPlan == 'yearly',
+                            isSelected: selectedPlan == 'starter',
                             onSelect: () {
                               setState(() {
-                                selectedPlan = 'yearly';
+                                selectedPlan = 'starter';
                               });
-                              _updateSubscription('yearly');
+                              _updateSubscription('starter');
                             },
+                            additionalText: 'for a year',
                           ),
                         _buildPricingCard(
                           title: 'Pro',
@@ -335,12 +344,13 @@ class _PricingPageState extends State<PricingPage> {
     required bool isSelected,
     VoidCallback? onSelect,
     bool isConstruction = false,
+    String? additionalText,
   }) {
     return Stack(
       children: [
         Container(
           width: isPopular ? 360 : 320,
-          height: (title == 'Starter' && !isYearly && !isOneTime)
+          height: (title == 'Starter' && !isOneTime)
               ? null
               : (isPopular ? 520 : 480),
           padding: const EdgeInsets.all(24),
@@ -375,7 +385,7 @@ class _PricingPageState extends State<PricingPage> {
                   ],
           ),
           child: Column(
-            mainAxisSize: (title == 'Starter' && !isYearly && !isOneTime)
+            mainAxisSize: (title == 'Starter' && !isOneTime)
                 ? MainAxisSize.min
                 : MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,9 +518,28 @@ class _PricingPageState extends State<PricingPage> {
                               color: Color(0xFF64748B),
                             ),
                           ),
+                        ] else if (additionalText != null) ...[
+                          const SizedBox(width: 4),
+                          Text(
+                            additionalText,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
                         ],
                       ],
                     ),
+                    if (title == 'Starter' && isYearly && !isOneTime) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        'That\'s just \$${(kStarterYearlyEarlyBirdPrice / 12).toStringAsFixed(2)}/month',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                    ],
                     if (title == 'Starter' && !isYearly && !isOneTime) ...[
                       const SizedBox(height: 8),
                       Container(
@@ -536,7 +565,7 @@ class _PricingPageState extends State<PricingPage> {
                 ),
                 const SizedBox(height: 16),
               ],
-              if (title == 'Starter' && !isYearly && !isOneTime)
+              if (title == 'Starter' && !isOneTime)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -577,12 +606,15 @@ class _PricingPageState extends State<PricingPage> {
                       child: ElevatedButton(
                         onPressed: isSelected ? null : onSelect,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isPopular
-                              ? const Color(0xFF1E3A8A)
-                              : isSelected
-                                  ? const Color(0xFF64748B)
-                                  : Colors.white,
-                          foregroundColor: isPopular || isSelected
+                          backgroundColor:
+                              isPopular || (title == 'Starter' && isOneTime)
+                                  ? const Color(0xFF1E3A8A)
+                                  : isSelected
+                                      ? const Color(0xFF64748B)
+                                      : Colors.white,
+                          foregroundColor: isPopular ||
+                                  isSelected ||
+                                  (title == 'Starter' && isOneTime)
                               ? Colors.white
                               : const Color(0xFF1E3A8A),
                           padding: EdgeInsets.symmetric(
@@ -590,7 +622,9 @@ class _PricingPageState extends State<PricingPage> {
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
-                            side: isPopular || isSelected
+                            side: isPopular ||
+                                    isSelected ||
+                                    (title == 'Starter' && isOneTime)
                                 ? BorderSide.none
                                 : const BorderSide(
                                     color: Color(0xFF1E3A8A),
@@ -657,12 +691,15 @@ class _PricingPageState extends State<PricingPage> {
                         child: ElevatedButton(
                           onPressed: isSelected ? null : onSelect,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: isPopular
-                                ? const Color(0xFF1E3A8A)
-                                : isSelected
-                                    ? const Color(0xFF64748B)
-                                    : Colors.white,
-                            foregroundColor: isPopular || isSelected
+                            backgroundColor:
+                                isPopular || (title == 'Starter' && isOneTime)
+                                    ? const Color(0xFF1E3A8A)
+                                    : isSelected
+                                        ? const Color(0xFF64748B)
+                                        : Colors.white,
+                            foregroundColor: isPopular ||
+                                    isSelected ||
+                                    (title == 'Starter' && isOneTime)
                                 ? Colors.white
                                 : const Color(0xFF1E3A8A),
                             padding: EdgeInsets.symmetric(
@@ -670,7 +707,9 @@ class _PricingPageState extends State<PricingPage> {
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
-                              side: isPopular || isSelected
+                              side: isPopular ||
+                                      isSelected ||
+                                      (title == 'Starter' && isOneTime)
                                   ? BorderSide.none
                                   : const BorderSide(
                                       color: Color(0xFF1E3A8A),
