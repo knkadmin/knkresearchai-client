@@ -230,6 +230,15 @@ class FirestoreService {
     }
   }
 
+  // Stream user data changes
+  Stream<Map<String, dynamic>?> streamUserData(String userId) {
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .snapshots()
+        .map((doc) => doc.data());
+  }
+
   // Update user profile
   Future<void> updateUserProfile(Map<String, dynamic> data) async {
     try {

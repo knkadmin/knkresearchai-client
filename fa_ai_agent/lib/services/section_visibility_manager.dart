@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:ui';
 import '../models/section.dart';
+import '../models/subscription_type.dart';
 import '../auth_service.dart';
 import '../services/firestore_service.dart';
 import 'package:rxdart/subjects.dart';
@@ -15,42 +16,43 @@ class SectionVisibilityManager {
     'Financial Performance',
   ];
 
+  /// Helper method to check if a user has access to all sections
+  static Future<bool> _hasFullAccess(String? userId, bool isMag7Company) async {
+    // If it's a Mag 7 company, always grant full access
+    if (isMag7Company) {
+      return true;
+    }
+
+    // If no user ID (non-authenticated) or no user data (free user), return false
+    if (userId == null) {
+      return false;
+    }
+
+    // Check user's subscription status
+    final firestoreService = FirestoreService();
+    final userData = await firestoreService.getUserData(userId);
+
+    final subscriptionType =
+        SubscriptionType.fromString(userData?['subscription']);
+    return subscriptionType.isPaid;
+  }
+
   static Future<List<Section>> filterSections(
     List<Section> sections,
     bool isAuthenticated,
     bool isMag7Company,
   ) async {
-    // If it's a Mag 7 company, show all sections regardless of subscription
-    if (isMag7Company) {
+    final user = AuthService().currentUser;
+    final hasAccess = await _hasFullAccess(user?.uid, isMag7Company);
+
+    if (hasAccess) {
       return sections;
     }
 
-    if (!isAuthenticated) {
-      return sections
-          .where((section) => freeSections.contains(section.title))
-          .toList();
-    }
-
-    // For authenticated users, check their subscription status
-    final user = AuthService().currentUser;
-    if (user != null) {
-      final firestoreService = FirestoreService();
-      final userData = await firestoreService.getUserData(user.uid);
-
-      // If user has a paid subscription, show all sections
-      if (userData != null &&
-          userData['subscription'] != null &&
-          userData['subscription'] != 'free') {
-        return sections;
-      }
-
-      // For free users, show only free sections
-      return sections
-          .where((section) => freeSections.contains(section.title))
-          .toList();
-    }
-
-    return sections;
+    // For both non-authenticated and free users, show only free sections
+    return sections
+        .where((section) => freeSections.contains(section.title))
+        .toList();
   }
 
   static Future<bool> isSectionVisible(
@@ -58,33 +60,38 @@ class SectionVisibilityManager {
     bool isAuthenticated,
     bool isMag7Company,
   ) async {
-    // If it's a Mag 7 company, show all sections regardless of subscription
-    if (isMag7Company) {
+    final user = AuthService().currentUser;
+    final hasAccess = await _hasFullAccess(user?.uid, isMag7Company);
+
+    if (hasAccess) {
       return true;
     }
 
-    if (!isAuthenticated) {
-      return freeSections.contains(sectionTitle);
-    }
+    // For both non-authenticated and free users, check if section is free
+    return freeSections.contains(sectionTitle);
+  }
 
-    // For authenticated users, check their subscription status
+  // Stream section visibility changes
+  static Stream<bool> streamSectionVisibility(
+    String sectionTitle,
+    bool isAuthenticated,
+    bool isMag7Company,
+  ) {
     final user = AuthService().currentUser;
-    if (user != null) {
-      final firestoreService = FirestoreService();
-      final userData = await firestoreService.getUserData(user.uid);
-
-      // If user has a paid subscription, show all sections
-      if (userData != null &&
-          userData['subscription'] != null &&
-          userData['subscription'] != 'free') {
-        return true;
-      }
-
-      // For free users, show only free sections
-      return freeSections.contains(sectionTitle);
+    if (user == null) {
+      return Stream.value(freeSections.contains(sectionTitle));
     }
 
-    return false;
+    final firestoreService = FirestoreService();
+    return firestoreService.streamUserData(user.uid).map((userData) {
+      if (isMag7Company) return true;
+
+      final subscriptionType =
+          SubscriptionType.fromString(userData?['subscription']);
+      if (subscriptionType.isPaid) return true;
+
+      return freeSections.contains(sectionTitle);
+    });
   }
 
   static Future<Widget> buildSectionContent(

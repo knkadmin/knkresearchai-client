@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../auth_service.dart';
 import '../services/firestore_service.dart';
 import '../gradient_text.dart';
+import '../models/subscription_type.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Pricing constants
@@ -22,7 +23,7 @@ class PricingPage extends StatefulWidget {
 }
 
 class _PricingPageState extends State<PricingPage> {
-  String? selectedPlan;
+  SubscriptionType? selectedPlan;
   bool isYearly = false;
   bool isOneTime = false;
 
@@ -41,30 +42,24 @@ class _PricingPageState extends State<PricingPage> {
       if (mounted) {
         setState(() {
           // Set the selected plan based on user's current subscription
-          if (userData != null && userData['subscription'] != null) {
-            selectedPlan = userData['subscription'];
-          } else {
-            // Default to free plan if no subscription is set
-            selectedPlan = 'free';
-          }
+          selectedPlan = SubscriptionType.fromString(userData?['subscription']);
         });
       }
     }
   }
 
-  Future<void> _updateSubscription(String plan) async {
+  Future<void> _updateSubscription(SubscriptionType plan) async {
     final user = AuthService().currentUser;
     if (user != null) {
       final firestoreService = FirestoreService();
       try {
-        // Only determine payment method for paid plans
         Map<String, dynamic> updateData = {
-          'subscription': plan,
+          'subscription': plan.value,
           'subscriptionUpdatedAt': DateTime.now().toIso8601String(),
         };
 
         // Add payment method only for paid plans
-        if (plan != 'free') {
+        if (plan.isPaid) {
           updateData['paymentMethod'] = 'monthly';
         } else {
           // Remove paymentMethod field for free plan
@@ -181,12 +176,12 @@ class _PricingPageState extends State<PricingPage> {
                             'Add companies to watchlist',
                           ],
                           isPopular: false,
-                          isSelected: selectedPlan == 'free',
+                          isSelected: selectedPlan == SubscriptionType.free,
                           onSelect: () {
                             setState(() {
-                              selectedPlan = 'free';
+                              selectedPlan = SubscriptionType.free;
                             });
-                            _updateSubscription('free');
+                            _updateSubscription(SubscriptionType.free);
                           },
                         ),
                         _buildPricingCard(
@@ -201,12 +196,12 @@ class _PricingPageState extends State<PricingPage> {
                             'Insider trading data included',
                           ],
                           isPopular: true,
-                          isSelected: selectedPlan == 'starter',
+                          isSelected: selectedPlan == SubscriptionType.starter,
                           onSelect: () {
                             setState(() {
-                              selectedPlan = 'starter';
+                              selectedPlan = SubscriptionType.starter;
                             });
-                            _updateSubscription('starter');
+                            _updateSubscription(SubscriptionType.starter);
                           },
                         ),
                         _buildPricingCard(
@@ -217,7 +212,7 @@ class _PricingPageState extends State<PricingPage> {
                             'More advanced features coming soon for pro users - please stay tuned.',
                           ],
                           isPopular: false,
-                          isSelected: selectedPlan == 'pro',
+                          isSelected: selectedPlan == SubscriptionType.pro,
                           onSelect: null,
                           isConstruction: true,
                         ),
