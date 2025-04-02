@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../auth_service.dart';
 import '../services/firestore_service.dart';
 import '../gradient_text.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // Pricing constants
 const int kFreePrice = 0;
@@ -22,13 +23,13 @@ class PricingPage extends StatefulWidget {
 
 class _PricingPageState extends State<PricingPage> {
   String? selectedPlan;
-  bool isYearly = true;
+  bool isYearly = false;
   bool isOneTime = false;
 
   @override
   void initState() {
     super.initState();
-    isYearly = true;
+    isYearly = false;
     _checkUserSubscription();
   }
 
@@ -74,11 +75,14 @@ class _PricingPageState extends State<PricingPage> {
             paymentMethod = 'monthly';
           }
           updateData['paymentMethod'] = paymentMethod;
+        } else {
+          // Remove paymentMethod field for free plan
+          updateData['paymentMethod'] = FieldValue.delete();
         }
 
         await firestoreService.updateUserProfile(updateData);
         if (mounted) {
-          context.go('/');
+          context.pop();
         }
       } catch (e) {
         if (mounted) {
@@ -136,7 +140,7 @@ class _PricingPageState extends State<PricingPage> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   IconButton(
-                    onPressed: () => context.go('/'),
+                    onPressed: () => context.pop(),
                     icon: const Icon(
                       Icons.close,
                       size: 24,
@@ -174,21 +178,39 @@ class _PricingPageState extends State<PricingPage> {
                     child: Column(
                       children: [
                         SegmentedButton<String>(
-                          segments: const [
+                          showSelectedIcon: false,
+                          segments: [
                             ButtonSegment(
                               value: 'monthly',
-                              label: Text('Monthly'),
-                              icon: Icon(Icons.calendar_month),
+                              label: const Text('Monthly'),
                             ),
                             ButtonSegment(
                               value: 'yearly',
-                              label: Text('Yearly'),
-                              icon: Icon(Icons.calendar_today),
+                              label: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFF6B6B)
+                                          .withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: const Icon(
+                                      Icons.local_fire_department,
+                                      size: 16,
+                                      color: Color(0xFFFF6B6B),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Text('Yearly'),
+                                ],
+                              ),
                             ),
                             ButtonSegment(
                               value: 'one-time',
-                              label: Text('One-time'),
-                              icon: Icon(Icons.payments),
+                              label: const Text('One-time'),
                             ),
                           ],
                           selected: {
@@ -208,8 +230,7 @@ class _PricingPageState extends State<PricingPage> {
                                 MaterialStateProperty.resolveWith<Color>(
                               (Set<MaterialState> states) {
                                 if (states.contains(MaterialState.selected)) {
-                                  return const Color(0xFF1E3A8A)
-                                      .withOpacity(0.1);
+                                  return const Color(0xFF1E3A8A);
                                 }
                                 return Colors.white;
                               },
@@ -218,7 +239,7 @@ class _PricingPageState extends State<PricingPage> {
                                 MaterialStateProperty.resolveWith<Color>(
                               (Set<MaterialState> states) {
                                 if (states.contains(MaterialState.selected)) {
-                                  return const Color(0xFF1E3A8A);
+                                  return Colors.white;
                                 }
                                 return const Color(0xFF64748B);
                               },
@@ -231,8 +252,29 @@ class _PricingPageState extends State<PricingPage> {
                             ),
                             padding: MaterialStateProperty.all(
                               const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
+                                  horizontal: 32, vertical: 16),
                             ),
+                            shape: MaterialStateProperty.all(
+                              RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            elevation:
+                                MaterialStateProperty.resolveWith<double>(
+                              (Set<MaterialState> states) {
+                                if (states.contains(MaterialState.selected)) {
+                                  return 2;
+                                }
+                                return 0;
+                              },
+                            ),
+                            textStyle: MaterialStateProperty.all(
+                              const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            iconSize: MaterialStateProperty.all(24),
                           ),
                         ),
                         if (isYearly && !isOneTime) ...[
@@ -395,7 +437,7 @@ class _PricingPageState extends State<PricingPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                    color: const Color(0xFFFF6B6B).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -404,7 +446,7 @@ class _PricingPageState extends State<PricingPage> {
                       Icon(
                         title == 'Starter' ? Icons.local_offer : Icons.star,
                         size: 16,
-                        color: const Color(0xFF1E3A8A),
+                        color: const Color(0xFFFF6B6B),
                       ),
                       const SizedBox(width: 4),
                       Text(
@@ -412,7 +454,7 @@ class _PricingPageState extends State<PricingPage> {
                             ? 'Early Bird Offer'
                             : 'Most Popular',
                         style: const TextStyle(
-                          color: Color(0xFF1E3A8A),
+                          color: Color(0xFFFF6B6B),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -542,23 +584,46 @@ class _PricingPageState extends State<PricingPage> {
                     ],
                     if (title == 'Starter' && !isYearly && !isOneTime) ...[
                       const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Text(
-                          'Early Bird Offer',
-                          style: TextStyle(
-                            color: Color(0xFF1E3A8A),
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF6B6B).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'Early Bird Offer',
+                              style: TextStyle(
+                                color: Color(0xFFFF6B6B),
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E3A8A).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'Limited time',
+                              style: TextStyle(
+                                color: Color(0xFF1E3A8A),
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ],
@@ -637,9 +702,9 @@ class _PricingPageState extends State<PricingPage> {
                               ? 'Your current plan'
                               : onSelect == null
                                   ? 'Not Available'
-                                  : title == 'Starter' && isOneTime
-                                      ? 'Buy now'
-                                      : 'Select ${isPopular ? 'Starter' : title} Plan',
+                                  : title == 'Free'
+                                      ? 'Select'
+                                      : 'Start with 7 days Free Trial',
                           style: TextStyle(
                             fontSize: isPopular ? 18 : 16,
                             fontWeight: FontWeight.bold,
@@ -722,9 +787,9 @@ class _PricingPageState extends State<PricingPage> {
                                 ? 'Your current plan'
                                 : onSelect == null
                                     ? 'Not Available'
-                                    : title == 'Starter' && isOneTime
-                                        ? 'Buy now'
-                                        : 'Select ${isPopular ? 'Starter' : title} Plan',
+                                    : title == 'Free'
+                                        ? 'Select'
+                                        : 'Start with 7 days Free Trial',
                             style: TextStyle(
                               fontSize: isPopular ? 18 : 16,
                               fontWeight: FontWeight.bold,
@@ -738,6 +803,16 @@ class _PricingPageState extends State<PricingPage> {
             ],
           ),
         ),
+        if (title == 'Starter' && isYearly && !isOneTime)
+          Positioned(
+            top: 16,
+            right: 16,
+            child: const Icon(
+              Icons.local_fire_department,
+              size: 32,
+              color: Color(0xFFFF6B6B),
+            ),
+          ),
       ],
     );
   }

@@ -171,8 +171,17 @@ class MyApp extends StatelessWidget {
           ),
           GoRoute(
             path: '/pricing',
-            pageBuilder: (context, state) => NoTransitionPage<void>(
+            pageBuilder: (context, state) => CustomTransitionPage<void>(
+              key: state.pageKey,
               child: const PricingPage(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: child,
+                );
+              },
+              transitionDuration: const Duration(milliseconds: 200),
             ),
           ),
         ],

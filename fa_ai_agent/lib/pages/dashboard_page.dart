@@ -1002,7 +1002,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                     }
                                   } else if (value == 'upgrade') {
                                     if (context.mounted) {
-                                      context.go('/pricing');
+                                      context.push('/pricing');
                                     }
                                   }
                                 },
