@@ -329,9 +329,9 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
     // Calculate navigation position
     final scrollOffset = _scrollController.offset;
-    final initialTop =
+    const initialTop =
         400.0; // Initial top position (adjusted to align with first section)
-    final stickyTop = 80.0; // Position when sticky (below app bar)
+    const stickyTop = 80.0; // Position when sticky (below app bar)
 
     if (scrollOffset > initialTop - stickyTop) {
       _navigationTop.value = stickyTop;
@@ -359,98 +359,13 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     }
   }
 
-  Widget _buildSection(Section section) {
-    final user = AuthService().currentUser;
-    final isAuthenticated = user != null;
-
-    // Make all sections from Accounting Red Flags onwards full width
-    final bool isFullWidth = sections.indexOf(section) >=
-        sections.indexWhere((s) => s.title == 'Accounting Red Flags');
-
-    Widget sectionContent = Column(
-      key: _sectionKeys[section.title],
-      children: [
-        if (isFullWidth)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: section.buildContent(),
-          )
-        else
-          section.buildContent(),
-        const SizedBox(height: 48),
-      ],
-    );
-
-    return FutureBuilder<bool>(
-      future: _isMag7CompanyFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox.shrink();
-        }
-
-        final isMag7Company = snapshot.data ?? false;
-
-        // If it's a Mag 7 company, show all sections without restrictions
-        if (isMag7Company) {
-          return sectionContent;
-        }
-
-        return StreamBuilder<bool>(
-          stream: SectionVisibilityManager.streamSectionVisibility(
-            section.title,
-            isAuthenticated,
-            isMag7Company,
-          ),
-          builder: (context, visibilitySnapshot) {
-            if (visibilitySnapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox.shrink();
-            }
-
-            return ValueListenableBuilder<SubscriptionType?>(
-              valueListenable: _subscriptionTypeNotifier,
-              builder: (context, subscriptionType, child) {
-                // Only check subscription type for authenticated users
-                if (isAuthenticated && subscriptionType == null) {
-                  return const SizedBox.shrink();
-                }
-
-                // Check if we should show blur overlay
-                final shouldShowBlur =
-                    _premiumSectionManager.shouldShowBlurOverlay(
-                  sectionTitle: section.title,
-                  isAuthenticated: isAuthenticated,
-                  isMag7Company: isMag7Company,
-                  subscriptionType: subscriptionType,
-                );
-
-                if (shouldShowBlur) {
-                  return _premiumSectionManager.buildSectionWithBlurOverlay(
-                    sectionContent: sectionContent,
-                    sectionTitle: section.title,
-                    isAuthenticated: isAuthenticated,
-                    context: context,
-                    cacheManager: _cacheManager,
-                  );
-                }
-
-                // For non-premium sections or users with access, show content
-                return sectionContent;
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
   void _scrollToSection(String sectionTitle) {
     final key = _sectionKeys[sectionTitle];
     if (key?.currentContext != null) {
       Scrollable.ensureVisible(
         key!.currentContext!,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
+        duration: const Duration(milliseconds: 1000),
+        curve: Curves.easeOutExpo,
       );
     }
   }
@@ -629,6 +544,90 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       loadingStateStream: widget.service.loadingStateSubject.stream,
       watchlistService: _watchlistService,
       isRefreshing: _isRefreshing,
+    );
+  }
+  Widget _buildSection(Section section) {
+    final user = AuthService().currentUser;
+    final isAuthenticated = user != null;
+
+    // Make all sections from Accounting Red Flags onwards full width
+    final bool isFullWidth = sections.indexOf(section) >=
+        sections.indexWhere((s) => s.title == 'Accounting Red Flags');
+
+    Widget sectionContent = Column(
+      key: _sectionKeys[section.title],
+      children: [
+        if (isFullWidth)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: section.buildContent(),
+          )
+        else
+          section.buildContent(),
+        const SizedBox(height: 48),
+      ],
+    );
+
+    return FutureBuilder<bool>(
+      future: _isMag7CompanyFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+
+        final isMag7Company = snapshot.data ?? false;
+
+        // If it's a Mag 7 company, show all sections without restrictions
+        if (isMag7Company) {
+          return sectionContent;
+        }
+
+        return StreamBuilder<bool>(
+          stream: SectionVisibilityManager.streamSectionVisibility(
+            section.title,
+            isAuthenticated,
+            isMag7Company,
+          ),
+          builder: (context, visibilitySnapshot) {
+            if (visibilitySnapshot.connectionState == ConnectionState.waiting) {
+              return const SizedBox.shrink();
+            }
+
+            return ValueListenableBuilder<SubscriptionType?>(
+              valueListenable: _subscriptionTypeNotifier,
+              builder: (context, subscriptionType, child) {
+                // Only check subscription type for authenticated users
+                if (isAuthenticated && subscriptionType == null) {
+                  return const SizedBox.shrink();
+                }
+
+                // Check if we should show blur overlay
+                final shouldShowBlur =
+                    _premiumSectionManager.shouldShowBlurOverlay(
+                  sectionTitle: section.title,
+                  isAuthenticated: isAuthenticated,
+                  isMag7Company: isMag7Company,
+                  subscriptionType: subscriptionType,
+                );
+
+                if (shouldShowBlur) {
+                  return _premiumSectionManager.buildSectionWithBlurOverlay(
+                    sectionContent: sectionContent,
+                    sectionTitle: section.title,
+                    isAuthenticated: isAuthenticated,
+                    context: context,
+                    cacheManager: _cacheManager,
+                  );
+                }
+
+                // For non-premium sections or users with access, show content
+                return sectionContent;
+              },
+            );
+          },
+        );
+      },
     );
   }
 }
