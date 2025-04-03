@@ -54,7 +54,7 @@ class FirestoreService {
       final result = await _firestore.collection('users').limit(1).get();
       print('Successfully connected to Firestore');
       return true;
-    } catch (e, stackTrace) {
+    } catch (e) {
       print('Firestore connection check failed: $e');
       return false;
     }

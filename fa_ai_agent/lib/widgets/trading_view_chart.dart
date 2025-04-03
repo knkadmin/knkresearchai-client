@@ -3,7 +3,6 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'dart:html' as html;
-import 'dart:io' show Platform;
 import 'dart:ui_web' as ui;
 
 class TradingViewChart extends StatefulWidget {

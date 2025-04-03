@@ -1,12 +1,10 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:url_strategy/url_strategy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
-import 'dart:io' show Platform;
 
 import 'package:fa_ai_agent/services/agent_service.dart';
 import 'package:fa_ai_agent/gradient_text.dart';
@@ -30,7 +28,6 @@ import 'package:fa_ai_agent/services/auth_service.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:fa_ai_agent/pages/error_page.dart';
 
-import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

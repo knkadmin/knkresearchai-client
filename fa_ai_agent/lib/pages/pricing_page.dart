@@ -247,7 +247,6 @@ class _PricingPageState extends State<PricingPage> {
     required bool isSelected,
     VoidCallback? onSelect,
     bool isConstruction = false,
-    String? additionalText,
   }) {
     return Stack(
       children: [

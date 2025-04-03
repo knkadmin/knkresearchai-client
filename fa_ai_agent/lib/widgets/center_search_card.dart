@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fa_ai_agent/services/agent_service.dart';
-import '../result_advanced.dart';
 import 'company_button.dart';
 import 'package:fa_ai_agent/services/auth_service.dart';
 import 'search_bar.dart' show CustomSearchBar;
