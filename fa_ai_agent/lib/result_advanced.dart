@@ -29,6 +29,7 @@ import 'services/public_user_last_viewed_report_tracker.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fa_ai_agent/widgets/navigation_list_content.dart';
+import 'services/subscription_service.dart';
 
 class ResultAdvancedPage extends StatefulWidget {
   final String tickerCode;
@@ -69,12 +70,13 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   Map<String, GlobalKey> _sectionKeys = {};
   final Map<String, ValueNotifier<bool>> _tickAnimationStates = {};
   final WatchlistService _watchlistService = WatchlistService();
+  final SubscriptionService _subscriptionService = SubscriptionService();
   bool _isHovered = false;
   bool forceRefresh = false;
 
-  StreamSubscription<String?>? _subscriptionSubscription;
-  final ValueNotifier<String?> _subscriptionTypeNotifier =
-      ValueNotifier<String?>(null);
+  StreamSubscription<SubscriptionType>? _subscriptionSubscription;
+  final ValueNotifier<SubscriptionType?> _subscriptionTypeNotifier =
+      ValueNotifier<SubscriptionType?>(null);
 
   // Add mapping between section titles and their cache keys
   final Map<String, String> _sectionToCacheKey = {
@@ -230,10 +232,11 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     // Set up user data subscription
     final user = AuthService().currentUser;
     if (user != null) {
-      _subscriptionSubscription =
-          FirestoreService().streamUserSubscription(user.uid).listen((data) {
+      _subscriptionSubscription = _subscriptionService
+          .streamUserSubscription()
+          .listen((subscriptionType) {
         if (mounted) {
-          _subscriptionTypeNotifier.value = data;
+          _subscriptionTypeNotifier.value = subscriptionType;
         }
       });
     }
@@ -342,16 +345,12 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
               return const SizedBox.shrink();
             }
 
-            return FutureBuilder<SubscriptionType>(
-              future: _getCurrentUserSubscription(),
-              builder: (context, subscriptionSnapshot) {
-                if (subscriptionSnapshot.connectionState ==
-                    ConnectionState.waiting) {
+            return ValueListenableBuilder<SubscriptionType?>(
+              valueListenable: _subscriptionTypeNotifier,
+              builder: (context, subscriptionType, child) {
+                if (subscriptionType == null) {
                   return const SizedBox.shrink();
                 }
-
-                final subscriptionType =
-                    subscriptionSnapshot.data ?? SubscriptionType.free;
 
                 if (!isMag7Company &&
                     (!isAuthenticated ||
@@ -429,120 +428,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     });
   }
 
-  Widget _buildRefreshButton(bool isHovered) {
-    return StreamBuilder<Map<String, bool>>(
-      stream: widget.service.loadingStateSubject.stream,
-      builder: (context, snapshot) {
-        final loadingStates = snapshot.data ?? {};
-        final isAnySectionLoading =
-            loadingStates.values.any((isLoading) => isLoading);
-        final isRefreshing = isAnySectionLoading;
-
-        return StatefulBuilder(
-          builder: (context, setState) {
-            bool isHovered = false;
-            return MouseRegion(
-              cursor: SystemMouseCursors.click,
-              onEnter: (_) => setState(() => isHovered = true),
-              onExit: (_) => setState(() => isHovered = false),
-              child: ValueListenableBuilder<bool>(
-                valueListenable: _showCompanyNameInTitle,
-                builder: (context, showCompanyName, child) {
-                  return SizedBox(
-                    width: showCompanyName ? 32 : null,
-                    child: showCompanyName
-                        ? ElevatedButton(
-                            onPressed: isRefreshing ? null : _handleRefresh,
-                            style: isHovered
-                                ? _getHoverButtonStyle().copyWith(
-                                    padding: MaterialStateProperty.all(
-                                      const EdgeInsets.all(0),
-                                    ),
-                                    minimumSize: MaterialStateProperty.all(
-                                      const Size(32, 40),
-                                    ),
-                                  )
-                                : _getButtonStyle().copyWith(
-                                    padding: MaterialStateProperty.all(
-                                      const EdgeInsets.all(0),
-                                    ),
-                                    minimumSize: MaterialStateProperty.all(
-                                      const Size(32, 40),
-                                    ),
-                                  ),
-                            child: isRefreshing
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: ThinkingAnimation(
-                                      size: 16,
-                                      color: Color(0xFF1E3A8A),
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.refresh,
-                                    size: 16,
-                                    color: isHovered
-                                        ? Colors.white
-                                        : const Color(0xFF1E3A8A),
-                                  ),
-                          )
-                        : ElevatedButton.icon(
-                            onPressed: isRefreshing ? null : _handleRefresh,
-                            icon: isRefreshing
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: ThinkingAnimation(
-                                      size: 16,
-                                      color: Color(0xFF1E3A8A),
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.refresh,
-                                    size: 16,
-                                    color: isHovered
-                                        ? Colors.white
-                                        : const Color(0xFF1E3A8A),
-                                  ),
-                            label: Text(
-                              'Refresh',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                                color: isHovered
-                                    ? Colors.white
-                                    : const Color(0xFF1E3A8A),
-                              ),
-                            ),
-                            style: isHovered
-                                ? _getHoverButtonStyle().copyWith(
-                                    padding: MaterialStateProperty.all(
-                                      const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                        horizontal: 16,
-                                      ),
-                                    ),
-                                  )
-                                : _getButtonStyle().copyWith(
-                                    padding: MaterialStateProperty.all(
-                                      const EdgeInsets.symmetric(
-                                        vertical: 12,
-                                        horizontal: 16,
-                                      ),
-                                    ),
-                                  ),
-                          ),
-                  );
-                },
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
   Widget _buildNavigationListContent(List<Section> sections) {
     return NavigationListContent(
       sections: sections,
@@ -592,7 +477,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     final user = AuthService().currentUser;
     final isAuthenticated = user != null;
 
-    return ValueListenableBuilder<String?>(
+    return ValueListenableBuilder<SubscriptionType?>(
       valueListenable: _subscriptionTypeNotifier,
       builder: (context, subscriptionType, child) {
         return FutureBuilder<bool>(
@@ -612,7 +497,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   }
 
   Widget _buildScaffold(List<Section> sections, bool isAuthenticated,
-      bool isMag7Company, String? userSubscriptionType) {
+      bool isMag7Company, SubscriptionType? userSubscriptionType) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: Stack(
@@ -635,8 +520,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                         builder:
                             (BuildContext context, BoxConstraints constraints) {
                           // Use cached user data instead of stream
-                          final subscriptionType = SubscriptionType.fromString(
-                              userSubscriptionType ?? 'free');
+                          final subscriptionType =
+                              userSubscriptionType ?? SubscriptionType.free;
 
                           // Determine if metrics table should be shown
                           final shouldShowMetrics = isMag7Company ||
@@ -819,7 +704,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     return StreamBuilder(
         stream: widget.cacheTimeSubject.stream,
         builder: (BuildContext context, AsyncSnapshot snapshot) {
-          final user = AuthService().currentUser;
           return Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -1213,38 +1097,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     );
   }
 
-  ButtonStyle _getButtonStyle() {
-    return ElevatedButton.styleFrom(
-      backgroundColor: Colors.white,
-      foregroundColor: const Color(0xFF1E3A8A),
-      elevation: 0,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(
-          color: const Color(0xFF1E3A8A).withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-    );
-  }
-
-  ButtonStyle _getHoverButtonStyle() {
-    return ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFF1E3A8A),
-      foregroundColor: Colors.white,
-      elevation: 2,
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: const BorderSide(
-          color: Color(0xFF1E3A8A),
-          width: 1,
-        ),
-      ),
-    );
-  }
-
   Future<bool> _checkIfMag7Company() async {
     try {
       final companies = await CompanyData.getMega7Companies();
@@ -1253,19 +1105,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     } catch (e) {
       print('Error checking if company is Mag 7: $e');
       return false;
-    }
-  }
-
-  Future<SubscriptionType> _getCurrentUserSubscription() async {
-    final user = AuthService().currentUser;
-    if (user == null) return SubscriptionType.free;
-
-    try {
-      final userData = await FirestoreService().getUserProfile();
-      return SubscriptionType.fromString(userData?['subscription'] ?? 'free');
-    } catch (e) {
-      print('Error getting user subscription: $e');
-      return SubscriptionType.free;
     }
   }
 }
