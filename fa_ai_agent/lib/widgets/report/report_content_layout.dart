@@ -3,6 +3,7 @@ import 'package:fa_ai_agent/models/section.dart';
 import 'package:fa_ai_agent/models/subscription_type.dart';
 import 'package:fa_ai_agent/services/section_visibility_manager.dart';
 import 'package:fa_ai_agent/widgets/animations/thinking_animation.dart';
+import 'package:rxdart/rxdart.dart';
 
 class ReportContentLayout extends StatelessWidget {
   final List<Section> sections;
@@ -12,7 +13,9 @@ class ReportContentLayout extends StatelessWidget {
   final bool isNarrow;
   final Widget Function(Section) buildSection;
   final Widget Function(String) headerView;
-  final Widget Function(bool) getMetricsTable;
+  final Map<String, Widget> sectionCache;
+  final String tickerCode;
+  final String language;
 
   const ReportContentLayout({
     Key? key,
@@ -23,7 +26,9 @@ class ReportContentLayout extends StatelessWidget {
     required this.isNarrow,
     required this.buildSection,
     required this.headerView,
-    required this.getMetricsTable,
+    required this.sectionCache,
+    required this.tickerCode,
+    required this.language,
   }) : super(key: key);
 
   @override
@@ -173,6 +178,13 @@ class ReportContentLayout extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+
+  Widget getMetricsTable(bool isNarrow) {
+    return SizedBox(
+      width: isNarrow ? double.infinity : 280,
+      child: sectionCache['financialMetrics'] ?? const SizedBox.shrink(),
     );
   }
 }

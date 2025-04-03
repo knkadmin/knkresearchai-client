@@ -444,20 +444,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     );
   }
 
-  Widget getMetricsTable(bool isNarrow) {
-    final cachedMetricsTable = _sectionCache['financialMetrics'];
-    if (cachedMetricsTable == null) {
-      _sectionCache['financialMetrics'] = _reportWidgets.getFinancialMetrics(
-        widget.tickerCode,
-        widget.language.value,
-      );
-    }
-    return SizedBox(
-      width: isNarrow ? double.infinity : 280,
-      child: _sectionCache['financialMetrics'] ?? const SizedBox.shrink(),
-    );
-  }
-
   void _scrollToSection(String sectionTitle) {
     final key = _sectionKeys[sectionTitle];
     if (key?.currentContext != null) {
@@ -561,6 +547,14 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
   Widget _buildMainContent(List<Section> sections, bool isAuthenticated,
       bool isMag7Company, SubscriptionType? userSubscriptionType) {
+    // Create the metrics table if it doesn't exist in the cache
+    if (!_sectionCache.containsKey('financialMetrics')) {
+      _sectionCache['financialMetrics'] = _reportWidgets.getFinancialMetrics(
+        widget.tickerCode,
+        widget.language.value,
+      );
+    }
+
     return SingleChildScrollView(
       controller: _scrollController,
       child: Center(
@@ -582,7 +576,9 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                   sectorSubject: widget.sectorSubject,
                   language: widget.language,
                 ),
-                getMetricsTable: getMetricsTable,
+                sectionCache: _sectionCache,
+                tickerCode: widget.tickerCode,
+                language: widget.language.value,
               );
             },
           ),
