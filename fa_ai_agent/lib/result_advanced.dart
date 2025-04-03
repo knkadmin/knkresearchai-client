@@ -1144,9 +1144,10 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                         Material(
                           color: Colors.transparent,
                           child: Container(
+                            width: 280,
                             height: MediaQuery.of(context).size.height,
                             padding: const EdgeInsets.only(right: 24),
-                            child: _buildNavigationList(sections),
+                            child: _buildNavigationListContent(sections),
                           ),
                         ),
                         const Expanded(child: SizedBox()),
