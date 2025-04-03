@@ -334,6 +334,11 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
         final isMag7Company = snapshot.data ?? false;
 
+        // If it's a Mag 7 company, show all sections without restrictions
+        if (isMag7Company) {
+          return sectionContent;
+        }
+
         return StreamBuilder<bool>(
           stream: SectionVisibilityManager.streamSectionVisibility(
             section.title,
@@ -348,16 +353,29 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             return ValueListenableBuilder<SubscriptionType?>(
               valueListenable: _subscriptionTypeNotifier,
               builder: (context, subscriptionType, child) {
-                if (subscriptionType == null) {
+                // Only check subscription type for authenticated users
+                if (isAuthenticated && subscriptionType == null) {
                   return const SizedBox.shrink();
                 }
 
-                if (!isMag7Company &&
-                    (!isAuthenticated ||
-                        subscriptionType == SubscriptionType.free)) {
-                  // For Price Target and Financial Performance, show blur cover with action button
-                  if (section.title == 'Price Target' ||
-                      section.title == 'Financial Performance') {
+                // For non-authenticated users, show all sections except premium ones
+                if (!isAuthenticated) {
+                  // Premium sections that require authentication
+                  final premiumSections = [
+                    'Price Target',
+                    'Financial Performance',
+                    'Accounting Red Flags',
+                    'Cash Flow',
+                    'Competitive Landscape',
+                    'Supply Chain',
+                    'Strategic Outlook',
+                    'Insider Trading',
+                    'Shareholders',
+                    'Technical Analysis',
+                  ];
+
+                  // If it's a premium section, show blur overlay
+                  if (premiumSections.contains(section.title)) {
                     return Stack(
                       children: [
                         sectionContent,
@@ -365,20 +383,56 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                           title: section.title,
                           isAuthenticated: isAuthenticated,
                           onActionPressed: () {
-                            if (isAuthenticated) {
-                              context.push('/pricing');
-                            } else {
-                              _cacheManager.pendingWatchlistAddition = true;
-                              context.go('/signup');
-                            }
+                            _cacheManager.pendingWatchlistAddition = true;
+                            context.go('/signup');
                           },
                         ),
                       ],
                     );
                   }
+
+                  // For non-premium sections, show content
                   return sectionContent;
                 }
 
+                // For authenticated users with free subscription
+                if (subscriptionType == SubscriptionType.free &&
+                    !isMag7Company) {
+                  // Premium sections that require paid subscription
+                  final premiumSections = [
+                    'Price Target',
+                    'Financial Performance',
+                    'Accounting Red Flags',
+                    'Cash Flow',
+                    'Competitive Landscape',
+                    'Supply Chain',
+                    'Strategic Outlook',
+                    'Insider Trading',
+                    'Shareholders',
+                    'Technical Analysis',
+                  ];
+
+                  // If it's a premium section, show blur overlay
+                  if (premiumSections.contains(section.title)) {
+                    return Stack(
+                      children: [
+                        sectionContent,
+                        BlurOverlay(
+                          title: section.title,
+                          isAuthenticated: isAuthenticated,
+                          onActionPressed: () {
+                            context.push('/pricing');
+                          },
+                        ),
+                      ],
+                    );
+                  }
+
+                  // For non-premium sections, show content
+                  return sectionContent;
+                }
+
+                // For authenticated users with paid subscription or Mag7 companies
                 return sectionContent;
               },
             );
@@ -524,6 +578,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                               userSubscriptionType ?? SubscriptionType.free;
 
                           // Determine if metrics table should be shown
+                          // Show metrics for Mag7 companies or for authenticated users with paid subscription
                           final shouldShowMetrics = isMag7Company ||
                               (isAuthenticated &&
                                   subscriptionType != SubscriptionType.free);
