@@ -1,35 +1,175 @@
 import 'package:fa_ai_agent/agent_service.dart';
 import 'package:fa_ai_agent/main.dart';
-import 'package:fa_ai_agent/widgets/dynamic_app_bar_title.dart';
 import 'package:fa_ai_agent/models/section.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:fa_ai_agent/constants/company_data.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
-import 'dart:ui';
 import 'package:intl/intl.dart';
 import 'package:rxdart/subjects.dart';
-import 'package:go_router/go_router.dart';
-import 'package:fa_ai_agent/widgets/report_builder.dart';
-import 'package:fa_ai_agent/widgets/chart_builder.dart';
 import 'package:fa_ai_agent/widgets/thinking_animation.dart';
-import 'package:fa_ai_agent/widgets/tick_animation.dart';
-import 'package:fa_ai_agent/widgets/trading_view_chart.dart';
-import 'package:fa_ai_agent/widgets/alert_report_builder.dart';
-import 'package:fa_ai_agent/widgets/marquee_text.dart';
-import 'package:fa_ai_agent/widgets/blur_overlay.dart';
+import 'package:fa_ai_agent/widgets/report_widgets.dart';
 import 'services/watchlist_service.dart';
 import 'services/section_visibility_manager.dart';
+import 'services/premium_section_manager.dart';
 import 'auth_service.dart';
-import 'services/firestore_service.dart';
 import 'models/subscription_type.dart';
 import 'services/public_user_last_viewed_report_tracker.dart';
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:fa_ai_agent/widgets/navigation_list_content.dart';
 import 'services/subscription_service.dart';
+
+/// Configuration for a section
+class SectionConfig {
+  final String title;
+  final String cacheKey;
+  final IconData icon;
+  final Widget Function(String, String) builder;
+
+  const SectionConfig({
+    required this.title,
+    required this.cacheKey,
+    required this.icon,
+    required this.builder,
+  });
+}
+
+/// Constants and utilities for section management
+class SectionConstants {
+  static List<SectionConfig> createSectionConfigs(
+          ReportWidgets reportWidgets) =>
+      [
+        SectionConfig(
+          title: 'Price Target',
+          cacheKey: 'stock-price-target',
+          icon: Icons.trending_up,
+          builder: reportWidgets.getStockPriceTarget,
+        ),
+        SectionConfig(
+          title: 'Company Overview',
+          cacheKey: 'business-overview',
+          icon: Icons.business,
+          builder: reportWidgets.getBusinessOverview,
+        ),
+        SectionConfig(
+          title: 'EPS vs Stock Price',
+          cacheKey: 'eps-vs-stock-price-chart',
+          icon: Icons.compare_arrows,
+          builder: reportWidgets.getEPSvsStockPriceChart,
+        ),
+        SectionConfig(
+          title: 'Financial Performance',
+          cacheKey: 'combined-charts',
+          icon: Icons.assessment,
+          builder: reportWidgets.getCombinedCharts,
+        ),
+        SectionConfig(
+          title: 'Accounting Red Flags',
+          cacheKey: 'accounting-redflags',
+          icon: Icons.warning_amber_rounded,
+          builder: reportWidgets.getAccountingRedFlags,
+        ),
+        SectionConfig(
+          title: 'Cash Flow',
+          cacheKey: 'cash-flow-chart',
+          icon: Icons.account_balance,
+          builder: reportWidgets.getCashFlowChart,
+        ),
+        SectionConfig(
+          title: 'Recent News',
+          cacheKey: 'recent-news',
+          icon: Icons.newspaper,
+          builder: reportWidgets.getRecentNews,
+        ),
+        SectionConfig(
+          title: 'Competitive Landscape',
+          cacheKey: 'competitor-landscape',
+          icon: Icons.people,
+          builder: reportWidgets.getCompetitorLandscape,
+        ),
+        SectionConfig(
+          title: 'Sector Stocks',
+          cacheKey: 'sector-stocks',
+          icon: Icons.category_outlined,
+          builder: reportWidgets.getSectorStocksChart,
+        ),
+        SectionConfig(
+          title: 'Sector Comparison',
+          cacheKey: 'sector-comparison',
+          icon: Icons.compare_arrows,
+          builder: reportWidgets.getSectorComparison,
+        ),
+        SectionConfig(
+          title: 'PE/PB Ratio',
+          cacheKey: 'pe-pb-ratio-band',
+          icon: Icons.analytics,
+          builder: reportWidgets.getPEPBRatioBandChart,
+        ),
+        SectionConfig(
+          title: 'Supply Chain',
+          cacheKey: 'supply-chain',
+          icon: Icons.linear_scale,
+          builder: reportWidgets.getSupplyChain,
+        ),
+        SectionConfig(
+          title: 'Industrial Relations',
+          cacheKey: 'industrial-relationship',
+          icon: Icons.handshake,
+          builder: reportWidgets.getIndustrialRelationship,
+        ),
+        SectionConfig(
+          title: 'Strategic Outlook',
+          cacheKey: 'strategic-outlooks',
+          icon: Icons.visibility,
+          builder: reportWidgets.getStrategicOutlooks,
+        ),
+        SectionConfig(
+          title: 'Insider Trading',
+          cacheKey: 'insider-trading',
+          icon: Icons.swap_horiz,
+          builder: reportWidgets.getInsiderTrading,
+        ),
+        SectionConfig(
+          title: 'Shareholders',
+          cacheKey: 'shareholder-chart',
+          icon: Icons.pie_chart,
+          builder: reportWidgets.getShareholderChart,
+        ),
+        SectionConfig(
+          title: 'Technical Analysis',
+          cacheKey: 'candle-stick-chart',
+          icon: Icons.candlestick_chart,
+          builder: reportWidgets.getCandleStickChart,
+        ),
+      ];
+
+  static List<String> get allSectionNames => createSectionConfigs(ReportWidgets(
+        service: AgentService(),
+        imageCache: {},
+        encodedImageCache: {},
+        sectionCache: {},
+        futureCache: {},
+        cacheTimeSubject: BehaviorSubject(),
+        forceRefresh: false,
+      )).map((config) => config.title).toList();
+
+  static List<String> get premiumSectionNames => allSectionNames
+      .where((section) => section != 'Company Overview')
+      .toList();
+
+  static Map<String, String> get sectionToCacheKey => {
+        for (var config in createSectionConfigs(ReportWidgets(
+          service: AgentService(),
+          imageCache: {},
+          encodedImageCache: {},
+          sectionCache: {},
+          futureCache: {},
+          cacheTimeSubject: BehaviorSubject(),
+          forceRefresh: false,
+        )))
+          config.title: config.cacheKey
+      };
+}
 
 class ResultAdvancedPage extends StatefulWidget {
   final String tickerCode;
@@ -67,6 +207,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   final ValueNotifier<bool> _showCompanyNameInTitle =
       ValueNotifier<bool>(false);
   final ValueNotifier<double> _navigationTop = ValueNotifier<double>(200);
+  final ValueNotifier<bool> _isRefreshing = ValueNotifier<bool>(false);
   Map<String, GlobalKey> _sectionKeys = {};
   final Map<String, ValueNotifier<bool>> _tickAnimationStates = {};
   final WatchlistService _watchlistService = WatchlistService();
@@ -78,131 +219,19 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   final ValueNotifier<SubscriptionType?> _subscriptionTypeNotifier =
       ValueNotifier<SubscriptionType?>(null);
 
-  // Add mapping between section titles and their cache keys
-  final Map<String, String> _sectionToCacheKey = {
-    'Price Target': 'stock-price-target',
-    'Company Overview': 'business-overview',
-    'EPS vs Stock Price': 'eps-vs-stock-price-chart',
-    'Financial Performance': 'combined-charts',
-    'Accounting Red Flags': 'accounting-redflags',
-    'Cash Flow': 'cash-flow-chart',
-    'Recent News': 'recent-news',
-    'Competitive Landscape': 'competitor-landscape',
-    'Sector Stocks': 'sector-stocks',
-    'Sector Comparison': 'sector-comparison',
-    'PE/PB Ratio': 'pe-pb-ratio-band',
-    'Supply Chain': 'supply-chain',
-    'Industrial Relations': 'industrial-relationship',
-    'Strategic Outlook': 'strategic-outlooks',
-    'Insider Trading': 'insider-trading',
-    'Shareholders': 'shareholder-chart',
-    'Technical Analysis': 'candle-stick-chart',
-  };
+  final PremiumSectionManager _premiumSectionManager = PremiumSectionManager();
 
-  late final List<Section> sections = [
-    Section(
-      title: 'Price Target',
-      icon: Icons.trending_up,
-      buildContent: () =>
-          getStockPriceTarget(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Company Overview',
-      icon: Icons.business,
-      buildContent: () =>
-          getBusinessOverview(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'EPS vs Stock Price',
-      icon: Icons.compare_arrows,
-      buildContent: () =>
-          getEPSvsStockPriceChart(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Financial Performance',
-      icon: Icons.assessment,
-      buildContent: () =>
-          getCombinedCharts(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Accounting Red Flags',
-      icon: Icons.warning_amber_rounded,
-      buildContent: () =>
-          getAccountingRedFlags(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Cash Flow',
-      icon: Icons.account_balance,
-      buildContent: () =>
-          getCashFlowChart(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Recent News',
-      icon: Icons.newspaper,
-      buildContent: () =>
-          getRecentNews(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Competitive Landscape',
-      icon: Icons.people,
-      buildContent: () =>
-          getCompetitorLandscape(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Sector Stocks',
-      icon: Icons.category_outlined,
-      buildContent: () =>
-          getSectorStocksChart(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Sector Comparison',
-      icon: Icons.compare_arrows,
-      buildContent: () =>
-          getSectorComparison(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'PE/PB Ratio',
-      icon: Icons.analytics,
-      buildContent: () =>
-          getPEPBRatioBandChart(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Supply Chain',
-      icon: Icons.linear_scale,
-      buildContent: () =>
-          getSupplyChain(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Industrial Relations',
-      icon: Icons.handshake,
-      buildContent: () =>
-          getIndustrialRelationship(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Strategic Outlook',
-      icon: Icons.visibility,
-      buildContent: () =>
-          getStrategicOutlooks(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Insider Trading',
-      icon: Icons.swap_horiz,
-      buildContent: () =>
-          getInsiderTrading(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Shareholders',
-      icon: Icons.pie_chart,
-      buildContent: () =>
-          getShareholderChart(widget.tickerCode, widget.language.value),
-    ),
-    Section(
-      title: 'Technical Analysis',
-      icon: Icons.candlestick_chart,
-      buildContent: () =>
-          getCandleStickChart(widget.tickerCode, widget.language.value),
-    ),
-  ];
+  ReportWidgets _reportWidgets = ReportWidgets(
+    service: AgentService(),
+    imageCache: {},
+    encodedImageCache: {},
+    sectionCache: {},
+    futureCache: {},
+    cacheTimeSubject: BehaviorSubject(),
+    forceRefresh: false,
+  );
+
+  late List<Section> sections;
 
   @override
   void initState() {
@@ -211,6 +240,18 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     analytics.logEvent(
         name: 'view_reports', parameters: {'ticker': widget.tickerCode});
     _scrollController.addListener(_onScroll);
+
+    // Initialize sections
+    sections =
+        SectionConstants.createSectionConfigs(_reportWidgets).map((config) {
+      return Section(
+        title: config.title,
+        icon: config.icon,
+        buildContent: () =>
+            config.builder(widget.tickerCode, widget.language.value),
+      );
+    }).toList();
+
     // Initialize section keys from sections list with unique keys
     _sectionKeys = {
       for (var section in sections)
@@ -240,6 +281,17 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
         }
       });
     }
+
+    // Initialize the report widgets
+    _reportWidgets = ReportWidgets(
+      service: widget.service,
+      imageCache: _imageCache,
+      encodedImageCache: _encodedImageCache,
+      sectionCache: _sectionCache,
+      futureCache: _futureCache,
+      cacheTimeSubject: widget.cacheTimeSubject,
+      forceRefresh: forceRefresh,
+    );
   }
 
   @override
@@ -358,81 +410,26 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                   return const SizedBox.shrink();
                 }
 
-                // For non-authenticated users, show all sections except premium ones
-                if (!isAuthenticated) {
-                  // Premium sections that require authentication
-                  final premiumSections = [
-                    'Price Target',
-                    'Financial Performance',
-                    'Accounting Red Flags',
-                    'Cash Flow',
-                    'Competitive Landscape',
-                    'Supply Chain',
-                    'Strategic Outlook',
-                    'Insider Trading',
-                    'Shareholders',
-                    'Technical Analysis',
-                  ];
+                // Check if we should show blur overlay
+                final shouldShowBlur =
+                    _premiumSectionManager.shouldShowBlurOverlay(
+                  sectionTitle: section.title,
+                  isAuthenticated: isAuthenticated,
+                  isMag7Company: isMag7Company,
+                  subscriptionType: subscriptionType,
+                );
 
-                  // If it's a premium section, show blur overlay
-                  if (premiumSections.contains(section.title)) {
-                    return Stack(
-                      children: [
-                        sectionContent,
-                        BlurOverlay(
-                          title: section.title,
-                          isAuthenticated: isAuthenticated,
-                          onActionPressed: () {
-                            _cacheManager.pendingWatchlistAddition = true;
-                            context.go('/signup');
-                          },
-                        ),
-                      ],
-                    );
-                  }
-
-                  // For non-premium sections, show content
-                  return sectionContent;
+                if (shouldShowBlur) {
+                  return _premiumSectionManager.buildSectionWithBlurOverlay(
+                    sectionContent: sectionContent,
+                    sectionTitle: section.title,
+                    isAuthenticated: isAuthenticated,
+                    context: context,
+                    cacheManager: _cacheManager,
+                  );
                 }
 
-                // For authenticated users with free subscription
-                if (subscriptionType == SubscriptionType.free &&
-                    !isMag7Company) {
-                  // Premium sections that require paid subscription
-                  final premiumSections = [
-                    'Price Target',
-                    'Financial Performance',
-                    'Accounting Red Flags',
-                    'Cash Flow',
-                    'Competitive Landscape',
-                    'Supply Chain',
-                    'Strategic Outlook',
-                    'Insider Trading',
-                    'Shareholders',
-                    'Technical Analysis',
-                  ];
-
-                  // If it's a premium section, show blur overlay
-                  if (premiumSections.contains(section.title)) {
-                    return Stack(
-                      children: [
-                        sectionContent,
-                        BlurOverlay(
-                          title: section.title,
-                          isAuthenticated: isAuthenticated,
-                          onActionPressed: () {
-                            context.push('/pricing');
-                          },
-                        ),
-                      ],
-                    );
-                  }
-
-                  // For non-premium sections, show content
-                  return sectionContent;
-                }
-
-                // For authenticated users with paid subscription or Mag7 companies
+                // For non-premium sections or users with access, show content
                 return sectionContent;
               },
             );
@@ -445,7 +442,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   Widget getMetricsTable(bool isNarrow) {
     final cachedMetricsTable = _sectionCache['financialMetrics'];
     if (cachedMetricsTable == null) {
-      _sectionCache['financialMetrics'] = getFinancialMetrics(
+      _sectionCache['financialMetrics'] = _reportWidgets.getFinancialMetrics(
         widget.tickerCode,
         widget.language.value,
       );
@@ -469,6 +466,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
   void _handleRefresh() async {
     setState(() {
+      _isRefreshing.value = true;
       _sectionLoadingStates.clear();
       for (var notifier in _tickAnimationStates.values) {
         notifier.dispose();
@@ -479,7 +477,38 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       _encodedImageCache.clear(); // Clear encoded image cache
       _sectionCache.clear(); // Clear section cache
       forceRefresh = true; // Set force refresh flag
+
+      // Reinitialize the report widgets with the updated forceRefresh value
+      _reportWidgets = ReportWidgets(
+        service: widget.service,
+        imageCache: _imageCache,
+        encodedImageCache: _encodedImageCache,
+        sectionCache: _sectionCache,
+        futureCache: _futureCache,
+        cacheTimeSubject: widget.cacheTimeSubject,
+        forceRefresh: forceRefresh,
+      );
+
+      // Recreate sections with the new report widgets
+      sections =
+          SectionConstants.createSectionConfigs(_reportWidgets).map((config) {
+        return Section(
+          title: config.title,
+          icon: config.icon,
+          buildContent: () =>
+              config.builder(widget.tickerCode, widget.language.value),
+        );
+      }).toList();
     });
+
+    // Wait for all sections to finish loading
+    await Future.delayed(const Duration(milliseconds: 100));
+    while (widget.service.loadingStateSubject.value.values
+        .any((isLoading) => isLoading)) {
+      await Future.delayed(const Duration(milliseconds: 100));
+    }
+
+    _isRefreshing.value = false;
   }
 
   Widget _buildNavigationListContent(List<Section> sections) {
@@ -491,7 +520,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       showCompanyNameInTitle: _showCompanyNameInTitle,
       sectionLoadingStates: _sectionLoadingStates,
       tickAnimationStates: _tickAnimationStates,
-      sectionToCacheKey: _sectionToCacheKey,
+      sectionToCacheKey: SectionConstants.sectionToCacheKey,
       cacheTimeStream: widget.cacheTimeSubject.stream,
       onSectionTap: _scrollToSection,
       onRefresh: _handleRefresh,
@@ -523,6 +552,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       isHovered: _isHovered,
       loadingStateStream: widget.service.loadingStateSubject.stream,
       watchlistService: _watchlistService,
+      isRefreshing: _isRefreshing,
     );
   }
 
@@ -892,264 +922,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             ),
           );
         });
-  }
-
-  Widget getBusinessOverview(String ticker, String language) {
-    return getReport(
-        _getCachedFuture(
-            'businessOverview',
-            () => widget.service
-                .getBusinessOverview(ticker, language, forceRefresh)),
-        "Company Overview",
-        "businessOverview");
-  }
-
-  Widget getEPSvsStockPriceChart(String ticker, String language) {
-    return getChart(
-        _getCachedFuture(
-            'epsVsStockPriceChart',
-            () => widget.service
-                .getEPSvsStockPriceChart(ticker, language, forceRefresh)),
-        'epsVsStockPriceChart',
-        title: 'EPS vs Stock Price');
-  }
-
-  Widget getFinancialMetrics(String ticker, String language) {
-    return getReport(
-        _getCachedFuture(
-            'financialMetrics',
-            () => widget.service
-                .getFinancialMetrics(ticker, language, forceRefresh)),
-        "Financial Metrics",
-        "financialMetrics",
-        showTitle: false);
-  }
-
-  Widget getReport(
-      Future<Map<String, dynamic>> future, String title, String key,
-      {bool showTitle = true}) {
-    return ReportBuilder(
-      future: future,
-      title: title,
-      reportKey: key,
-      showTitle: showTitle,
-      onCacheTimeUpdate: (DateTime cacheTime) {
-        widget.cacheTimeSubject.add(cacheTime);
-      },
-    );
-  }
-
-  Widget getFinancialPerformance(String ticker, String language) {
-    return getReport(
-        _getCachedFuture(
-            'financialPerformance',
-            () => widget.service
-                .getFinancialPerformance(ticker, language, forceRefresh)),
-        "Financial Performance",
-        "financialReport");
-  }
-
-  Widget getCompetitorLandscape(String ticker, String language) {
-    return getReport(
-        _getCachedFuture(
-            'competitorLandscape',
-            () => widget.service
-                .getCompetitorLandscape(ticker, language, forceRefresh)),
-        "Competitive Landscape",
-        "competitorReport");
-  }
-
-  Widget getSupplyChain(String ticker, String language) {
-    return getReport(
-        _getCachedFuture(
-            'supplyChain',
-            () =>
-                widget.service.getSupplyChain(ticker, language, forceRefresh)),
-        "Supply Chain Feedbacks",
-        "supplyChainReport");
-  }
-
-  Widget getStrategicOutlooks(String ticker, String language) {
-    return getReport(
-        _getCachedFuture(
-            'strategicOutlooks',
-            () => widget.service
-                .getStrategicOutlooks(ticker, language, forceRefresh)),
-        "Strategic Outlooks",
-        "strategicOutlooksReport");
-  }
-
-  Widget getRecentNews(String ticker, String language) {
-    return getReport(
-        _getCachedFuture('recentNews',
-            () => widget.service.getRecentNews(ticker, language, forceRefresh)),
-        "Recent News",
-        "recentNews");
-  }
-
-  Widget getStockPriceTarget(String ticker, String language) {
-    return getChart(
-        _getCachedFuture(
-            'stockPriceTarget',
-            () => widget.service
-                .getStockPriceTarget(ticker, language, forceRefresh)),
-        'stockPriceTarget',
-        title: 'Price Target',
-        showTitle: false);
-  }
-
-  Widget getInsiderTrading(String ticker, String language) {
-    return getChart(
-        _getCachedFuture(
-            'insiderTrading',
-            () => widget.service
-                .getInsiderTrading(ticker, language, forceRefresh)),
-        'insiderTrading',
-        title: 'Insider Trading');
-  }
-
-  Widget getPEPBRatioBandChart(String ticker, String language) {
-    return getChart(
-        _getCachedFuture(
-            'pbRatioBand',
-            () => widget.service
-                .getPEPBRatioBand(ticker, language, forceRefresh)),
-        'pbRatioBand',
-        title: 'PE/PB Ratio');
-  }
-
-  Widget getSectorStocksChart(String ticker, String language) {
-    return getChart(
-        _getCachedFuture(
-            'sectorStocks',
-            () =>
-                widget.service.getSectorStocks(ticker, language, forceRefresh)),
-        'sectorStocks',
-        title: 'Sector Stocks');
-  }
-
-  Widget getCandleStickChart(String ticker, String language) {
-    return getChart(
-        _getCachedFuture(
-            'candleStickChart',
-            () => widget.service
-                .getCandleStickChart(ticker, language, forceRefresh)),
-        'candleStickChart',
-        title: 'Technical Analysis');
-  }
-
-  Widget getCombinedCharts(String ticker, String language) {
-    return Column(
-      children: [
-        getChart(
-          _getCachedFuture(
-              'combinedCharts',
-              () => widget.service
-                  .getCombinedCharts(ticker, language, forceRefresh)),
-          'combinedCharts',
-          title: 'Financial Performance',
-        ),
-        const SizedBox(height: 24),
-        getReport(
-          _getCachedFuture(
-              'financialPerformance',
-              () => widget.service
-                  .getFinancialPerformance(ticker, language, forceRefresh)),
-          "Financial Performance",
-          "financialReport",
-          showTitle: false,
-        ),
-      ],
-    );
-  }
-
-  Widget getCashFlowChart(String ticker, String language) {
-    return getChart(
-        _getCachedFuture(
-            'cashFlowChart',
-            () => widget.service
-                .getCashFlowChart(ticker, language, forceRefresh)),
-        'cashFlowChart',
-        title: 'Cash Flow');
-  }
-
-  Widget getIndustrialRelationship(String ticker, String language) {
-    return getChart(
-        _getCachedFuture(
-            'industrialRelationship',
-            () => widget.service
-                .getIndustrialRelationship(ticker, language, forceRefresh)),
-        'industrialRelationship',
-        title: 'Industrial Relations');
-  }
-
-  Widget getSectorComparison(String ticker, String language) {
-    return getChart(
-        _getCachedFuture(
-            'sectorComparison',
-            () => widget.service
-                .getSectorComparison(ticker, language, forceRefresh)),
-        'sectorComparison',
-        title: 'Sector Comparison');
-  }
-
-  Widget getShareholderChart(String ticker, String language) {
-    return getChart(
-        _getCachedFuture(
-            'shareholderChart',
-            () => widget.service
-                .getShareholderChart(ticker, language, forceRefresh)),
-        'shareholderChart',
-        title: 'Shareholders');
-  }
-
-  Widget getChart(Future<Map<String, dynamic>> future, String key,
-      {required String title, bool showTitle = true}) {
-    return ChartBuilder(
-      future: future,
-      chartKey: key,
-      cachedImage: (!forceRefresh && _imageCache.containsKey(key))
-          ? _imageCache[key]
-          : null,
-      cachedEncodedImage: (!forceRefresh && _encodedImageCache.containsKey(key))
-          ? _encodedImageCache[key]
-          : null,
-      onImageCached: (Widget image, String encodedImage) {
-        _imageCache[key] = image;
-        _encodedImageCache[key] = encodedImage;
-      },
-      title: title,
-      showTitle: showTitle,
-    );
-  }
-
-  Future<Map<String, dynamic>> _getCachedFuture(
-      String key, Future<Map<String, dynamic>> Function() createFuture) {
-    if (!_futureCache.containsKey(key)) {
-      _futureCache[key] = createFuture();
-    }
-    return _futureCache[key]!;
-  }
-
-  Widget getTradingViewChart(String ticker, String companyName) {
-    return TradingViewChart(
-      tickerSymbol: ticker,
-      companyName: companyName,
-    );
-  }
-
-  Widget getAccountingRedFlags(String ticker, String language) {
-    return AlertReportBuilder(
-      future: _getCachedFuture(
-          'accountingRedFlags',
-          () => widget.service
-              .getAccountingRedFlags(ticker, language, forceRefresh)),
-      title: "Accounting Red Flags",
-      reportKey: "accountingRedflags",
-      onCacheTimeUpdate: (DateTime cacheTime) {
-        widget.cacheTimeSubject.add(cacheTime);
-      },
-    );
   }
 
   Future<bool> _checkIfMag7Company() async {

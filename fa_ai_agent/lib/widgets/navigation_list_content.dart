@@ -25,6 +25,7 @@ class NavigationListContent extends StatelessWidget {
   final bool isHovered;
   final Stream<Map<String, bool>> loadingStateStream;
   final WatchlistService watchlistService;
+  final ValueNotifier<bool> isRefreshing;
 
   const NavigationListContent({
     Key? key,
@@ -43,6 +44,7 @@ class NavigationListContent extends StatelessWidget {
     required this.isHovered,
     required this.loadingStateStream,
     required this.watchlistService,
+    required this.isRefreshing,
   }) : super(key: key);
 
   @override
@@ -495,48 +497,49 @@ class NavigationListContent extends StatelessWidget {
   }
 
   Widget _buildRefreshButton(BuildContext context, bool isHovered) {
-    return ElevatedButton.icon(
-      onPressed: onRefresh,
-      icon: Icon(
-        Icons.refresh,
-        size: 16,
-        color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
-      ),
-      label: Text(
-        'Refresh',
-        style: TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w500,
-          color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
-        ),
-      ),
-      style: isHovered
-          ? ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF1E3A8A),
-              foregroundColor: Colors.white,
-              elevation: 2,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: const BorderSide(
-                  color: Color(0xFF1E3A8A),
-                  width: 1,
+    return ValueListenableBuilder<bool>(
+      valueListenable: isRefreshing,
+      builder: (context, isRefreshing, child) {
+        return ElevatedButton.icon(
+          onPressed: isRefreshing ? null : onRefresh,
+          icon: isRefreshing
+              ? const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: ThinkingAnimation(
+                    size: 16,
+                    color: Color(0xFF1E3A8A),
+                  ),
+                )
+              : Icon(
+                  Icons.refresh,
+                  size: 16,
+                  color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
                 ),
-              ),
-            )
-          : ElevatedButton.styleFrom(
-              backgroundColor: Colors.white,
-              foregroundColor: const Color(0xFF1E3A8A),
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-                side: BorderSide(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.2),
-                  width: 1,
-                ),
+          label: Text(
+            isRefreshing ? 'Refreshing...' : 'Refresh',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: isHovered ? Colors.white : const Color(0xFF1E3A8A),
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: isHovered ? const Color(0xFF1E3A8A) : Colors.white,
+            elevation: 2,
+            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: BorderSide(
+                color: isHovered
+                    ? const Color(0xFF1E3A8A)
+                    : const Color(0xFF1E3A8A).withOpacity(0.2),
+                width: 1,
               ),
             ),
+          ),
+        );
+      },
     );
   }
 }

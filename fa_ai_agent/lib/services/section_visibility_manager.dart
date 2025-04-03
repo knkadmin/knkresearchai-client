@@ -7,12 +7,15 @@ import '../models/subscription_type.dart';
 import '../auth_service.dart';
 import '../services/firestore_service.dart';
 import 'package:rxdart/subjects.dart';
+import '../services/premium_section_manager.dart';
 
 class SectionVisibilityManager {
   static final List<String> freeSections = [
     'Company Overview',
-    'Financial Performance',
   ];
+
+  static final PremiumSectionManager _premiumSectionManager =
+      PremiumSectionManager();
 
   /// Helper method to check if a user has access to all sections
   static Future<bool> _hasFullAccess(String? userId, bool isMag7Company) async {
@@ -41,10 +44,11 @@ class SectionVisibilityManager {
       return sections;
     }
 
-    // For both non-authenticated and free users, show only free sections
-    return sections
-        .where((section) => freeSections.contains(section.title))
-        .toList();
+    // For both non-authenticated and free users, show free sections and preview sections
+    return sections.where((section) {
+      if (freeSections.contains(section.title)) return true;
+      return _premiumSectionManager.isPreviewSection(section.title);
+    }).toList();
   }
 
   static Future<bool> isSectionVisible(
@@ -59,8 +63,9 @@ class SectionVisibilityManager {
       return true;
     }
 
-    // For both non-authenticated and free users, check if section is free
-    return freeSections.contains(sectionTitle);
+    // For both non-authenticated and free users, check if section is free or preview
+    return freeSections.contains(sectionTitle) ||
+        _premiumSectionManager.isPreviewSection(sectionTitle);
   }
 
   // Stream section visibility changes
@@ -74,7 +79,8 @@ class SectionVisibilityManager {
 
     final user = AuthService().currentUser;
     if (user == null) {
-      return Stream.value(freeSections.contains(sectionTitle));
+      return Stream.value(freeSections.contains(sectionTitle) ||
+          _premiumSectionManager.isPreviewSection(sectionTitle));
     }
 
     final firestoreService = FirestoreService();
@@ -83,7 +89,8 @@ class SectionVisibilityManager {
           SubscriptionType.fromString(userData?['subscription']);
       if (subscriptionType.isPaid) return true;
 
-      return freeSections.contains(sectionTitle);
+      return freeSections.contains(sectionTitle) ||
+          _premiumSectionManager.isPreviewSection(sectionTitle);
     });
   }
 
