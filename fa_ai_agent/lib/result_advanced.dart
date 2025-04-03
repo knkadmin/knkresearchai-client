@@ -12,6 +12,7 @@ import 'package:fa_ai_agent/widgets/report_widgets.dart';
 import 'services/watchlist_service.dart';
 import 'services/section_visibility_manager.dart';
 import 'services/premium_section_manager.dart';
+import 'services/company_service.dart';
 import 'auth_service.dart';
 import 'models/subscription_type.dart';
 import 'services/public_user_last_viewed_report_tracker.dart';
@@ -212,6 +213,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   final Map<String, ValueNotifier<bool>> _tickAnimationStates = {};
   final WatchlistService _watchlistService = WatchlistService();
   final SubscriptionService _subscriptionService = SubscriptionService();
+  final CompanyService _companyService = CompanyService();
   bool _isHovered = false;
   bool forceRefresh = false;
 
@@ -263,7 +265,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     widget.sectorSubject.add(widget.sector);
 
     // Initialize the Mag 7 company check future
-    _isMag7CompanyFuture = _checkIfMag7Company();
+    _isMag7CompanyFuture = _companyService.isMag7Company(widget.tickerCode);
 
     // Save last viewed report for non-authenticated users
     if (AuthService().currentUser == null) {
@@ -586,201 +588,225 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          SingleChildScrollView(
-            controller: _scrollController,
-            child: Center(
-              child: Container(
-                constraints:
-                    const BoxConstraints(maxWidth: LayoutConstants.maxWidth),
-                child: LayoutBuilder(
-                  builder: (BuildContext context, BoxConstraints constraints) {
-                    final bool isNarrow = constraints.maxWidth < 1000;
-                    return Padding(
-                      padding: EdgeInsets.only(
-                        left: isNarrow ? 24.0 : 264.0,
-                        right: 24.0,
-                      ),
-                      child: LayoutBuilder(
-                        builder:
-                            (BuildContext context, BoxConstraints constraints) {
-                          // Use cached user data instead of stream
-                          final subscriptionType =
-                              userSubscriptionType ?? SubscriptionType.free;
-
-                          // Determine if metrics table should be shown
-                          // Show metrics for Mag7 companies or for authenticated users with paid subscription
-                          final shouldShowMetrics = isMag7Company ||
-                              (isAuthenticated &&
-                                  subscriptionType != SubscriptionType.free);
-
-                          print('Metrics visibility check:');
-                          print('isMag7Company: $isMag7Company');
-                          print('isAuthenticated: $isAuthenticated');
-                          print('subscriptionType: $subscriptionType');
-                          print('shouldShowMetrics: $shouldShowMetrics');
-
-                          return FutureBuilder<List<Section>>(
-                            future: SectionVisibilityManager.filterSections(
-                              sections,
-                              isAuthenticated,
-                              isMag7Company,
-                            ),
-                            builder: (context, sectionsSnapshot) {
-                              if (sectionsSnapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return const Center(child: ThinkingAnimation());
-                              }
-
-                              final filteredSections =
-                                  sectionsSnapshot.data ?? [];
-                              final contentSections = filteredSections
-                                  .map((section) => _buildSection(section))
-                                  .where((widget) =>
-                                      widget is! SizedBox ||
-                                      (widget as SizedBox).width != 0)
-                                  .toList();
-
-                              // Find the index of Accounting Red Flags section
-                              final accountingRedFlagsIndex =
-                                  filteredSections.indexWhere(
-                                      (s) => s.title == 'Accounting Red Flags');
-
-                              return Column(
-                                children: [
-                                  headerView(widget.companyName),
-                                  const SizedBox(height: 24),
-                                  Container(
-                                    color: Colors.white,
-                                    child: isNarrow
-                                        ? Padding(
-                                            padding: const EdgeInsets.all(32),
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                if (shouldShowMetrics) ...[
-                                                  getMetricsTable(isNarrow),
-                                                  const SizedBox(height: 48),
-                                                ],
-                                                ...contentSections,
-                                              ],
-                                            ),
-                                          )
-                                        : Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              if (contentSections.isNotEmpty)
-                                                contentSections[0],
-                                              const SizedBox(height: 8),
-                                              Padding(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                        horizontal: 32),
-                                                child: Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    Expanded(
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          if (contentSections
-                                                                  .length >
-                                                              1)
-                                                            contentSections[1],
-                                                          const SizedBox(
-                                                              height: 48),
-                                                          if (contentSections
-                                                                  .length >
-                                                              2)
-                                                            contentSections[2],
-                                                          const SizedBox(
-                                                              height: 48),
-                                                          if (contentSections
-                                                                  .length >
-                                                              3)
-                                                            contentSections[3],
-                                                          const SizedBox(
-                                                              height: 48),
-                                                          // First four sections are in the left column
-                                                          if (accountingRedFlagsIndex >
-                                                              4)
-                                                            ...contentSections
-                                                                .skip(4)
-                                                                .take(
-                                                                    accountingRedFlagsIndex -
-                                                                        4),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                    if (shouldShowMetrics) ...[
-                                                      const SizedBox(width: 24),
-                                                      SizedBox(
-                                                        width: 280,
-                                                        child: getMetricsTable(
-                                                            isNarrow),
-                                                      ),
-                                                    ],
-                                                  ],
-                                                ),
-                                              ),
-                                              // Sections from Accounting Red Flags onwards are full width
-                                              if (accountingRedFlagsIndex >= 0)
-                                                ...contentSections.skip(
-                                                    accountingRedFlagsIndex),
-                                            ],
-                                          ),
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            bottom: 0,
-            child: Center(
-              child: Container(
-                constraints:
-                    const BoxConstraints(maxWidth: LayoutConstants.maxWidth),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final bool isNarrow = constraints.maxWidth < 1000;
-                    if (isNarrow) return const SizedBox.shrink();
-
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Material(
-                          color: Colors.transparent,
-                          child: Container(
-                            width: 280,
-                            height: MediaQuery.of(context).size.height,
-                            padding: const EdgeInsets.only(right: 24),
-                            child: _buildNavigationListContent(sections),
-                          ),
-                        ),
-                        const Expanded(child: SizedBox()),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ),
-          ),
+          _buildMainContent(
+              sections, isAuthenticated, isMag7Company, userSubscriptionType),
+          _buildNavigationOverlay(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMainContent(List<Section> sections, bool isAuthenticated,
+      bool isMag7Company, SubscriptionType? userSubscriptionType) {
+    return SingleChildScrollView(
+      controller: _scrollController,
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: LayoutConstants.maxWidth),
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              final bool isNarrow = constraints.maxWidth < 1000;
+              return _buildContentLayout(
+                sections,
+                isAuthenticated,
+                isMag7Company,
+                userSubscriptionType,
+                isNarrow,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildContentLayout(
+    List<Section> sections,
+    bool isAuthenticated,
+    bool isMag7Company,
+    SubscriptionType? userSubscriptionType,
+    bool isNarrow,
+  ) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: isNarrow ? 24.0 : 264.0,
+        right: 24.0,
+      ),
+      child: LayoutBuilder(
+        builder: (BuildContext context, BoxConstraints constraints) {
+          final subscriptionType =
+              userSubscriptionType ?? SubscriptionType.free;
+          final shouldShowMetrics = isMag7Company ||
+              (isAuthenticated && subscriptionType != SubscriptionType.free);
+
+          return FutureBuilder<List<Section>>(
+            future: SectionVisibilityManager.filterSections(
+              sections,
+              isAuthenticated,
+              isMag7Company,
+            ),
+            builder: (context, sectionsSnapshot) {
+              if (sectionsSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: ThinkingAnimation());
+              }
+
+              final filteredSections = sectionsSnapshot.data ?? [];
+              final contentSections = _buildContentSections(filteredSections);
+              final accountingRedFlagsIndex = filteredSections
+                  .indexWhere((s) => s.title == 'Accounting Red Flags');
+
+              return Column(
+                children: [
+                  headerView(widget.companyName),
+                  const SizedBox(height: 24),
+                  _buildSectionsContainer(
+                    contentSections,
+                    accountingRedFlagsIndex,
+                    shouldShowMetrics,
+                    isNarrow,
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  List<Widget> _buildContentSections(List<Section> filteredSections) {
+    return filteredSections
+        .map((section) => _buildSection(section))
+        .where(
+            (widget) => widget is! SizedBox || (widget as SizedBox).width != 0)
+        .toList();
+  }
+
+  Widget _buildSectionsContainer(
+    List<Widget> contentSections,
+    int accountingRedFlagsIndex,
+    bool shouldShowMetrics,
+    bool isNarrow,
+  ) {
+    return Container(
+      color: Colors.white,
+      child: isNarrow
+          ? _buildNarrowLayout(contentSections, shouldShowMetrics)
+          : _buildWideLayout(
+              contentSections,
+              accountingRedFlagsIndex,
+              shouldShowMetrics,
+            ),
+    );
+  }
+
+  Widget _buildNarrowLayout(
+      List<Widget> contentSections, bool shouldShowMetrics) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (shouldShowMetrics) ...[
+            getMetricsTable(true),
+            const SizedBox(height: 48),
+          ],
+          ...contentSections,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWideLayout(
+    List<Widget> contentSections,
+    int accountingRedFlagsIndex,
+    bool shouldShowMetrics,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (contentSections.isNotEmpty) contentSections[0],
+        const SizedBox(height: 8),
+        _buildMainSections(
+          contentSections,
+          accountingRedFlagsIndex,
+          shouldShowMetrics,
+        ),
+        if (accountingRedFlagsIndex >= 0)
+          ...contentSections.skip(accountingRedFlagsIndex),
+      ],
+    );
+  }
+
+  Widget _buildMainSections(
+    List<Widget> contentSections,
+    int accountingRedFlagsIndex,
+    bool shouldShowMetrics,
+  ) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (contentSections.length > 1) contentSections[1],
+                const SizedBox(height: 48),
+                if (contentSections.length > 2) contentSections[2],
+                const SizedBox(height: 48),
+                if (contentSections.length > 3) contentSections[3],
+                const SizedBox(height: 48),
+                if (accountingRedFlagsIndex > 4)
+                  ...contentSections.skip(4).take(accountingRedFlagsIndex - 4),
+              ],
+            ),
+          ),
+          if (shouldShowMetrics) ...[
+            const SizedBox(width: 24),
+            SizedBox(
+              width: 280,
+              child: getMetricsTable(false),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavigationOverlay() {
+    return Positioned(
+      left: 0,
+      right: 0,
+      top: 0,
+      bottom: 0,
+      child: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: LayoutConstants.maxWidth),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final bool isNarrow = constraints.maxWidth < 1000;
+              if (isNarrow) return const SizedBox.shrink();
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Material(
+                    color: Colors.transparent,
+                    child: Container(
+                      width: 280,
+                      height: MediaQuery.of(context).size.height,
+                      padding: const EdgeInsets.only(right: 24),
+                      child: _buildNavigationListContent(sections),
+                    ),
+                  ),
+                  const Expanded(child: SizedBox()),
+                ],
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -922,16 +948,5 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
             ),
           );
         });
-  }
-
-  Future<bool> _checkIfMag7Company() async {
-    try {
-      final companies = await CompanyData.getMega7Companies();
-      return companies
-          .any((company) => company.keys.first == widget.tickerCode);
-    } catch (e) {
-      print('Error checking if company is Mag 7: $e');
-      return false;
-    }
   }
 }
