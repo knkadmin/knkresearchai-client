@@ -501,6 +501,11 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
               config.builder(widget.tickerCode, widget.language.value),
         );
       }).toList();
+
+      // Reset the current section to the first one
+      if (sections.isNotEmpty) {
+        _currentSection.value = sections.first.title;
+      }
     });
 
     // Wait for all sections to finish loading
