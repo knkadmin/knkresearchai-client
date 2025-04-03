@@ -28,6 +28,7 @@ import 'models/subscription_type.dart';
 import 'services/public_user_last_viewed_report_tracker.dart';
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:fa_ai_agent/widgets/navigation_list_content.dart';
 
 class ResultAdvancedPage extends StatefulWidget {
   final String tickerCode;
@@ -542,396 +543,47 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     );
   }
 
-  Widget _buildNavigationList(List<Section> sections) {
-    final user = AuthService().currentUser;
-    final isAuthenticated = user != null;
-
-    return FutureBuilder<bool>(
-      future: _isMag7CompanyFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox.shrink();
-        }
-
-        final isMag7Company = snapshot.data ?? false;
-
-        return FutureBuilder<List<Section>>(
-          future: SectionVisibilityManager.filterSections(
-            sections,
-            isAuthenticated,
-            isMag7Company,
-          ),
-          builder: (context, sectionsSnapshot) {
-            if (sectionsSnapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox.shrink();
-            }
-
-            final visibleSections = sectionsSnapshot.data ?? [];
-            return _buildNavigationListContent(visibleSections);
-          },
-        );
-      },
-    );
-  }
-
   Widget _buildNavigationListContent(List<Section> sections) {
-    return Container(
-      width: 280,
-      decoration: BoxDecoration(
-        color: Colors.white,
-      ),
-      padding: const EdgeInsets.only(top: 16, bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ValueListenableBuilder<bool>(
-                  valueListenable: _showCompanyNameInTitle,
-                  builder: (context, showCompanyName, child) {
-                    return SizedBox(
-                      height: 120,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (AuthService().currentUser != null &&
-                              showCompanyName)
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Container(
-                                width: double.infinity,
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Colors.blue.shade900,
-                                      Colors.blue.shade800,
-                                    ],
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16),
-                                      child: MarqueeText(
-                                        text: widget.companyName,
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16),
-                                      child: StreamBuilder(
-                                        stream: widget.cacheTimeSubject.stream,
-                                        builder: (context, snapshot) {
-                                          if (snapshot.hasData) {
-                                            return Text(
-                                              'Report Generated: ${DateFormat('dd MMM yyyy').format(snapshot.data)}',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.white
-                                                    .withOpacity(0.8),
-                                              ),
-                                            );
-                                          }
-                                          return const SizedBox.shrink();
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          SizedBox(
-                              height: AuthService().currentUser != null &&
-                                      showCompanyName
-                                  ? 12
-                                  : 0),
-                          if (AuthService().currentUser != null &&
-                              showCompanyName)
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: StatefulBuilder(
-                                      builder: (context, setState) {
-                                        bool isHovered = false;
-                                        return MouseRegion(
-                                          cursor: SystemMouseCursors.click,
-                                          onEnter: (_) =>
-                                              setState(() => isHovered = true),
-                                          onExit: (_) =>
-                                              setState(() => isHovered = false),
-                                          child: _buildWatchButton(),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  ValueListenableBuilder<bool>(
-                                    valueListenable: _showCompanyNameInTitle,
-                                    builder: (context, showCompanyName, child) {
-                                      return SizedBox(
-                                        width: showCompanyName ? 32 : null,
-                                        child: StatefulBuilder(
-                                          builder: (context, setState) {
-                                            bool isHovered = false;
-                                            return MouseRegion(
-                                              cursor: SystemMouseCursors.click,
-                                              onEnter: (_) => setState(
-                                                  () => isHovered = true),
-                                              onExit: (_) => setState(
-                                                  () => isHovered = false),
-                                              child: _buildRefreshButton(
-                                                  isHovered),
-                                            );
-                                          },
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                ],
-                              ),
-                            )
-                          else
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    widget.tickerCode,
-                                    style: TextStyle(
-                                      fontSize: 28,
-                                      color: const Color(0xFF1E3A8A),
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.5,
-                                      shadows: [
-                                        Shadow(
-                                          color: const Color(0xFF1E3A8A)
-                                              .withOpacity(0.1),
-                                          offset: const Offset(0, 1),
-                                          blurRadius: 2,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  if (AuthService().currentUser != null) ...[
-                                    const SizedBox(height: 4),
-                                    SizedBox(
-                                      width: double.infinity,
-                                      child: StatefulBuilder(
-                                        builder: (context, setState) {
-                                          bool isHovered = false;
-                                          return MouseRegion(
-                                            cursor: SystemMouseCursors.click,
-                                            onEnter: (_) => setState(
-                                                () => isHovered = true),
-                                            onExit: (_) => setState(
-                                                () => isHovered = false),
-                                            child: _buildWatchButton(),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                  ],
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: StatefulBuilder(
-                                      builder: (context, setState) {
-                                        bool isHovered = false;
-                                        return MouseRegion(
-                                          cursor: SystemMouseCursors.click,
-                                          onEnter: (_) =>
-                                              setState(() => isHovered = true),
-                                          onExit: (_) =>
-                                              setState(() => isHovered = false),
-                                          child: _buildRefreshButton(isHovered),
-                                        );
-                                      },
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: StreamBuilder<Map<String, bool>>(
-                stream: widget.service.loadingStateSubject.stream,
-                builder: (context, loadingSnapshot) {
-                  final loadingStates = loadingSnapshot.data ?? {};
-                  return ValueListenableBuilder<String>(
-                    valueListenable: _currentSection,
-                    builder: (context, currentSection, child) {
-                      return ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: sections.length,
-                        itemBuilder: (context, index) {
-                          final section = sections[index];
-                          final isActive = section.title == currentSection;
-                          final cacheKey = _sectionToCacheKey[section.title];
-                          final isLoading = cacheKey != null &&
-                              loadingStates[cacheKey] == true;
+    return NavigationListContent(
+      sections: sections,
+      tickerCode: widget.tickerCode,
+      companyName: widget.companyName,
+      currentSection: _currentSection,
+      showCompanyNameInTitle: _showCompanyNameInTitle,
+      sectionLoadingStates: _sectionLoadingStates,
+      tickAnimationStates: _tickAnimationStates,
+      sectionToCacheKey: _sectionToCacheKey,
+      cacheTimeStream: widget.cacheTimeSubject.stream,
+      onSectionTap: _scrollToSection,
+      onRefresh: _handleRefresh,
+      onWatch: () async {
+        try {
+          // Get the current value from the stream
+          final isInWatchlist =
+              await _watchlistService.isInWatchlist(widget.tickerCode).first;
 
-                          // Handle loading state changes
-                          if (cacheKey != null) {
-                            final wasLoading =
-                                _sectionLoadingStates[cacheKey] ?? false;
-                            if (wasLoading && !isLoading) {
-                              // Get or create the ValueNotifier for this section
-                              final tickNotifier =
-                                  _tickAnimationStates.putIfAbsent(
-                                cacheKey,
-                                () => ValueNotifier<bool>(false),
-                              );
-
-                              // Show tick animation
-                              tickNotifier.value = true;
-
-                              // Hide tick after animation
-                              Future.delayed(const Duration(milliseconds: 800),
-                                  () {
-                                if (mounted) {
-                                  tickNotifier.value = false;
-                                }
-                              });
-                            }
-                            _sectionLoadingStates[cacheKey] = isLoading;
-                          }
-
-                          return Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              onTap: () => _scrollToSection(section.title),
-                              borderRadius: BorderRadius.circular(8),
-                              hoverColor: Colors.grey.shade100,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 12),
-                                decoration: BoxDecoration(
-                                  border: Border(
-                                    left: BorderSide(
-                                      color: isActive
-                                          ? const Color(0xFF1E3A8A)
-                                          : Colors.blue.shade50,
-                                      width: isActive ? 4 : 3,
-                                    ),
-                                  ),
-                                  color: isActive
-                                      ? Colors.blue.shade50.withOpacity(0.3)
-                                      : null,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(
-                                      section.icon,
-                                      size: isActive ? 18 : 16,
-                                      color: isLoading
-                                          ? Colors.grey.shade400
-                                          : isActive
-                                              ? const Color(0xFF1E3A8A)
-                                              : Colors.grey.shade600,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Text(
-                                        section.title,
-                                        style: TextStyle(
-                                          fontSize: isActive ? 15 : 14,
-                                          color: isLoading
-                                              ? Colors.grey.shade400
-                                              : isActive
-                                                  ? const Color(0xFF1E3A8A)
-                                                  : Colors.grey.shade700,
-                                          fontWeight: isActive
-                                              ? FontWeight.w600
-                                              : FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                    if (isLoading)
-                                      const SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: ThinkingAnimation(
-                                          size: 16,
-                                          color: Color(0xFF1E3A8A),
-                                        ),
-                                      )
-                                    else if (cacheKey != null)
-                                      ValueListenableBuilder<bool>(
-                                        valueListenable:
-                                            _tickAnimationStates.putIfAbsent(
-                                          cacheKey,
-                                          () => ValueNotifier<bool>(false),
-                                        ),
-                                        builder: (context, showTick, child) {
-                                          if (showTick) {
-                                            return const SizedBox(
-                                              width: 16,
-                                              height: 16,
-                                              child: TickAnimation(
-                                                size: 16,
-                                                color: Color(0xFF1E3A8A),
-                                              ),
-                                            );
-                                          }
-                                          return isActive
-                                              ? Container(
-                                                  width: 6,
-                                                  height: 6,
-                                                  decoration:
-                                                      const BoxDecoration(
-                                                    color: Color(0xFF1E3A8A),
-                                                    shape: BoxShape.circle,
-                                                  ),
-                                                )
-                                              : const SizedBox.shrink();
-                                        },
-                                      )
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                  );
-                },
+          if (isInWatchlist) {
+            await _watchlistService.removeFromWatchlist(widget.tickerCode);
+          } else {
+            await _watchlistService.addToWatchlist(
+              companyName: widget.companyName,
+              companyTicker: widget.tickerCode,
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${e.toString()}'),
+                backgroundColor: Colors.red,
               ),
-            ),
-          ),
-        ],
-      ),
+            );
+          }
+        }
+      },
+      isHovered: _isHovered,
+      loadingStateStream: widget.service.loadingStateSubject.stream,
+      watchlistService: _watchlistService,
     );
   }
 
@@ -1590,75 +1242,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
           width: 1,
         ),
       ),
-    );
-  }
-
-  Widget _buildWatchButton() {
-    final user = AuthService().currentUser;
-    if (user == null) return const SizedBox.shrink();
-
-    return StreamBuilder<bool>(
-      stream: _watchlistService.isInWatchlist(widget.tickerCode),
-      builder: (context, snapshot) {
-        final isInWatchlist = snapshot.data ?? false;
-
-        return ElevatedButton.icon(
-          onPressed: () async {
-            try {
-              if (isInWatchlist) {
-                await _watchlistService.removeFromWatchlist(widget.tickerCode);
-              } else {
-                await _watchlistService.addToWatchlist(
-                  companyName: widget.companyName,
-                  companyTicker: widget.tickerCode,
-                );
-              }
-            } catch (e) {
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: ${e.toString()}'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-              }
-            }
-          },
-          icon: Icon(
-            isInWatchlist ? Icons.check_circle : Icons.notifications_outlined,
-            size: 16,
-            color: isInWatchlist
-                ? (_isHovered ? Colors.white : const Color(0xFF1E3A8A))
-                : Colors.white,
-          ),
-          label: Text(
-            isInWatchlist ? 'In Watchlist' : 'Watch',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: isInWatchlist
-                  ? (_isHovered ? Colors.white : const Color(0xFF1E3A8A))
-                  : Colors.white,
-            ),
-          ),
-          style: isInWatchlist
-              ? (_isHovered ? _getHoverButtonStyle() : _getButtonStyle())
-              : ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1E3A8A),
-                  foregroundColor: Colors.white,
-                  elevation: 2,
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: const BorderSide(
-                      color: Color(0xFF1E3A8A),
-                      width: 1,
-                    ),
-                  ),
-                ),
-        );
-      },
     );
   }
 
