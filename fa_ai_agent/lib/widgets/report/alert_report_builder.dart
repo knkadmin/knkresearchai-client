@@ -5,7 +5,7 @@ import 'package:markdown/markdown.dart' as md;
 import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/agent_service.dart';
 import 'dart:convert';
-import 'package:fa_ai_agent/widgets/chart_image.dart';
+import 'package:fa_ai_agent/widgets/report/chart_image.dart';
 
 class AlertReportBuilder extends StatelessWidget {
   final Future<Map<String, dynamic>> future;

@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:rxdart/subjects.dart';
 import 'package:fa_ai_agent/widgets/thinking_animation.dart';
-import 'package:fa_ai_agent/widgets/report_widgets.dart';
+import 'package:fa_ai_agent/widgets/report/report_widgets.dart';
 import 'services/watchlist_service.dart';
 import 'services/section_visibility_manager.dart';
 import 'services/premium_section_manager.dart';

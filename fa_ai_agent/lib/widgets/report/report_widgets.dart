@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:fa_ai_agent/widgets/report_builder.dart';
-import 'package:fa_ai_agent/widgets/chart_builder.dart';
-import 'package:fa_ai_agent/widgets/alert_report_builder.dart';
+import 'package:fa_ai_agent/widgets/report/report_builder.dart';
+import 'package:fa_ai_agent/widgets/report/chart_builder.dart';
+import 'package:fa_ai_agent/widgets/report/alert_report_builder.dart';
 import 'package:fa_ai_agent/widgets/trading_view_chart.dart';
 import 'package:fa_ai_agent/agent_service.dart';
 import 'package:rxdart/subjects.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fa_ai_agent/widgets/loading_spinner.dart';
 import 'package:fa_ai_agent/widgets/error_display.dart';
-import 'package:fa_ai_agent/widgets/chart_image.dart';
+import 'package:fa_ai_agent/widgets/report/chart_image.dart';
 import 'package:fa_ai_agent/widgets/image_viewer.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
