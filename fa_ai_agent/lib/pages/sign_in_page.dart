@@ -2,7 +2,7 @@ import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sign_in_button/sign_in_button.dart';
-import '../auth_service.dart';
+import 'package:fa_ai_agent/services/auth_service.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});

@@ -8,7 +8,7 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'dart:io' show Platform;
 
-import 'package:fa_ai_agent/agent_service.dart';
+import 'package:fa_ai_agent/services/agent_service.dart';
 import 'package:fa_ai_agent/gradient_text.dart';
 import 'package:fa_ai_agent/result_advanced.dart';
 import 'package:fa_ai_agent/config.dart';
@@ -24,9 +24,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
 import 'package:intl/intl.dart';
-import 'package:fa_ai_agent/widgets/loading_spinner.dart';
+import 'package:fa_ai_agent/widgets/animations/loading_spinner.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:fa_ai_agent/auth_service.dart';
+import 'package:fa_ai_agent/services/auth_service.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:fa_ai_agent/pages/error_page.dart';
 

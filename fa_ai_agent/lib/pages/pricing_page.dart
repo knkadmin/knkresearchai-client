@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../auth_service.dart';
+import 'package:fa_ai_agent/services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../gradient_text.dart';
 import '../models/subscription_type.dart';

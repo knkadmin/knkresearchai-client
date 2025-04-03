@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:fa_ai_agent/widgets/loading_spinner.dart';
+import 'package:fa_ai_agent/widgets/animations/loading_spinner.dart';
 import 'package:fa_ai_agent/widgets/error_display.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:fa_ai_agent/gradient_text.dart';

@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'dart:ui';
 import '../models/section.dart';
 import '../models/subscription_type.dart';
-import '../auth_service.dart';
+import 'package:fa_ai_agent/services/auth_service.dart';
 import '../services/firestore_service.dart';
 import 'package:rxdart/subjects.dart';
 import '../services/premium_section_manager.dart';

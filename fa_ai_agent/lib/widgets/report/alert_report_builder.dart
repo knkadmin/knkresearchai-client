@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:fa_ai_agent/widgets/thinking_animation.dart';
+import 'package:fa_ai_agent/widgets/animations/thinking_animation.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:intl/intl.dart';
-import 'package:fa_ai_agent/agent_service.dart';
+import 'package:fa_ai_agent/services/agent_service.dart';
 import 'dart:convert';
 import 'package:fa_ai_agent/widgets/report/chart_image.dart';
 

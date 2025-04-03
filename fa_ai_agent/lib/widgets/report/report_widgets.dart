@@ -3,7 +3,7 @@ import 'package:fa_ai_agent/widgets/report/report_builder.dart';
 import 'package:fa_ai_agent/widgets/report/chart_builder.dart';
 import 'package:fa_ai_agent/widgets/report/alert_report_builder.dart';
 import 'package:fa_ai_agent/widgets/trading_view_chart.dart';
-import 'package:fa_ai_agent/agent_service.dart';
+import 'package:fa_ai_agent/services/agent_service.dart';
 import 'package:rxdart/subjects.dart';
 
 /// A class that provides methods to build various report widgets

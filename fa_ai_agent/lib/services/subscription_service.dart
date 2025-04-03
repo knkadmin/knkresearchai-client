@@ -1,4 +1,4 @@
-import 'package:fa_ai_agent/auth_service.dart';
+import 'package:fa_ai_agent/services/auth_service.dart';
 import 'package:fa_ai_agent/models/subscription_type.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
 

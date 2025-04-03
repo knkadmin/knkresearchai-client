@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../auth_service.dart';
+import 'package:fa_ai_agent/services/auth_service.dart';
 
 class WatchlistService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
