@@ -9,6 +9,9 @@ import 'package:intl/intl.dart';
 import 'package:rxdart/subjects.dart';
 import 'package:fa_ai_agent/widgets/animations/thinking_animation.dart';
 import 'package:fa_ai_agent/widgets/report/report_widgets.dart';
+import 'package:fa_ai_agent/widgets/report/report_header.dart';
+import 'package:fa_ai_agent/widgets/report/report_content_layout.dart';
+import 'package:fa_ai_agent/widgets/report/report_navigation_overlay.dart';
 import 'services/watchlist_service.dart';
 import 'services/section_visibility_manager.dart';
 import 'services/premium_section_manager.dart';
@@ -518,51 +521,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     _isRefreshing.value = false;
   }
 
-  Widget _buildNavigationListContent(List<Section> sections) {
-    return NavigationListContent(
-      sections: sections,
-      tickerCode: widget.tickerCode,
-      companyName: widget.companyName,
-      currentSection: _currentSection,
-      showCompanyNameInTitle: _showCompanyNameInTitle,
-      sectionLoadingStates: _sectionLoadingStates,
-      tickAnimationStates: _tickAnimationStates,
-      sectionToCacheKey: SectionConstants.sectionToCacheKey,
-      cacheTimeStream: widget.cacheTimeSubject.stream,
-      onSectionTap: _scrollToSection,
-      onRefresh: _handleRefresh,
-      onWatch: () async {
-        try {
-          // Get the current value from the stream
-          final isInWatchlist =
-              await _watchlistService.isInWatchlist(widget.tickerCode).first;
-
-          if (isInWatchlist) {
-            await _watchlistService.removeFromWatchlist(widget.tickerCode);
-          } else {
-            await _watchlistService.addToWatchlist(
-              companyName: widget.companyName,
-              companyTicker: widget.tickerCode,
-            );
-          }
-        } catch (e) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: ${e.toString()}'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        }
-      },
-      isHovered: _isHovered,
-      loadingStateStream: widget.service.loadingStateSubject.stream,
-      watchlistService: _watchlistService,
-      isRefreshing: _isRefreshing,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
@@ -611,347 +569,70 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
           child: LayoutBuilder(
             builder: (BuildContext context, BoxConstraints constraints) {
               final bool isNarrow = constraints.maxWidth < 1000;
-              return _buildContentLayout(
-                sections,
-                isAuthenticated,
-                isMag7Company,
-                userSubscriptionType,
-                isNarrow,
+              return ReportContentLayout(
+                sections: sections,
+                isAuthenticated: isAuthenticated,
+                isMag7Company: isMag7Company,
+                userSubscriptionType: userSubscriptionType,
+                isNarrow: isNarrow,
+                buildSection: _buildSection,
+                headerView: (title) => ReportHeader(
+                  companyName: widget.companyName,
+                  cacheTimeSubject: widget.cacheTimeSubject,
+                  sectorSubject: widget.sectorSubject,
+                  language: widget.language,
+                ),
+                getMetricsTable: getMetricsTable,
               );
             },
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildContentLayout(
-    List<Section> sections,
-    bool isAuthenticated,
-    bool isMag7Company,
-    SubscriptionType? userSubscriptionType,
-    bool isNarrow,
-  ) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: isNarrow ? 24.0 : 264.0,
-        right: 24.0,
-      ),
-      child: LayoutBuilder(
-        builder: (BuildContext context, BoxConstraints constraints) {
-          final subscriptionType =
-              userSubscriptionType ?? SubscriptionType.free;
-          final shouldShowMetrics = isMag7Company ||
-              (isAuthenticated && subscriptionType != SubscriptionType.free);
-
-          return FutureBuilder<List<Section>>(
-            future: SectionVisibilityManager.filterSections(
-              sections,
-              isAuthenticated,
-              isMag7Company,
-            ),
-            builder: (context, sectionsSnapshot) {
-              if (sectionsSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: ThinkingAnimation());
-              }
-
-              final filteredSections = sectionsSnapshot.data ?? [];
-              final contentSections = _buildContentSections(filteredSections);
-              final accountingRedFlagsIndex = filteredSections
-                  .indexWhere((s) => s.title == 'Accounting Red Flags');
-
-              return Column(
-                children: [
-                  headerView(widget.companyName),
-                  const SizedBox(height: 24),
-                  _buildSectionsContainer(
-                    contentSections,
-                    accountingRedFlagsIndex,
-                    shouldShowMetrics,
-                    isNarrow,
-                  ),
-                ],
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
-
-  List<Widget> _buildContentSections(List<Section> filteredSections) {
-    return filteredSections
-        .map((section) => _buildSection(section))
-        .where(
-            (widget) => widget is! SizedBox || (widget as SizedBox).width != 0)
-        .toList();
-  }
-
-  Widget _buildSectionsContainer(
-    List<Widget> contentSections,
-    int accountingRedFlagsIndex,
-    bool shouldShowMetrics,
-    bool isNarrow,
-  ) {
-    return Container(
-      color: Colors.white,
-      child: isNarrow
-          ? _buildNarrowLayout(contentSections, shouldShowMetrics)
-          : _buildWideLayout(
-              contentSections,
-              accountingRedFlagsIndex,
-              shouldShowMetrics,
-            ),
-    );
-  }
-
-  Widget _buildNarrowLayout(
-      List<Widget> contentSections, bool shouldShowMetrics) {
-    return Padding(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (shouldShowMetrics) ...[
-            getMetricsTable(true),
-            const SizedBox(height: 48),
-          ],
-          ...contentSections,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWideLayout(
-    List<Widget> contentSections,
-    int accountingRedFlagsIndex,
-    bool shouldShowMetrics,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (contentSections.isNotEmpty) contentSections[0],
-        const SizedBox(height: 8),
-        _buildMainSections(
-          contentSections,
-          accountingRedFlagsIndex,
-          shouldShowMetrics,
-        ),
-        if (accountingRedFlagsIndex >= 0)
-          ...contentSections.skip(accountingRedFlagsIndex),
-      ],
-    );
-  }
-
-  Widget _buildMainSections(
-    List<Widget> contentSections,
-    int accountingRedFlagsIndex,
-    bool shouldShowMetrics,
-  ) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (contentSections.length > 1) contentSections[1],
-                const SizedBox(height: 48),
-                if (contentSections.length > 2) contentSections[2],
-                const SizedBox(height: 48),
-                if (contentSections.length > 3) contentSections[3],
-                const SizedBox(height: 48),
-                if (accountingRedFlagsIndex > 4)
-                  ...contentSections.skip(4).take(accountingRedFlagsIndex - 4),
-              ],
-            ),
-          ),
-          if (shouldShowMetrics) ...[
-            const SizedBox(width: 24),
-            SizedBox(
-              width: 280,
-              child: getMetricsTable(false),
-            ),
-          ],
-        ],
       ),
     );
   }
 
   Widget _buildNavigationOverlay() {
-    return Positioned(
-      left: 0,
-      right: 0,
-      top: 0,
-      bottom: 0,
-      child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: LayoutConstants.maxWidth),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final bool isNarrow = constraints.maxWidth < 1000;
-              if (isNarrow) return const SizedBox.shrink();
+    return ReportNavigationOverlay(
+      sections: sections,
+      tickerCode: widget.tickerCode,
+      companyName: widget.companyName,
+      currentSection: _currentSection,
+      showCompanyNameInTitle: _showCompanyNameInTitle,
+      sectionLoadingStates: _sectionLoadingStates,
+      tickAnimationStates: _tickAnimationStates,
+      sectionToCacheKey: SectionConstants.sectionToCacheKey,
+      cacheTimeStream: widget.cacheTimeSubject.stream,
+      onSectionTap: _scrollToSection,
+      onRefresh: _handleRefresh,
+      onWatch: () async {
+        try {
+          // Get the current value from the stream
+          final isInWatchlist =
+              await _watchlistService.isInWatchlist(widget.tickerCode).first;
 
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Material(
-                    color: Colors.transparent,
-                    child: Container(
-                      width: 280,
-                      height: MediaQuery.of(context).size.height,
-                      padding: const EdgeInsets.only(right: 24),
-                      child: _buildNavigationListContent(sections),
-                    ),
-                  ),
-                  const Expanded(child: SizedBox()),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget headerView(String companyName) {
-    return StreamBuilder(
-        stream: widget.cacheTimeSubject.stream,
-        builder: (BuildContext context, AsyncSnapshot snapshot) {
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.blue.shade900,
-                  Colors.blue.shade800,
-                ],
+          if (isInWatchlist) {
+            await _watchlistService.removeFromWatchlist(widget.tickerCode);
+          } else {
+            await _watchlistService.addToWatchlist(
+              companyName: widget.companyName,
+              companyTicker: widget.tickerCode,
+            );
+          }
+        } catch (e) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error: ${e.toString()}'),
+                backgroundColor: Colors.red,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.3),
-                  spreadRadius: 2,
-                  blurRadius: 5,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 40),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 24),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    companyName,
-                                    style: const TextStyle(
-                                      fontSize: 28,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.white,
-                                      letterSpacing: 0.5,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Row(
-                              children: [
-                                StreamBuilder<String>(
-                                  stream: widget.sectorSubject.stream,
-                                  builder: (context, snapshot) {
-                                    if (!snapshot.hasData) {
-                                      return const SizedBox.shrink();
-                                    }
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white.withOpacity(0.15),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: Text(
-                                        snapshot.data!,
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    if (snapshot.hasData)
-                      SizedBox(
-                        width: 160,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            const Text(
-                              "Report Generated",
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.white70,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              DateFormat('dd MMMM, yyyy').format(snapshot.data),
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  width: double.infinity,
-                  height: 1,
-                  color: Colors.white.withOpacity(0.1),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  widget.language == Language.english
-                      ? "KNK Research - Comprehensive Financial Analysis Report"
-                      : "KNK Research - 综合财务分析报告",
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white.withOpacity(0.8),
-                    letterSpacing: 0.5,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          );
-        });
+            );
+          }
+        }
+      },
+      isHovered: _isHovered,
+      loadingStateStream: widget.service.loadingStateSubject.stream,
+      watchlistService: _watchlistService,
+      isRefreshing: _isRefreshing,
+    );
   }
 }
