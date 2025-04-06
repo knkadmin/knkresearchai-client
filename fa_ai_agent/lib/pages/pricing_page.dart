@@ -6,6 +6,7 @@ import '../services/payment_service.dart';
 import '../gradient_text.dart';
 import '../models/subscription_type.dart';
 import '../models/user.dart';
+import '../constants/subscription_constants.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:http/http.dart' as http;
@@ -359,11 +360,8 @@ class _PricingPageState extends State<PricingPage> {
                                       title: 'Free',
                                       price: _getFreePrice(),
                                       period: 'month',
-                                      features: [
-                                        'Complete access to reports for Mag 7 companies',
-                                        'Unlimited report refreshes',
-                                        'Add companies to watchlist',
-                                      ],
+                                      features: SubscriptionConstants
+                                          .planBenefits[SubscriptionType.free]!,
                                       isPopular: false,
                                       isSelected: true,
                                       onSelect: () => _updateSubscription(
@@ -388,13 +386,9 @@ class _PricingPageState extends State<PricingPage> {
                                     regularPrice:
                                         _getStarterRegularPriceFromFirestore(),
                                     period: 'month',
-                                    features: [
-                                      'Everything in Free plan',
-                                      'Unlimited access to reports for all U.S listed companies',
-                                      'Advanced financial data and industry insights',
-                                      'Accounting Irregularities detection included',
-                                      'Insider trading data included',
-                                    ],
+                                    features:
+                                        SubscriptionConstants.planBenefits[
+                                            SubscriptionType.starter]!,
                                     isPopular: true,
                                     isSelected: currentSubscription ==
                                         SubscriptionType.starter,
@@ -417,9 +411,8 @@ class _PricingPageState extends State<PricingPage> {
                                     price:
                                         '\$0.00', // Will be updated when Pro plan is available
                                     period: 'month',
-                                    features: [
-                                      'More advanced features coming soon for pro users - please stay tuned.',
-                                    ],
+                                    features: SubscriptionConstants
+                                        .planBenefits[SubscriptionType.pro]!,
                                     isPopular: false,
                                     isSelected: currentSubscription ==
                                         SubscriptionType.pro,

@@ -5,11 +5,17 @@ class Subscription {
   final SubscriptionType type;
   final DateTime updatedAt;
   final String? paymentMethod;
+  final DateTime? currentPeriodEnd;
+  final DateTime? cancelAt;
+  final bool cancelAtPeriodEnd;
 
   const Subscription({
     required this.type,
     required this.updatedAt,
     this.paymentMethod,
+    this.currentPeriodEnd,
+    this.cancelAt,
+    this.cancelAtPeriodEnd = false,
   });
 
   factory Subscription.fromJson(Map<String, dynamic> json) {
@@ -20,6 +26,13 @@ class Subscription {
           : DateTime.parse(
               json['updatedAt'] ?? DateTime.now().toIso8601String()),
       paymentMethod: json['paymentMethod'],
+      currentPeriodEnd: json['currentPeriodEnd'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['currentPeriodEnd'] * 1000)
+          : null,
+      cancelAt: json['cancelAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['cancelAt'] * 1000)
+          : null,
+      cancelAtPeriodEnd: json['cancelAtPeriodEnd'] ?? false,
     );
   }
 
@@ -28,6 +41,10 @@ class Subscription {
       'type': type.value,
       'updatedAt': updatedAt.toIso8601String(),
       if (paymentMethod != null) 'paymentMethod': paymentMethod,
+      if (currentPeriodEnd != null)
+        'currentPeriodEnd': currentPeriodEnd!.toIso8601String(),
+      if (cancelAt != null) 'cancelAt': cancelAt!.toIso8601String(),
+      'cancelAtPeriodEnd': cancelAtPeriodEnd,
     };
   }
 }
