@@ -32,7 +32,7 @@ class PaymentService {
         'userId': user.uid,
         'email': user.email,
         'successUrl': '${Uri.base.origin}/payment-success',
-        'cancelUrl': '${Uri.base.origin}/pricing',
+        'cancelUrl': '${Uri.base.origin}/payment-cancel',
       }),
     );
 

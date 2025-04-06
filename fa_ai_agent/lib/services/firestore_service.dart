@@ -1,11 +1,16 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
+import 'package:fa_ai_agent/models/user.dart';
+import 'package:fa_ai_agent/models/subscription_type.dart';
 
 class FirestoreService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  static final FirestoreService _instance = FirestoreService._internal();
+  factory FirestoreService() => _instance;
 
-  FirestoreService() {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
+
+  FirestoreService._internal() {
     // Configure Firestore settings
     _firestore.settings = const Settings(
       persistenceEnabled: true,
@@ -220,23 +225,24 @@ class FirestoreService {
   }
 
   // Get user data
-  Future<Map<String, dynamic>?> getUserData(String userId) async {
+  Future<User?> getUserData(String userId) async {
     try {
       final doc = await _firestore.collection('users').doc(userId).get();
-      return doc.data();
+      if (!doc.exists) return null;
+      return User.fromJson(doc.data()!);
     } catch (e) {
       print('Error getting user data: $e');
-      rethrow;
+      return null;
     }
   }
 
   // Stream user data changes
-  Stream<Map<String, dynamic>?> streamUserData(String userId) {
+  Stream<User?> streamUserData(String userId) {
     return _firestore
         .collection('users')
         .doc(userId)
         .snapshots()
-        .map((doc) => doc.data());
+        .map((doc) => doc.exists ? User.fromJson(doc.data()!) : null);
   }
 
   // Stream only the subscription field from user document
@@ -245,46 +251,39 @@ class FirestoreService {
         .collection('users')
         .doc(userId)
         .snapshots()
-        .map((doc) => doc.data()?['subscription'] as String?);
+        .map((doc) => doc.data()?['subscription']?['type'] as String?);
   }
 
   // Update user profile
-  Future<void> updateUserProfile(Map<String, dynamic> data) async {
+  Future<void> updateUserProfile(
+      String userId, Map<String, dynamic> data) async {
     try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        // Convert any FieldValue.delete() to a proper Firestore delete operation
-        final Map<String, dynamic> processedData = Map.from(data);
-        processedData.removeWhere((key, value) => value == FieldValue.delete());
-
-        // If there are any FieldValue.delete() values, we need to handle them separately
-        final deleteFields = data.entries
-            .where((entry) => entry.value == FieldValue.delete())
-            .map((entry) => entry.key)
-            .toList();
-
-        if (deleteFields.isNotEmpty) {
-          // Create a map with FieldValue.delete() for the fields to delete
-          final deleteData = {
-            for (var field in deleteFields) field: FieldValue.delete()
-          };
-
-          // Update with both the regular data and the delete operations
-          await _firestore.collection('users').doc(user.uid).update({
-            ...processedData,
-            ...deleteData,
-          });
-        } else {
-          // If no fields to delete, just update normally
-          await _firestore
-              .collection('users')
-              .doc(user.uid)
-              .update(processedData);
-        }
-      }
+      await _firestore.collection('users').doc(userId).update(data);
     } catch (e) {
       print('Error updating user profile: $e');
       rethrow;
+    }
+  }
+
+  Future<void> updateUserSubscription(
+      String userId, Subscription subscription) async {
+    try {
+      await _firestore.collection('users').doc(userId).update({
+        'subscription': subscription.toJson(),
+      });
+    } catch (e) {
+      print('Error updating user subscription: $e');
+      rethrow;
+    }
+  }
+
+  Future<bool> checkFirestoreConnection() async {
+    try {
+      await _firestore.collection('users').limit(1).get();
+      return true;
+    } catch (e) {
+      print('Error checking Firestore connection: $e');
+      return false;
     }
   }
 }

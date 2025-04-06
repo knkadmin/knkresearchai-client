@@ -2,10 +2,8 @@ import 'package:fa_ai_agent/services/agent_service.dart';
 import 'package:fa_ai_agent/main.dart';
 import 'package:fa_ai_agent/models/section.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
-import 'package:fa_ai_agent/constants/company_data.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:rxdart/subjects.dart';
 import 'package:fa_ai_agent/widgets/animations/thinking_animation.dart';
 import 'package:fa_ai_agent/widgets/report/report_widgets.dart';
@@ -20,7 +18,6 @@ import 'package:fa_ai_agent/services/auth_service.dart';
 import 'models/subscription_type.dart';
 import 'services/public_user_last_viewed_report_tracker.dart';
 import 'dart:async';
-import 'package:fa_ai_agent/widgets/navigation_list_content.dart';
 import 'services/subscription_service.dart';
 
 /// Configuration for a section
@@ -546,6 +543,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       isRefreshing: _isRefreshing,
     );
   }
+
   Widget _buildSection(Section section) {
     final user = AuthService().currentUser;
     final isAuthenticated = user != null;

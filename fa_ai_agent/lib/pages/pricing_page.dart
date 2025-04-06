@@ -5,6 +5,7 @@ import '../services/firestore_service.dart';
 import '../services/payment_service.dart';
 import '../gradient_text.dart';
 import '../models/subscription_type.dart';
+import '../models/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:http/http.dart' as http;
@@ -106,7 +107,8 @@ class _PricingPageState extends State<PricingPage> {
       if (mounted) {
         setState(() {
           // Set the selected plan based on user's current subscription
-          selectedPlan = SubscriptionType.fromString(userData?['subscription']);
+          selectedPlan = SubscriptionType.fromString(
+              userData?.subscription?.type.toString() ?? 'free');
         });
       }
     }
@@ -146,55 +148,20 @@ class _PricingPageState extends State<PricingPage> {
   }
 
   Future<void> _updateSubscription(SubscriptionType plan) async {
-    final user = AuthService().currentUser;
-
     if (plan == SubscriptionType.free) {
-      // Free plan doesn't require payment processing
-      _updateUserSubscriptionInFirestore(plan);
+      // Navigate back for free plan
+      if (mounted) {
+        if (context.canPop()) {
+          context.pop();
+        } else {
+          context.go('/');
+        }
+      }
       return;
     }
 
     // For paid plans, initiate Stripe payment flow
     await _initiatePayment(plan);
-  }
-
-  Future<void> _updateUserSubscriptionInFirestore(SubscriptionType plan) async {
-    final user = AuthService().currentUser;
-    if (user != null) {
-      final firestoreService = FirestoreService();
-      try {
-        Map<String, dynamic> updateData = {
-          'subscription': plan.value,
-          'subscriptionUpdatedAt': DateTime.now().toIso8601String(),
-        };
-
-        // Add payment method only for paid plans
-        if (plan.isPaid) {
-          updateData['paymentMethod'] = 'monthly';
-        } else {
-          // Remove paymentMethod field for free plan
-          updateData['paymentMethod'] = FieldValue.delete();
-        }
-
-        await firestoreService.updateUserProfile(updateData);
-        if (mounted) {
-          if (context.canPop()) {
-            context.pop();
-          } else {
-            context.go('/');
-          }
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to update subscription. Please try again.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
   }
 
   Future<void> _initiatePayment(SubscriptionType plan) async {

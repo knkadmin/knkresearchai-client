@@ -11,7 +11,6 @@ class ReportWidgets {
   final AgentService _service;
   final Map<String, Widget> _imageCache;
   final Map<String, String> _encodedImageCache;
-  final Map<String, Widget> _sectionCache;
   final Map<String, Future<Map<String, dynamic>>> _futureCache;
   final BehaviorSubject<dynamic> _cacheTimeSubject;
   final bool _forceRefresh;
@@ -27,7 +26,6 @@ class ReportWidgets {
   })  : _service = service,
         _imageCache = imageCache,
         _encodedImageCache = encodedImageCache,
-        _sectionCache = sectionCache,
         _futureCache = futureCache,
         _cacheTimeSubject = cacheTimeSubject,
         _forceRefresh = forceRefresh;

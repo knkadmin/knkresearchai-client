@@ -1,34 +1,50 @@
-import 'package:fa_ai_agent/services/auth_service.dart';
 import 'package:fa_ai_agent/models/subscription_type.dart';
+import 'package:fa_ai_agent/models/user.dart';
+import 'package:fa_ai_agent/services/auth_service.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
 
 class SubscriptionService {
-  final AuthService _authService = AuthService();
+  static final SubscriptionService _instance = SubscriptionService._internal();
+  factory SubscriptionService() => _instance;
+  SubscriptionService._internal();
+
   final FirestoreService _firestoreService = FirestoreService();
 
-  // Get the current user's subscription type
   Future<SubscriptionType> getCurrentUserSubscription() async {
-    final user = _authService.currentUser;
+    final user = AuthService().currentUser;
     if (user == null) return SubscriptionType.free;
 
-    try {
-      final userData = await _firestoreService.getUserProfile();
-      return SubscriptionType.fromString(userData?['subscription'] ?? 'free');
-    } catch (e) {
-      print('Error getting user subscription: $e');
-      return SubscriptionType.free;
-    }
+    final userData = await _firestoreService.getUserData(user.uid);
+    return userData?.subscription.type ?? SubscriptionType.free;
   }
 
-  // Stream of subscription changes
   Stream<SubscriptionType> streamUserSubscription() {
-    final user = _authService.currentUser;
+    final user = AuthService().currentUser;
     if (user == null) {
       return Stream.value(SubscriptionType.free);
     }
 
-    return _firestoreService.streamUserSubscription(user.uid).map(
-        (subscriptionString) =>
-            SubscriptionType.fromString(subscriptionString ?? 'free'));
+    return _firestoreService.streamUserData(user.uid).map((user) {
+      return user?.subscription.type ?? SubscriptionType.free;
+    });
+  }
+
+  Future<void> updateUserSubscription(SubscriptionType type) async {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+
+    final userData = await _firestoreService.getUserData(user.uid);
+    if (userData == null) return;
+
+    final updatedUser = userData.copyWith(
+      subscription: Subscription(
+        type: type,
+        updatedAt: DateTime.now(),
+        paymentMethod: type.isPaid ? 'stripe' : null,
+      ),
+    );
+
+    await _firestoreService.updateUserSubscription(
+        user.uid, updatedUser.subscription);
   }
 }

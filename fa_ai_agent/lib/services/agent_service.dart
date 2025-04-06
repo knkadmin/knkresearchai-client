@@ -51,7 +51,8 @@ class AgentService {
     }
 
     _log.info("Cache miss, fetching from remote for query: $query");
-    final url = Uri.https(baseUrl, 'ticker-symbol-search', {'q': query});
+    final url = Uri.https(
+        Uri.parse(baseUrl).host, 'ticker-symbol-search', {'q': query});
 
     try {
       final response = await http.get(url);
@@ -215,7 +216,7 @@ class AgentService {
           token = userDoc.data()?['token'] as String? ?? '';
         }
 
-        final url = Uri.https(baseUrl, endpoint, {
+        final url = Uri.https(Uri.parse(baseUrl).host, endpoint, {
           'code': ticker,
           'language': language.toLowerCase(),
           'userId': userId,

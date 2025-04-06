@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:go_router/go_router.dart';
-import 'dart:ui';
 import '../models/section.dart';
-import '../models/subscription_type.dart';
+
 import 'package:fa_ai_agent/services/auth_service.dart';
 import '../services/firestore_service.dart';
-import 'package:rxdart/subjects.dart';
+
 import '../services/premium_section_manager.dart';
 
 class SectionVisibilityManager {
@@ -26,10 +23,8 @@ class SectionVisibilityManager {
     if (userId == null) return false;
 
     // For authenticated users, check subscription
-    final userData = await FirestoreService().getUserData(userId);
-    final subscriptionType =
-        SubscriptionType.fromString(userData?['subscription']);
-    return subscriptionType.isPaid;
+    final user = await FirestoreService().getUserData(userId);
+    return user?.subscription.type.isPaid ?? false;
   }
 
   static Future<List<Section>> filterSections(
@@ -83,11 +78,9 @@ class SectionVisibilityManager {
           _premiumSectionManager.isPreviewSection(sectionTitle));
     }
 
-    final firestoreService = FirestoreService();
-    return firestoreService.streamUserData(user.uid).map((userData) {
-      final subscriptionType =
-          SubscriptionType.fromString(userData?['subscription']);
-      if (subscriptionType.isPaid) return true;
+    return FirestoreService().streamUserData(user.uid).map((user) {
+      if (user == null) return false;
+      if (user.subscription.type.isPaid) return true;
 
       return freeSections.contains(sectionTitle) ||
           _premiumSectionManager.isPreviewSection(sectionTitle);

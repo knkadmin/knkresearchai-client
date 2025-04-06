@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fa_ai_agent/widgets/animations/loading_spinner.dart';
 import 'package:fa_ai_agent/widgets/error_display.dart';
 import 'package:fa_ai_agent/widgets/report/chart_image.dart';
-import 'package:fa_ai_agent/widgets/image_viewer.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'dart:convert' as convert;
@@ -137,17 +136,6 @@ class ChartBuilder extends StatelessWidget {
             decodedImage,
             cacheWidth: LayoutConstants.maxWidth.toInt(),
             filterQuality: FilterQuality.high,
-          );
-
-          // Create a high resolution version for the viewer without size constraints
-          final highResImage = Image.memory(
-            decodedImage,
-            filterQuality: FilterQuality.high,
-            gaplessPlayback: true,
-            fit: BoxFit.contain,
-            isAntiAlias: true,
-            cacheWidth: null, // Remove size constraints
-            cacheHeight: null, // Remove size constraints
           );
 
           // Cache the image widget and encoded string

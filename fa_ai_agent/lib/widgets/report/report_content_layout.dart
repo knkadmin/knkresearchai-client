@@ -3,7 +3,6 @@ import 'package:fa_ai_agent/models/section.dart';
 import 'package:fa_ai_agent/models/subscription_type.dart';
 import 'package:fa_ai_agent/services/section_visibility_manager.dart';
 import 'package:fa_ai_agent/widgets/animations/thinking_animation.dart';
-import 'package:rxdart/rxdart.dart';
 
 class ReportContentLayout extends StatelessWidget {
   final List<Section> sections;
@@ -83,8 +82,7 @@ class ReportContentLayout extends StatelessWidget {
   List<Widget> _buildContentSections(List<Section> filteredSections) {
     return filteredSections
         .map((section) => buildSection(section))
-        .where(
-            (widget) => widget is! SizedBox || (widget as SizedBox).width != 0)
+        .where((widget) => widget is! SizedBox || (widget).width != 0)
         .toList();
   }
 

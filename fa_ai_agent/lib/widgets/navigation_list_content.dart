@@ -5,8 +5,7 @@ import 'package:fa_ai_agent/widgets/animations/tick_animation.dart';
 import 'package:fa_ai_agent/widgets/animations/marquee_text.dart';
 import 'package:fa_ai_agent/services/auth_service.dart';
 import 'package:intl/intl.dart';
-import 'package:fa_ai_agent/services/agent_service.dart';
-import 'package:rxdart/subjects.dart';
+
 import 'package:fa_ai_agent/services/watchlist_service.dart';
 
 class NavigationListContent extends StatelessWidget {

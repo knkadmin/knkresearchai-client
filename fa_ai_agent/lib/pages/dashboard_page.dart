@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:fa_ai_agent/services/auth_service.dart';
 import 'package:fa_ai_agent/services/agent_service.dart';
 import '../services/browse_history_service.dart';
@@ -18,6 +18,7 @@ import 'package:quickalert/quickalert.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fa_ai_agent/constants/company_data.dart';
 import '../services/public_user_last_viewed_report_tracker.dart';
+import '../models/user.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -46,7 +47,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final TextEditingController feedbackController = TextEditingController();
   final TextEditingController emailController = TextEditingController();
   List<Map<String, String>> _mega7Companies = [];
-  late final StreamSubscription<User?> _authStateSubscription;
+  late final StreamSubscription<auth.User?> _authStateSubscription;
 
   @override
   void initState() {
@@ -957,7 +958,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                             ),
                                           ],
                                         ),
-                                        FutureBuilder<Map<String, dynamic>?>(
+                                        FutureBuilder<User?>(
                                           future: FirestoreService()
                                               .getUserData(user.uid),
                                           builder: (context, snapshot) {
@@ -965,9 +966,10 @@ class _DashboardPageState extends State<DashboardPage> {
                                                 ConnectionState.waiting) {
                                               return const SizedBox(width: 4);
                                             }
-                                            final subscription = snapshot
-                                                    .data?['subscription'] ??
+                                            final subscription = snapshot.data
+                                                    ?.subscription.type.value ??
                                                 'free';
+
                                             return Container(
                                               padding:
                                                   const EdgeInsets.symmetric(
