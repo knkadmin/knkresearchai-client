@@ -54,4 +54,24 @@ class PaymentService {
       }
     }
   }
+
+  static Future<void> cancelSubscription() async {
+    final user = AuthService().currentUser;
+    if (user == null) {
+      throw Exception('User not authenticated');
+    }
+
+    final url = Uri.parse('${ApiConstants.baseUrl}/cancel-subscription');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'userId': user.uid,
+      }),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to cancel subscription: ${response.body}');
+    }
+  }
 }

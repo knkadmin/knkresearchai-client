@@ -87,30 +87,13 @@ class PricingPage extends StatefulWidget {
 }
 
 class _PricingPageState extends State<PricingPage> {
-  SubscriptionType? selectedPlan;
   bool _isLoading = false;
   Map<String, PricingPlan> _pricingPlans = {};
 
   @override
   void initState() {
     super.initState();
-    _checkUserSubscription();
     _fetchPricingPlans();
-  }
-
-  Future<void> _checkUserSubscription() async {
-    final user = AuthService().currentUser;
-    if (user != null) {
-      final firestoreService = FirestoreService();
-      final userData = await firestoreService.getUserData(user.uid);
-
-      if (mounted) {
-        setState(() {
-          // Set the selected plan based on user's current subscription
-          selectedPlan = userData?.subscription.type;
-        });
-      }
-    }
   }
 
   Future<void> _fetchPricingPlans() async {
@@ -148,23 +131,80 @@ class _PricingPageState extends State<PricingPage> {
 
   Future<void> _updateSubscription(SubscriptionType plan) async {
     if (plan == SubscriptionType.free) {
-      // Navigate back for free plan
-      if (mounted) {
-        if (context.canPop()) {
-          context.pop();
-        } else {
-          context.go('/');
+      // Show confirmation dialog for downgrading to Free plan
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Confirm Plan Change'),
+          content: const Text(
+            'Are you sure you want to downgrade to Free plan? You will no longer have unlimited access to all U.S. listed companies (except for Mag 7)',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Confirm'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirmed == true) {
+        try {
+          // Show loading overlay
+          if (mounted) {
+            setState(() => _isLoading = true);
+          }
+
+          // Cancel the current subscription
+          await PaymentService.cancelSubscription();
+
+          // Update the user's subscription in Firestore
+          final user = AuthService().currentUser;
+          if (user != null) {
+            await FirestoreService().updateUserSubscription(
+              user.uid,
+              Subscription(
+                type: SubscriptionType.free,
+                updatedAt: DateTime.now(),
+                paymentMethod: null,
+              ),
+            );
+          }
+
+          // Navigate back
+          if (mounted) {
+            setState(() => _isLoading = false);
+            if (context.canPop()) {
+              context.pop();
+            } else {
+              context.go('/');
+            }
+          }
+        } catch (e) {
+          if (mounted) {
+            setState(() => _isLoading = false);
+            QuickAlert.show(
+              context: context,
+              type: QuickAlertType.error,
+              title: 'Error',
+              text: 'Failed to cancel subscription: ${e.toString()}',
+            );
+          }
         }
       }
       return;
     }
 
     // For paid plans, initiate Stripe payment flow
-    await _initiatePayment(plan);
-  }
-
-  Future<void> _initiatePayment(SubscriptionType plan) async {
     try {
+      if (mounted) {
+        setState(() => _isLoading = true);
+      }
+
       final pricingPlan = _pricingPlans[plan.value];
       if (pricingPlan == null) {
         throw Exception('Pricing plan not found for type: ${plan.value}');
@@ -173,6 +213,7 @@ class _PricingPageState extends State<PricingPage> {
       await PaymentService.initiateCheckout(pricingPlan.stripeProductId);
     } catch (e) {
       if (mounted) {
+        setState(() => _isLoading = false);
         QuickAlert.show(
           context: context,
           type: QuickAlertType.error,
@@ -302,62 +343,86 @@ class _PricingPageState extends State<PricingPage> {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             // Free Plan Card
-                            _buildPricingCard(
-                              title: 'Free',
-                              price: _getFreePrice(),
-                              period: 'month',
-                              features: [
-                                'Complete access to reports for Mag 7 companies',
-                                'Unlimited report refreshes',
-                                'Add companies to watchlist',
-                              ],
-                              isPopular: false,
-                              isSelected: selectedPlan == SubscriptionType.free,
-                              onSelect: () {
-                                setState(() {
-                                  selectedPlan = SubscriptionType.free;
-                                });
-                                _updateSubscription(SubscriptionType.free);
-                              },
-                            ),
+                            StreamBuilder<User?>(
+                                stream: user != null
+                                    ? FirestoreService()
+                                        .streamUserData(user.uid)
+                                    : Stream.value(null),
+                                builder: (context, snapshot) {
+                                  final currentSubscription =
+                                      snapshot.data?.subscription.type ??
+                                          SubscriptionType.free;
+                                  return _buildPricingCard(
+                                    title: 'Free',
+                                    price: _getFreePrice(),
+                                    period: 'month',
+                                    features: [
+                                      'Complete access to reports for Mag 7 companies',
+                                      'Unlimited report refreshes',
+                                      'Add companies to watchlist',
+                                    ],
+                                    isPopular: false,
+                                    isSelected: currentSubscription ==
+                                        SubscriptionType.free,
+                                    onSelect: () => _updateSubscription(
+                                        SubscriptionType.free),
+                                  );
+                                }),
                             // Starter Plan Card
-                            _buildPricingCard(
-                              title: 'Starter',
-                              price: _getStarterPriceFromFirestore(),
-                              regularPrice:
-                                  _getStarterRegularPriceFromFirestore(),
-                              period: 'month',
-                              features: [
-                                'Everything in Free plan',
-                                'Unlimited access to reports for all U.S listed companies',
-                                'Advanced financial data and industry insights',
-                                'Accounting Irregularities detection included',
-                                'Insider trading data included',
-                              ],
-                              isPopular: true,
-                              isSelected:
-                                  selectedPlan == SubscriptionType.starter,
-                              onSelect: () {
-                                setState(() {
-                                  selectedPlan = SubscriptionType.starter;
-                                });
-                                _updateSubscription(SubscriptionType.starter);
-                              },
-                            ),
+                            StreamBuilder<User?>(
+                                stream: user != null
+                                    ? FirestoreService()
+                                        .streamUserData(user.uid)
+                                    : Stream.value(null),
+                                builder: (context, snapshot) {
+                                  final currentSubscription =
+                                      snapshot.data?.subscription.type ??
+                                          SubscriptionType.free;
+                                  return _buildPricingCard(
+                                    title: 'Starter',
+                                    price: _getStarterPriceFromFirestore(),
+                                    regularPrice:
+                                        _getStarterRegularPriceFromFirestore(),
+                                    period: 'month',
+                                    features: [
+                                      'Everything in Free plan',
+                                      'Unlimited access to reports for all U.S listed companies',
+                                      'Advanced financial data and industry insights',
+                                      'Accounting Irregularities detection included',
+                                      'Insider trading data included',
+                                    ],
+                                    isPopular: true,
+                                    isSelected: currentSubscription ==
+                                        SubscriptionType.starter,
+                                    onSelect: () => _updateSubscription(
+                                        SubscriptionType.starter),
+                                  );
+                                }),
                             // Pro Plan Card
-                            _buildPricingCard(
-                              title: 'Pro',
-                              price:
-                                  '\$0.00', // Will be updated when Pro plan is available
-                              period: 'month',
-                              features: [
-                                'More advanced features coming soon for pro users - please stay tuned.',
-                              ],
-                              isPopular: false,
-                              isSelected: selectedPlan == SubscriptionType.pro,
-                              onSelect: null,
-                              isConstruction: true,
-                            ),
+                            StreamBuilder<User?>(
+                                stream: user != null
+                                    ? FirestoreService()
+                                        .streamUserData(user.uid)
+                                    : Stream.value(null),
+                                builder: (context, snapshot) {
+                                  final currentSubscription =
+                                      snapshot.data?.subscription.type ??
+                                          SubscriptionType.free;
+                                  return _buildPricingCard(
+                                    title: 'Pro',
+                                    price:
+                                        '\$0.00', // Will be updated when Pro plan is available
+                                    period: 'month',
+                                    features: [
+                                      'More advanced features coming soon for pro users - please stay tuned.',
+                                    ],
+                                    isPopular: false,
+                                    isSelected: currentSubscription ==
+                                        SubscriptionType.pro,
+                                    onSelect: null,
+                                    isConstruction: true,
+                                  );
+                                }),
                           ],
                         ),
                       ),
