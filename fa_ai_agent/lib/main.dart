@@ -1,10 +1,16 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:flutter_stripe_web/flutter_stripe_web.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_strategy/url_strategy.dart';
 import 'package:go_router/go_router.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:fa_ai_agent/services/agent_service.dart';
 import 'package:fa_ai_agent/gradient_text.dart';
@@ -14,7 +20,6 @@ import 'package:fa_ai_agent/pages/sign_in_page.dart';
 import 'package:fa_ai_agent/pages/sign_up_page.dart';
 import 'package:fa_ai_agent/pages/dashboard_page.dart';
 import 'package:fa_ai_agent/pages/pricing_page.dart';
-import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -23,15 +28,22 @@ import 'package:quickalert/models/quickalert_type.dart';
 import 'package:quickalert/widgets/quickalert_dialog.dart';
 import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/widgets/animations/loading_spinner.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:fa_ai_agent/services/auth_service.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:fa_ai_agent/pages/error_page.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   setPathUrlStrategy();
+  if (kIsWeb) {
+    // Register the web implementation
+    StripePlatform.instance = WebStripe.instance;
+  }
+  Stripe.publishableKey =
+      'pk_test_51R8fetCX57jNO1ch1M1g0zFMEWkyd9MQazUTh3FXA1G7gR2UXPLcnNoGdz0L3aRiPssRiGkph7eQeZxacrF6yecx00EuucSjhX';
+  // Initialize Stripe for web
+  await Stripe.instance.applySettings();
+
   await Hive.initFlutter(); // Initialize Hive
   await Hive.openBox('settings'); // Open a box (like a database table)
 

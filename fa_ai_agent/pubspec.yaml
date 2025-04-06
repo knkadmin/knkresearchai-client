@@ -63,6 +63,9 @@ dependencies:
   webview_flutter_android: ^3.15.0
   webview_flutter_wkwebview: ^3.12.0
   markdown: ^7.2.1
+  flutter_stripe: ^11.4.0
+  flutter_stripe_web: ^6.4.0
+  universal_html: ^2.2.4
   
 dev_dependencies:
   flutter_test:

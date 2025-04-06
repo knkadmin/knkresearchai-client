@@ -2,18 +2,81 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fa_ai_agent/services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../services/payment_service.dart';
 import '../gradient_text.dart';
 import '../models/subscription_type.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:quickalert/models/quickalert_type.dart';
+import 'package:quickalert/widgets/quickalert_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:universal_html/html.dart' as html;
 
-// Pricing constants
-const int kFreePrice = 0;
-const int kStarterRegularPrice = 20;
-const int kStarterEarlyBirdPrice = 15;
-const int kStarterYearlyRegularPrice = 259;
-const int kStarterYearlyEarlyBirdPrice = 200;
-const int kProPrice = 99;
-const double kYearlyDiscount = 0.8; // 20% discount for yearly plans
+// Stripe product IDs
+const String kStarterMonthlyProductId = 'prod_starter_monthly';
+const String kStarterYearlyProductId = 'prod_starter_yearly';
+const String kProMonthlyProductId = 'prod_pro_monthly';
+
+class StripeProduct {
+  final String id;
+  final String name;
+  final String description;
+  final String priceId;
+  final int amount;
+  final String currency;
+  final String? interval;
+  final String type;
+
+  StripeProduct({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.priceId,
+    required this.amount,
+    required this.currency,
+    this.interval,
+    required this.type,
+  });
+
+  factory StripeProduct.fromJson(Map<String, dynamic> json) {
+    return StripeProduct(
+      id: json['id'],
+      name: json['name'],
+      description: json['description'] ?? '',
+      priceId: json['price_id'],
+      amount: json['amount'],
+      currency: json['currency'],
+      interval: json['interval'],
+      type: json['type'] ?? '',
+    );
+  }
+}
+
+class PricingPlan {
+  final String type;
+  final int amount;
+  final String stripeProductId;
+  final int? discountedAmount;
+
+  PricingPlan({
+    required this.type,
+    required this.amount,
+    required this.stripeProductId,
+    this.discountedAmount,
+  });
+
+  factory PricingPlan.fromFirestore(Map<String, dynamic> data) {
+    return PricingPlan(
+      type: data['type'] ?? '',
+      amount: data['amount'] ?? 0,
+      stripeProductId: data['stripeProductId'] ?? '',
+      discountedAmount: data['discountedAmount'],
+    );
+  }
+}
 
 class PricingPage extends StatefulWidget {
   const PricingPage({super.key});
@@ -24,13 +87,14 @@ class PricingPage extends StatefulWidget {
 
 class _PricingPageState extends State<PricingPage> {
   SubscriptionType? selectedPlan;
-  bool isYearly = false;
-  bool isOneTime = false;
+  bool _isLoading = false;
+  Map<String, PricingPlan> _pricingPlans = {};
 
   @override
   void initState() {
     super.initState();
     _checkUserSubscription();
+    _fetchPricingPlans();
   }
 
   Future<void> _checkUserSubscription() async {
@@ -48,7 +112,53 @@ class _PricingPageState extends State<PricingPage> {
     }
   }
 
+  Future<void> _fetchPricingPlans() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final pricingSnapshot =
+          await FirebaseFirestore.instance.collection('pricing').get();
+
+      final plans = <String, PricingPlan>{
+        for (var doc in pricingSnapshot.docs)
+          doc.data()['type'] as String: PricingPlan.fromFirestore(doc.data())
+      };
+
+      setState(() {
+        _pricingPlans = plans;
+      });
+    } catch (e) {
+      if (mounted) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'Error',
+          text: 'Failed to load pricing information. Please try again later.',
+        );
+      }
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
   Future<void> _updateSubscription(SubscriptionType plan) async {
+    final user = AuthService().currentUser;
+
+    if (plan == SubscriptionType.free) {
+      // Free plan doesn't require payment processing
+      _updateUserSubscriptionInFirestore(plan);
+      return;
+    }
+
+    // For paid plans, initiate Stripe payment flow
+    await _initiatePayment(plan);
+  }
+
+  Future<void> _updateUserSubscriptionInFirestore(SubscriptionType plan) async {
     final user = AuthService().currentUser;
     if (user != null) {
       final firestoreService = FirestoreService();
@@ -87,12 +197,58 @@ class _PricingPageState extends State<PricingPage> {
     }
   }
 
-  String _formatPrice(int price) {
-    return '\$$price';
+  Future<void> _initiatePayment(SubscriptionType plan) async {
+    try {
+      final pricingPlan = _pricingPlans[plan.value];
+      if (pricingPlan == null) {
+        throw Exception('Pricing plan not found for type: ${plan.value}');
+      }
+
+      await PaymentService.initiateCheckout(pricingPlan.stripeProductId);
+    } catch (e) {
+      if (mounted) {
+        QuickAlert.show(
+          context: context,
+          type: QuickAlertType.error,
+          title: 'Payment Failed',
+          text: e.toString(),
+        );
+      }
+    }
   }
 
-  int _getStarterPrice() {
-    return kStarterEarlyBirdPrice;
+  String _formatPrice(int price) {
+    return '\$${(price / 100).toStringAsFixed(0)}';
+  }
+
+  String _getFreePrice() {
+    return _formatPrice(0);
+  }
+
+  String _getStarterPriceFromFirestore() {
+    if (_pricingPlans.isEmpty) {
+      return '\$0.00';
+    }
+
+    final starterPlan = _pricingPlans['starter'];
+    if (starterPlan == null) {
+      return '\$0.00';
+    }
+
+    return _formatPrice(starterPlan.discountedAmount ?? starterPlan.amount);
+  }
+
+  String _getStarterRegularPriceFromFirestore() {
+    if (_pricingPlans.isEmpty) {
+      return '20';
+    }
+
+    final starterPlan = _pricingPlans['starter'];
+    if (starterPlan == null) {
+      return '20';
+    }
+
+    return _formatPrice(starterPlan.amount).substring(1);
   }
 
   @override
@@ -101,139 +257,161 @@ class _PricingPageState extends State<PricingPage> {
 
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // Header
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.black.withOpacity(0.05),
-                    width: 1,
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.black.withOpacity(0.05),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          if (context.canPop()) {
+                            context.pop();
+                          } else {
+                            context.go('/');
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.close,
+                          size: 24,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      if (context.canPop()) {
-                        context.pop();
-                      } else {
-                        context.go('/');
-                      }
-                    },
-                    icon: const Icon(
-                      Icons.close,
-                      size: 24,
-                      color: Color(0xFF1E293B),
-                    ),
+                // Pricing Content
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 40),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'Choose Your Plan',
+                        style: TextStyle(
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Select the plan that best fits your needs',
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Color(0xFF64748B),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'All prices are in USD',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF64748B),
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      // Pricing Cards
+                      Center(
+                        child: Wrap(
+                          spacing: 24,
+                          runSpacing: 24,
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            // Free Plan Card
+                            _buildPricingCard(
+                              title: 'Free',
+                              price: _getFreePrice(),
+                              period: 'month',
+                              features: [
+                                'Complete access to reports for Mag 7 companies',
+                                'Unlimited report refreshes',
+                                'Add companies to watchlist',
+                              ],
+                              isPopular: false,
+                              isSelected: selectedPlan == SubscriptionType.free,
+                              onSelect: () {
+                                setState(() {
+                                  selectedPlan = SubscriptionType.free;
+                                });
+                                _updateSubscription(SubscriptionType.free);
+                              },
+                            ),
+                            // Starter Plan Card
+                            _buildPricingCard(
+                              title: 'Starter',
+                              price: _getStarterPriceFromFirestore(),
+                              regularPrice:
+                                  _getStarterRegularPriceFromFirestore(),
+                              period: 'month',
+                              features: [
+                                'Everything in Free plan',
+                                'Unlimited access to reports for all U.S listed companies',
+                                'Advanced financial data and industry insights',
+                                'Accounting Irregularities detection included',
+                                'Insider trading data included',
+                              ],
+                              isPopular: true,
+                              isSelected:
+                                  selectedPlan == SubscriptionType.starter,
+                              onSelect: () {
+                                setState(() {
+                                  selectedPlan = SubscriptionType.starter;
+                                });
+                                _updateSubscription(SubscriptionType.starter);
+                              },
+                            ),
+                            // Pro Plan Card
+                            _buildPricingCard(
+                              title: 'Pro',
+                              price:
+                                  '\$0.00', // Will be updated when Pro plan is available
+                              period: 'month',
+                              features: [
+                                'More advanced features coming soon for pro users - please stay tuned.',
+                              ],
+                              isPopular: false,
+                              isSelected: selectedPlan == SubscriptionType.pro,
+                              onSelect: null,
+                              isConstruction: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            // Pricing Content
+          ),
+          // Loading overlay
+          if (_isLoading)
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 40),
-              child: Column(
-                children: [
-                  const Text(
-                    'Choose Your Plan',
-                    style: TextStyle(
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF1E293B),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Select the plan that best fits your needs',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Color(0xFF64748B),
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'All prices are in USD',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF64748B),
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                  const SizedBox(height: 40),
-                  // Pricing Cards
-                  Center(
-                    child: Wrap(
-                      spacing: 24,
-                      runSpacing: 24,
-                      alignment: WrapAlignment.center,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        _buildPricingCard(
-                          title: 'Free',
-                          price: _formatPrice(kFreePrice),
-                          period: 'month',
-                          features: [
-                            'Complete access to reports for Mag 7 companies',
-                            'Unlimited report refreshes',
-                            'Add companies to watchlist',
-                          ],
-                          isPopular: false,
-                          isSelected: selectedPlan == SubscriptionType.free,
-                          onSelect: () {
-                            setState(() {
-                              selectedPlan = SubscriptionType.free;
-                            });
-                            _updateSubscription(SubscriptionType.free);
-                          },
-                        ),
-                        _buildPricingCard(
-                          title: 'Starter',
-                          price: _formatPrice(_getStarterPrice()),
-                          period: 'month',
-                          features: [
-                            'Everything in Free plan',
-                            'Unlimited access to reports for all U.S listed companies',
-                            'Advanced financial data and industry insights',
-                            'Accounting Irregularities detection included',
-                            'Insider trading data included',
-                          ],
-                          isPopular: true,
-                          isSelected: selectedPlan == SubscriptionType.starter,
-                          onSelect: () {
-                            setState(() {
-                              selectedPlan = SubscriptionType.starter;
-                            });
-                            _updateSubscription(SubscriptionType.starter);
-                          },
-                        ),
-                        _buildPricingCard(
-                          title: 'Pro',
-                          price: _formatPrice(kProPrice),
-                          period: 'month',
-                          features: [
-                            'More advanced features coming soon for pro users - please stay tuned.',
-                          ],
-                          isPopular: false,
-                          isSelected: selectedPlan == SubscriptionType.pro,
-                          onSelect: null,
-                          isConstruction: true,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF1E3A8A),
+                ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -241,6 +419,7 @@ class _PricingPageState extends State<PricingPage> {
   Widget _buildPricingCard({
     required String title,
     required String price,
+    String? regularPrice,
     required String period,
     required List<String> features,
     required bool isPopular,
@@ -289,7 +468,7 @@ class _PricingPageState extends State<PricingPage> {
                 (title == 'Starter') ? MainAxisSize.min : MainAxisSize.max,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (isPopular && (title != 'Starter' || isYearly)) ...[
+              if (isPopular) ...[
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -300,17 +479,15 @@ class _PricingPageState extends State<PricingPage> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        title == 'Starter' ? Icons.local_offer : Icons.star,
+                      const Icon(
+                        Icons.local_offer,
                         size: 16,
-                        color: const Color(0xFFFF6B6B),
+                        color: Color(0xFFFF6B6B),
                       ),
                       const SizedBox(width: 4),
-                      Text(
-                        title == 'Starter'
-                            ? 'Early Bird Offer'
-                            : 'Most Popular',
-                        style: const TextStyle(
+                      const Text(
+                        'Early Bird Offer',
+                        style: TextStyle(
                           color: Color(0xFFFF6B6B),
                           fontWeight: FontWeight.bold,
                         ),
@@ -337,10 +514,10 @@ class _PricingPageState extends State<PricingPage> {
                         color: Color(0xFFFFA500),
                       ),
                       const SizedBox(width: 4),
-                      Text(
+                      const Text(
                         'Coming Soon',
                         style: TextStyle(
-                          color: const Color(0xFFFFA500),
+                          color: Color(0xFFFFA500),
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -369,7 +546,7 @@ class _PricingPageState extends State<PricingPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (title == 'Starter') ...[
+                    if (title == 'Starter' && regularPrice != null) ...[
                       Stack(
                         children: [
                           Padding(
@@ -379,7 +556,7 @@ class _PricingPageState extends State<PricingPage> {
                               textBaseline: TextBaseline.alphabetic,
                               children: [
                                 Text(
-                                  '${kStarterRegularPrice}',
+                                  regularPrice,
                                   style: TextStyle(
                                     fontSize: isPopular ? 32 : 28,
                                     fontWeight: FontWeight.bold,
@@ -427,8 +604,7 @@ class _PricingPageState extends State<PricingPage> {
                             textBaseline: TextBaseline.alphabetic,
                             children: [
                               Text(
-                                price.substring(
-                                    1), // Remove the dollar sign from the original price
+                                price.substring(1),
                                 style: TextStyle(
                                   fontSize: isPopular ? 56 : 48,
                                   fontWeight: FontWeight.bold,
@@ -460,17 +636,7 @@ class _PricingPageState extends State<PricingPage> {
                         ),
                       ],
                     ),
-                    if (title == 'Starter' && isYearly && !isOneTime) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'That\'s just \$${(kStarterYearlyEarlyBirdPrice / 12).toStringAsFixed(2)}/month',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF64748B),
-                        ),
-                      ),
-                    ],
-                    if (title == 'Starter' && !isYearly && !isOneTime) ...[
+                    if (title == 'Starter') ...[
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -518,7 +684,7 @@ class _PricingPageState extends State<PricingPage> {
                 ),
                 const SizedBox(height: 16),
               ],
-              if (title == 'Starter' && !isOneTime)
+              if (title == 'Starter')
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -559,15 +725,10 @@ class _PricingPageState extends State<PricingPage> {
                       child: ElevatedButton(
                         onPressed: isSelected ? null : onSelect,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              isPopular || (title == 'Starter' && isOneTime)
-                                  ? const Color(0xFF1E3A8A)
-                                  : isSelected
-                                      ? const Color(0xFF64748B)
-                                      : Colors.white,
-                          foregroundColor: isPopular ||
-                                  isSelected ||
-                                  (title == 'Starter' && isOneTime)
+                          backgroundColor: isPopular
+                              ? const Color(0xFF1E3A8A)
+                              : Colors.white,
+                          foregroundColor: isPopular
                               ? Colors.white
                               : const Color(0xFF1E3A8A),
                           padding: EdgeInsets.symmetric(
@@ -575,9 +736,7 @@ class _PricingPageState extends State<PricingPage> {
                           ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
-                            side: isPopular ||
-                                    isSelected ||
-                                    (title == 'Starter' && isOneTime)
+                            side: isPopular
                                 ? BorderSide.none
                                 : const BorderSide(
                                     color: Color(0xFF1E3A8A),
@@ -588,11 +747,7 @@ class _PricingPageState extends State<PricingPage> {
                         child: Text(
                           isSelected
                               ? 'Your current plan'
-                              : onSelect == null
-                                  ? 'Not Available'
-                                  : title == 'Free'
-                                      ? 'Select'
-                                      : 'Start with 7 days Free Trial',
+                              : 'Start with 7 days Free Trial',
                           style: TextStyle(
                             fontSize: isPopular ? 18 : 16,
                             fontWeight: FontWeight.bold,
@@ -644,15 +799,10 @@ class _PricingPageState extends State<PricingPage> {
                         child: ElevatedButton(
                           onPressed: isSelected ? null : onSelect,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor:
-                                isPopular || (title == 'Starter' && isOneTime)
-                                    ? const Color(0xFF1E3A8A)
-                                    : isSelected
-                                        ? const Color(0xFF64748B)
-                                        : Colors.white,
-                            foregroundColor: isPopular ||
-                                    isSelected ||
-                                    (title == 'Starter' && isOneTime)
+                            backgroundColor: isPopular
+                                ? const Color(0xFF1E3A8A)
+                                : Colors.white,
+                            foregroundColor: isPopular
                                 ? Colors.white
                                 : const Color(0xFF1E3A8A),
                             padding: EdgeInsets.symmetric(
@@ -660,9 +810,7 @@ class _PricingPageState extends State<PricingPage> {
                             ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
-                              side: isPopular ||
-                                      isSelected ||
-                                      (title == 'Starter' && isOneTime)
+                              side: isPopular
                                   ? BorderSide.none
                                   : const BorderSide(
                                       color: Color(0xFF1E3A8A),
@@ -673,11 +821,7 @@ class _PricingPageState extends State<PricingPage> {
                           child: Text(
                             isSelected
                                 ? 'Your current plan'
-                                : onSelect == null
-                                    ? 'Not Available'
-                                    : title == 'Free'
-                                        ? 'Select'
-                                        : 'Start with 7 days Free Trial',
+                                : 'Start with 7 days Free Trial',
                             style: TextStyle(
                               fontSize: isPopular ? 18 : 16,
                               fontWeight: FontWeight.bold,
@@ -691,16 +835,6 @@ class _PricingPageState extends State<PricingPage> {
             ],
           ),
         ),
-        if (title == 'Starter' && isYearly && !isOneTime)
-          Positioned(
-            top: 16,
-            right: 16,
-            child: const Icon(
-              Icons.local_fire_department,
-              size: 32,
-              color: Color(0xFFFF6B6B),
-            ),
-          ),
       ],
     );
   }

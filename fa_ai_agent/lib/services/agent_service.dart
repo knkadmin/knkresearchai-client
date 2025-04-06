@@ -6,6 +6,7 @@ import 'package:logging/logging.dart';
 import 'package:fa_ai_agent/config.dart';
 import 'package:fa_ai_agent/services/search_cache_service.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
+import 'package:fa_ai_agent/constants/api_constants.dart';
 
 class AgentService {
   static final _log = Logger('AgentService');
@@ -20,8 +21,7 @@ class AgentService {
     });
   }
 
-  final String baseUrl =
-      'knkresearchai-server-1067859590559.australia-southeast1.run.app';
+  final String baseUrl = ApiConstants.baseUrl;
 
   final BehaviorSubject<Map<String, bool>> loadingStateSubject =
       BehaviorSubject();
