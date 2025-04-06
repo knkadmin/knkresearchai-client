@@ -22,6 +22,191 @@ import '../models/user.dart';
 import '../services/subscription_service.dart';
 import '../models/subscription_type.dart';
 
+class SettingsPopup extends StatefulWidget {
+  const SettingsPopup({super.key});
+
+  @override
+  State<SettingsPopup> createState() => _SettingsPopupState();
+}
+
+class _SettingsPopupState extends State<SettingsPopup> {
+  String _selectedMenu = 'General';
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Colors.transparent,
+      child: Stack(
+        children: [
+          Container(
+            width: 800,
+            height: 600,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                // Side Menu
+                Container(
+                  width: 200,
+                  decoration: BoxDecoration(
+                    border: Border(
+                      right: BorderSide(
+                        color: Colors.grey.withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'Settings',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                      _buildMenuItem('General', Icons.settings_outlined),
+                      _buildMenuItem(
+                          'Subscription', Icons.workspace_premium_outlined),
+                    ],
+                  ),
+                ),
+                // Main Content
+                Expanded(
+                  child: _buildMainContent(),
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 16,
+            right: 16,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(20),
+                onTap: () => Navigator.of(context).pop(),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Icon(
+                    Icons.close,
+                    size: 20,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem(String title, IconData icon) {
+    final isSelected = _selectedMenu == title;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _selectedMenu = title;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF1E3A8A).withOpacity(0.1) : null,
+            border: Border(
+              left: BorderSide(
+                color:
+                    isSelected ? const Color(0xFF1E3A8A) : Colors.transparent,
+                width: 3,
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                icon,
+                size: 20,
+                color: isSelected
+                    ? const Color(0xFF1E3A8A)
+                    : const Color(0xFF1E293B),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected
+                      ? const Color(0xFF1E3A8A)
+                      : const Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMainContent() {
+    switch (_selectedMenu) {
+      case 'General':
+        return const Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'General Settings',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              SizedBox(height: 24),
+              // Add general settings content here
+            ],
+          ),
+        );
+      case 'Subscription':
+        return const Padding(
+          padding: EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Subscription Settings',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              SizedBox(height: 24),
+              // Add subscription settings content here
+            ],
+          ),
+        );
+      default:
+        return const SizedBox();
+    }
+  }
+}
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
@@ -1017,6 +1202,28 @@ class _DashboardPageState extends State<DashboardPage> {
                                     ),
                                   ),
                                   PopupMenuItem<String>(
+                                    value: 'settings',
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 12),
+                                    child: const Row(
+                                      children: [
+                                        Icon(
+                                          Icons.settings,
+                                          size: 20,
+                                          color: Color(0xFF1E293B),
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Settings',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  PopupMenuItem<String>(
                                     value: 'signout',
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 16, vertical: 12),
@@ -1065,6 +1272,14 @@ class _DashboardPageState extends State<DashboardPage> {
                                   } else if (value == 'upgrade') {
                                     if (context.mounted) {
                                       context.push('/pricing');
+                                    }
+                                  } else if (value == 'settings') {
+                                    if (context.mounted) {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) =>
+                                            const SettingsPopup(),
+                                      );
                                     }
                                   }
                                 },
