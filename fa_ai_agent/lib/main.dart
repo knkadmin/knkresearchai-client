@@ -17,6 +17,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fa_ai_agent/services/auth_service.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:fa_ai_agent/pages/error_page.dart';
+import 'package:fa_ai_agent/pages/payment_success_page.dart';
+import 'package:fa_ai_agent/pages/payment_cancel_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -185,6 +187,18 @@ class MyApp extends StatelessWidget {
                 );
               },
               transitionDuration: const Duration(milliseconds: 200),
+            ),
+          ),
+          GoRoute(
+            path: '/payment-success',
+            pageBuilder: (context, state) => NoTransitionPage<void>(
+              child: const PaymentSuccessPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/payment-cancel',
+            pageBuilder: (context, state) => NoTransitionPage<void>(
+              child: const PaymentCancelPage(),
             ),
           ),
         ],

@@ -31,8 +31,8 @@ class PaymentService {
         'productId': stripeProductId,
         'userId': user.uid,
         'email': user.email,
-        'successUrl': '${Uri.base.origin}/payment-success',
-        'cancelUrl': '${Uri.base.origin}/payment-cancel',
+        'successUrl': Uri.base.origin,
+        'cancelUrl': Uri.base.origin,
       }),
     );
 

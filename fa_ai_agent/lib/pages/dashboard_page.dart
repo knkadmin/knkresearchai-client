@@ -19,6 +19,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fa_ai_agent/constants/company_data.dart';
 import '../services/public_user_last_viewed_report_tracker.dart';
 import '../models/user.dart';
+import '../services/subscription_service.dart';
+import '../models/subscription_type.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -148,6 +150,13 @@ class _DashboardPageState extends State<DashboardPage> {
       setState(() {
         _browseHistory = history;
       });
+
+      // If there's history and no report is currently being shown, navigate to the most recent report
+      if (history.isNotEmpty && _reportPage == null) {
+        final mostRecentReport = history.first;
+        _navigateToReport(
+            mostRecentReport.companyTicker, mostRecentReport.companyName);
+      }
     });
   }
 
@@ -745,6 +754,58 @@ class _DashboardPageState extends State<DashboardPage> {
                               ),
                             ),
                           ] else ...[
+                            // Membership Badge - Only show for paid plans
+                            StreamBuilder<SubscriptionType>(
+                              stream: SubscriptionService()
+                                  .streamUserSubscription(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState ==
+                                    ConnectionState.waiting) {
+                                  return const SizedBox(width: 4);
+                                }
+                                final subscription =
+                                    snapshot.data ?? SubscriptionType.free;
+
+                                // Only show badge for paid plans
+                                if (!subscription.isPaid) {
+                                  return const SizedBox(width: 4);
+                                }
+
+                                return Container(
+                                  margin: const EdgeInsets.only(right: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFF1E3A8A)
+                                        .withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: const Color(0xFF1E3A8A)
+                                          .withOpacity(0.2),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.workspace_premium,
+                                        size: 16,
+                                        color: Color(0xFF1E3A8A),
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        '${subscription.value.toUpperCase()} PLAN',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF1E3A8A),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
                             // User Menu
                             Container(
                               width: 40,
@@ -937,60 +998,20 @@ class _DashboardPageState extends State<DashboardPage> {
                                     value: 'upgrade',
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 16, vertical: 12),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                    child: const Row(
                                       children: [
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.workspace_premium,
-                                              size: 20,
-                                              color: Color(0xFF1E293B),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            const Text(
-                                              'Upgrade Plan',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Color(0xFF1E293B),
-                                              ),
-                                            ),
-                                          ],
+                                        Icon(
+                                          Icons.workspace_premium,
+                                          size: 20,
+                                          color: Color(0xFF1E293B),
                                         ),
-                                        FutureBuilder<User?>(
-                                          future: FirestoreService()
-                                              .getUserData(user.uid),
-                                          builder: (context, snapshot) {
-                                            if (snapshot.connectionState ==
-                                                ConnectionState.waiting) {
-                                              return const SizedBox(width: 4);
-                                            }
-                                            final subscription = snapshot.data
-                                                    ?.subscription.type.value ??
-                                                'free';
-
-                                            return Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 2),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF1E3A8A)
-                                                    .withOpacity(0.1),
-                                                borderRadius:
-                                                    BorderRadius.circular(12),
-                                              ),
-                                              child: Text(
-                                                subscription.toUpperCase(),
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color(0xFF1E3A8A),
-                                                ),
-                                              ),
-                                            );
-                                          },
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Upgrade Plan',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Color(0xFF1E293B),
+                                          ),
                                         ),
                                       ],
                                     ),
