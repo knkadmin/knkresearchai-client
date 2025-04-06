@@ -107,8 +107,7 @@ class _PricingPageState extends State<PricingPage> {
       if (mounted) {
         setState(() {
           // Set the selected plan based on user's current subscription
-          selectedPlan = SubscriptionType.fromString(
-              userData?.subscription?.type.toString() ?? 'free');
+          selectedPlan = userData?.subscription.type;
         });
       }
     }
@@ -714,7 +713,11 @@ class _PricingPageState extends State<PricingPage> {
                         child: Text(
                           isSelected
                               ? 'Your current plan'
-                              : 'Start with 7 days Free Trial',
+                              : title == 'Pro'
+                                  ? 'Not Available'
+                                  : title == 'Free'
+                                      ? 'Select'
+                                      : 'Start with 7 days Free Trial',
                           style: TextStyle(
                             fontSize: isPopular ? 18 : 16,
                             fontWeight: FontWeight.bold,
@@ -788,7 +791,11 @@ class _PricingPageState extends State<PricingPage> {
                           child: Text(
                             isSelected
                                 ? 'Your current plan'
-                                : 'Start with 7 days Free Trial',
+                                : title == 'Pro'
+                                    ? 'Not Available'
+                                    : title == 'Free'
+                                        ? 'Select'
+                                        : 'Start with 7 days Free Trial',
                             style: TextStyle(
                               fontSize: isPopular ? 18 : 16,
                               fontWeight: FontWeight.bold,

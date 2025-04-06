@@ -10,6 +10,7 @@ import 'package:fa_ai_agent/pages/sign_up_page.dart';
 import 'package:fa_ai_agent/pages/dashboard_page.dart';
 import 'package:fa_ai_agent/pages/pricing_page.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive_flutter/hive_flutter.dart' show HiveWebStorage;
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -29,8 +30,16 @@ void main() async {
   // Initialize Stripe for web
   await Stripe.instance.applySettings();
 
-  await Hive.initFlutter(); // Initialize Hive
-  await Hive.openBox('settings'); // Open a box (like a database table)
+  // Initialize Hive with proper configuration for web
+  if (kIsWeb) {
+    // For web, we need to use a different path
+    await Hive.initFlutter('web_storage');
+  } else {
+    await Hive.initFlutter();
+  }
+
+  // Open the settings box
+  await Hive.openBox('settings');
 
   try {
     // Initialize Firebase first

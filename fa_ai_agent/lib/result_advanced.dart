@@ -19,6 +19,7 @@ import 'models/subscription_type.dart';
 import 'services/public_user_last_viewed_report_tracker.dart';
 import 'dart:async';
 import 'services/subscription_service.dart';
+import 'package:hive/hive.dart';
 
 /// Configuration for a section
 class SectionConfig {
@@ -411,12 +412,24 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
     // Wait for all sections to finish loading
     await Future.delayed(const Duration(milliseconds: 100));
+
+    // Clear Hive cache for this report
+    final box = Hive.box('settings');
+    final cacheKeys = box.keys.where((key) => key
+        .toString()
+        .startsWith('${widget.tickerCode}-${widget.language.value}'));
+    for (var key in cacheKeys) {
+      await box.delete(key);
+    }
+
+    // Wait for all sections to finish loading
     while (widget.service.loadingStateSubject.value.values
         .any((isLoading) => isLoading)) {
       await Future.delayed(const Duration(milliseconds: 100));
     }
 
     _isRefreshing.value = false;
+    forceRefresh = false; // Reset force refresh flag after refresh is complete
   }
 
   @override
