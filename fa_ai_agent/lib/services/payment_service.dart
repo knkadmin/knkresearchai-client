@@ -1,3 +1,4 @@
+import 'package:fa_ai_agent/constants/subscription_constants.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -33,6 +34,7 @@ class PaymentService {
         'email': user.email,
         'successUrl': Uri.base.origin,
         'cancelUrl': Uri.base.origin,
+        'trialDays': SubscriptionConstants.freeTrialDays,
       }),
     );
 

@@ -30,7 +30,7 @@ class AgentService {
 
   Future<bool> sendFeedback(String email, String message) async {
     final response = await http.post(
-      Uri.https(baseUrl, '/feedback'),
+      Uri.https(Uri.parse(baseUrl).host, '/feedback'),
       headers: {'Content-Type': 'application/json'},
       body: convert.jsonEncode({
         'email': email,

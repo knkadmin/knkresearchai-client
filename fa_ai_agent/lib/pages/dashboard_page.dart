@@ -22,6 +22,7 @@ import '../services/public_user_last_viewed_report_tracker.dart';
 import '../models/user.dart';
 import '../services/subscription_service.dart';
 import '../models/subscription_type.dart';
+import 'package:fa_ai_agent/widgets/feedback_popup.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -848,6 +849,25 @@ class _DashboardPageState extends State<DashboardPage>
                                     ],
                                   ),
                                 ),
+                              // Feedback Button
+                              Container(
+                                margin: const EdgeInsets.only(right: 12),
+                                child: IconButton(
+                                  onPressed: () {
+                                    showDialog(
+                                      context: context,
+                                      builder: (context) =>
+                                          const FeedbackPopup(),
+                                    );
+                                  },
+                                  icon: const Icon(
+                                    Icons.feedback_outlined,
+                                    size: 24,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                  tooltip: 'Send Feedback',
+                                ),
+                              ),
                               // User Menu
                               Container(
                                 width: 40,
@@ -1449,28 +1469,41 @@ class _DashboardPageState extends State<DashboardPage>
                                                 controller: feedbackController,
                                                 maxLines: 5,
                                                 style: const TextStyle(
-                                                    color: Colors.white),
+                                                    color: Color(0xFF1E293B)),
                                                 decoration: InputDecoration(
                                                   hintText:
                                                       'Please tell us what you were trying to achieve and what unexpected results or false information you noticed from AI agent reports.',
                                                   hintStyle: const TextStyle(
-                                                      color: Colors.grey),
+                                                      color: Color(0xFF94A3B8)),
+                                                  filled: true,
+                                                  fillColor:
+                                                      const Color(0xFFF8FAFC),
                                                   border: OutlineInputBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                            10),
+                                                            8),
                                                     borderSide: BorderSide(
-                                                        color: Colors
-                                                            .grey.shade800),
+                                                        color:
+                                                            Colors.grey[300]!),
+                                                  ),
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                    borderSide: BorderSide(
+                                                        color:
+                                                            Colors.grey[300]!),
                                                   ),
                                                   focusedBorder:
                                                       OutlineInputBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                            10),
-                                                    borderSide: BorderSide(
-                                                        color: Colors
-                                                            .grey.shade300),
+                                                            8),
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Color(
+                                                                0xFF2563EB)),
                                                   ),
                                                 ),
                                               ),
@@ -1480,7 +1513,7 @@ class _DashboardPageState extends State<DashboardPage>
                                                 style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.bold,
-                                                  color: Colors.grey,
+                                                  color: Color(0xFF64748B),
                                                 ),
                                               ),
                                               const SizedBox(height: 5),
@@ -1489,66 +1522,161 @@ class _DashboardPageState extends State<DashboardPage>
                                                 keyboardType:
                                                     TextInputType.emailAddress,
                                                 style: const TextStyle(
-                                                    color: Colors.white),
+                                                    color: Color(0xFF1E293B)),
                                                 decoration: InputDecoration(
                                                   hintText: 'Enter your email',
                                                   hintStyle: const TextStyle(
-                                                      color: Colors.grey),
+                                                      color: Color(0xFF94A3B8)),
+                                                  filled: true,
+                                                  fillColor:
+                                                      const Color(0xFFF8FAFC),
                                                   border: OutlineInputBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                            10),
+                                                            8),
                                                     borderSide: BorderSide(
-                                                        color: Colors
-                                                            .grey.shade800),
+                                                        color:
+                                                            Colors.grey[300]!),
+                                                  ),
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            8),
+                                                    borderSide: BorderSide(
+                                                        color:
+                                                            Colors.grey[300]!),
                                                   ),
                                                   focusedBorder:
                                                       OutlineInputBorder(
                                                     borderRadius:
                                                         BorderRadius.circular(
-                                                            10),
-                                                    borderSide: BorderSide(
-                                                        color: Colors
-                                                            .grey.shade300),
+                                                            8),
+                                                    borderSide:
+                                                        const BorderSide(
+                                                            color: Color(
+                                                                0xFF2563EB)),
                                                   ),
                                                 ),
                                               ),
                                               const SizedBox(height: 30),
                                               Container(
                                                 child: ElevatedButton(
-                                                  onPressed: () {
+                                                  onPressed: () async {
                                                     if (feedbackController
                                                         .text.isEmpty) {
-                                                      QuickAlert.show(
-                                                        context: context,
-                                                        type: QuickAlertType
-                                                            .error,
-                                                        title:
-                                                            "Your message is empty",
-                                                        text:
-                                                            'Please describe your issue in the description.',
-                                                        showConfirmBtn: true,
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: const Text(
+                                                              'Please describe your issue in the description field.'),
+                                                          backgroundColor:
+                                                              Colors.red,
+                                                          behavior:
+                                                              SnackBarBehavior
+                                                                  .floating,
+                                                          margin:
+                                                              const EdgeInsets
+                                                                  .all(16),
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                          ),
+                                                        ),
                                                       );
                                                       return;
                                                     }
-                                                    service.sendFeedback(
-                                                        emailController.text,
-                                                        feedbackController
-                                                            .text);
-                                                    emailController.text = "";
-                                                    feedbackController.text =
-                                                        "";
-                                                    setState(() {
-                                                      QuickAlert.show(
-                                                        context: context,
-                                                        type: QuickAlertType
-                                                            .success,
-                                                        title: "Thank you",
-                                                        text:
-                                                            'Your feedback is on its way to our mailbox.',
-                                                        showConfirmBtn: true,
+                                                    if (emailController
+                                                        .text.isEmpty) {
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: const Text(
+                                                              'Please enter your email address.'),
+                                                          backgroundColor:
+                                                              Colors.red,
+                                                          behavior:
+                                                              SnackBarBehavior
+                                                                  .floating,
+                                                          margin:
+                                                              const EdgeInsets
+                                                                  .all(16),
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                          ),
+                                                        ),
                                                       );
-                                                    });
+                                                      return;
+                                                    }
+                                                    try {
+                                                      await service
+                                                          .sendFeedback(
+                                                              emailController
+                                                                  .text,
+                                                              feedbackController
+                                                                  .text);
+                                                      emailController.text = "";
+                                                      feedbackController.text =
+                                                          "";
+                                                      Navigator.pop(context);
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: const Text(
+                                                              'Thank you for your feedback!'),
+                                                          backgroundColor:
+                                                              Colors.green,
+                                                          behavior:
+                                                              SnackBarBehavior
+                                                                  .floating,
+                                                          margin:
+                                                              const EdgeInsets
+                                                                  .all(16),
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    } catch (e) {
+                                                      Navigator.pop(context);
+                                                      ScaffoldMessenger.of(
+                                                              context)
+                                                          .showSnackBar(
+                                                        SnackBar(
+                                                          content: const Text(
+                                                              'Failed to send feedback. Please try again later.'),
+                                                          backgroundColor:
+                                                              Colors.red,
+                                                          behavior:
+                                                              SnackBarBehavior
+                                                                  .floating,
+                                                          margin:
+                                                              const EdgeInsets
+                                                                  .all(16),
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                          ),
+                                                        ),
+                                                      );
+                                                    }
                                                   },
                                                   style: ButtonStyle(
                                                     backgroundColor:
@@ -1637,69 +1765,6 @@ class _DashboardPageState extends State<DashboardPage>
                   onHideSearchResults: _hideSearchResults,
                 ),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMarketCard(String title, String value, String change,
-      bool isPositive, String detail) {
-    return Card(
-      elevation: 8,
-      shadowColor: Colors.black12,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        width: 280,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF1E2C3D),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E2C3D),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Icon(
-                  isPositive ? Icons.arrow_upward : Icons.arrow_downward,
-                  color: isPositive ? Colors.green : Colors.red,
-                  size: 20,
-                ),
-                Text(
-                  change,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isPositive ? Colors.green : Colors.red,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              detail,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-              ),
-            ),
           ],
         ),
       ),

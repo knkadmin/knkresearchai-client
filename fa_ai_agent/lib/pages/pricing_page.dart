@@ -156,11 +156,17 @@ class _PricingPageState extends State<PricingPage> {
         } catch (e) {
           if (mounted) {
             setState(() => _isLoading = false);
-            QuickAlert.show(
-              context: context,
-              type: QuickAlertType.error,
-              title: 'Error',
-              text: 'Failed to cancel subscription: ${e.toString()}',
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text(
+                    'Failed to cancel subscription. Please try again later.'),
+                backgroundColor: Colors.red,
+                behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.all(16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
             );
           }
         }
@@ -183,12 +189,22 @@ class _PricingPageState extends State<PricingPage> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
-          title: 'Payment Failed',
-          text: e.toString(),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+                'Failed to process payment. Please try again later.'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
         );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }

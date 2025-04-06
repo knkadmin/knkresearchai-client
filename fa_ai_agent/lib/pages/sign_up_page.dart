@@ -54,7 +54,9 @@ class _SignUpPageState extends State<SignUpPage> {
 
       // Save token to Firestore
       final firestoreService = FirestoreService();
-      await firestoreService.createOrUpdateUserProfile();
+      await firestoreService.createOrUpdateUserProfile(
+          email: _emailController.text,
+          displayName: _emailController.text.split('@')[0]);
       await firestoreService.updateUserToken(idToken ?? '');
 
       if (mounted) {
@@ -62,8 +64,33 @@ class _SignUpPageState extends State<SignUpPage> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'An error occurred';
+        String errorTitle = 'Error';
+
+        if (e.toString().contains('email-already-in-use')) {
+          errorMessage =
+              'This email address is already registered. Please try signing in instead.';
+        } else if (e.toString().contains('invalid-email')) {
+          errorMessage = 'Please enter a valid email address.';
+        } else if (e.toString().contains('weak-password')) {
+          errorMessage =
+              'Please choose a stronger password (at least 6 characters).';
+        } else if (e.toString().contains('network-request-failed')) {
+          errorMessage = 'Please check your internet connection and try again.';
+        } else if (e.toString().contains('too-many-requests')) {
+          errorMessage = 'Too many sign-up attempts. Please try again later.';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
         );
       }
     } finally {
@@ -91,8 +118,33 @@ class _SignUpPageState extends State<SignUpPage> {
       }
     } catch (e) {
       if (mounted) {
+        String errorMessage = 'An error occurred';
+        String errorTitle = 'Error';
+
+        if (e.toString().contains('email-already-in-use')) {
+          errorMessage =
+              'This email address is already registered. Please try signing in instead.';
+        } else if (e.toString().contains('invalid-email')) {
+          errorMessage = 'Please enter a valid email address.';
+        } else if (e.toString().contains('weak-password')) {
+          errorMessage =
+              'Please choose a stronger password (at least 6 characters).';
+        } else if (e.toString().contains('network-request-failed')) {
+          errorMessage = 'Please check your internet connection and try again.';
+        } else if (e.toString().contains('too-many-requests')) {
+          errorMessage = 'Too many sign-up attempts. Please try again later.';
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
         );
       }
     } finally {

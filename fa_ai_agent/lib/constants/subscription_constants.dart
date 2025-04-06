@@ -18,4 +18,6 @@ class SubscriptionConstants {
       'More advanced features coming soon for pro users - please stay tuned.',
     ],
   };
+
+  static const freeTrialDays = 7;
 }

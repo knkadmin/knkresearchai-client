@@ -30,41 +30,6 @@ class FirestoreService {
     return _firestore.collection('users').doc(user.uid);
   }
 
-  // Check Firestore connection
-  Future<bool> checkConnection() async {
-    try {
-      print('Attempting to connect to Firestore...');
-
-      // Check authentication state
-      final user = _auth.currentUser;
-      if (user == null) {
-        print('No authenticated user found');
-        return false;
-      }
-
-      // Try to read the user's own document first
-      try {
-        final userDoc =
-            await _firestore.collection('users').doc(user.uid).get();
-        if (!userDoc.exists) {
-          print('User document does not exist');
-          return false;
-        }
-      } catch (e) {
-        print('Error reading user document: $e');
-        return false;
-      }
-
-      // Try a simple query
-      final result = await _firestore.collection('users').limit(1).get();
-      print('Successfully connected to Firestore');
-      return true;
-    } catch (e) {
-      print('Firestore connection check failed: $e');
-      return false;
-    }
-  }
-
   // Create or update user profile
   Future<void> createOrUpdateUserProfile({
     String? displayName,
@@ -79,12 +44,6 @@ class FirestoreService {
         throw Exception('No user logged in');
       }
       print('Attempting to create/update profile for user: ${user.uid}');
-
-      // Check connection
-      final isConnected = await checkConnection();
-      if (!isConnected) {
-        throw Exception('No connection to Firestore');
-      }
 
       // Check if user profile already exists
       final userDocRef = _firestore.collection('users').doc(user.uid);
