@@ -342,7 +342,7 @@ class _PricingPageState extends State<PricingPage> {
                           alignment: WrapAlignment.center,
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
-                            // Free Plan Card
+                            // Free Plan Card - Only show for free users
                             StreamBuilder<User?>(
                                 stream: user != null
                                     ? FirestoreService()
@@ -352,21 +352,25 @@ class _PricingPageState extends State<PricingPage> {
                                   final currentSubscription =
                                       snapshot.data?.subscription.type ??
                                           SubscriptionType.free;
-                                  return _buildPricingCard(
-                                    title: 'Free',
-                                    price: _getFreePrice(),
-                                    period: 'month',
-                                    features: [
-                                      'Complete access to reports for Mag 7 companies',
-                                      'Unlimited report refreshes',
-                                      'Add companies to watchlist',
-                                    ],
-                                    isPopular: false,
-                                    isSelected: currentSubscription ==
-                                        SubscriptionType.free,
-                                    onSelect: () => _updateSubscription(
-                                        SubscriptionType.free),
-                                  );
+                                  // Only show Free plan card if user is on free plan
+                                  if (currentSubscription ==
+                                      SubscriptionType.free) {
+                                    return _buildPricingCard(
+                                      title: 'Free',
+                                      price: _getFreePrice(),
+                                      period: 'month',
+                                      features: [
+                                        'Complete access to reports for Mag 7 companies',
+                                        'Unlimited report refreshes',
+                                        'Add companies to watchlist',
+                                      ],
+                                      isPopular: false,
+                                      isSelected: true,
+                                      onSelect: () => _updateSubscription(
+                                          SubscriptionType.free),
+                                    );
+                                  }
+                                  return const SizedBox.shrink();
                                 }),
                             // Starter Plan Card
                             StreamBuilder<User?>(
