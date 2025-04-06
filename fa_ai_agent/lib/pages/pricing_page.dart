@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:fa_ai_agent/services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/payment_service.dart';
+import '../services/pricing_service.dart';
 import '../gradient_text.dart';
 import '../models/subscription_type.dart';
 import '../models/user.dart';
@@ -89,45 +90,12 @@ class PricingPage extends StatefulWidget {
 
 class _PricingPageState extends State<PricingPage> {
   bool _isLoading = false;
-  Map<String, PricingPlan> _pricingPlans = {};
+  final PricingService _pricingService = PricingService();
 
   @override
   void initState() {
     super.initState();
-    _fetchPricingPlans();
-  }
-
-  Future<void> _fetchPricingPlans() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final pricingSnapshot =
-          await FirebaseFirestore.instance.collection('pricing').get();
-
-      final plans = <String, PricingPlan>{
-        for (var doc in pricingSnapshot.docs)
-          doc.data()['type'] as String: PricingPlan.fromFirestore(doc.data())
-      };
-
-      setState(() {
-        _pricingPlans = plans;
-      });
-    } catch (e) {
-      if (mounted) {
-        QuickAlert.show(
-          context: context,
-          type: QuickAlertType.error,
-          title: 'Error',
-          text: 'Failed to load pricing information. Please try again later.',
-        );
-      }
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    _pricingService.initialize();
   }
 
   Future<void> _updateSubscription(SubscriptionType plan) async {
@@ -206,7 +174,7 @@ class _PricingPageState extends State<PricingPage> {
         setState(() => _isLoading = true);
       }
 
-      final pricingPlan = _pricingPlans[plan.value];
+      final pricingPlan = _pricingService.pricingPlans[plan.value];
       if (pricingPlan == null) {
         throw Exception('Pricing plan not found for type: ${plan.value}');
       }
@@ -234,11 +202,7 @@ class _PricingPageState extends State<PricingPage> {
   }
 
   String _getStarterPriceFromFirestore() {
-    if (_pricingPlans.isEmpty) {
-      return '\$0.00';
-    }
-
-    final starterPlan = _pricingPlans['starter'];
+    final starterPlan = _pricingService.pricingPlans['starter'];
     if (starterPlan == null) {
       return '\$0.00';
     }
@@ -247,11 +211,7 @@ class _PricingPageState extends State<PricingPage> {
   }
 
   String _getStarterRegularPriceFromFirestore() {
-    if (_pricingPlans.isEmpty) {
-      return '20';
-    }
-
-    final starterPlan = _pricingPlans['starter'];
+    final starterPlan = _pricingService.pricingPlans['starter'];
     if (starterPlan == null) {
       return '20';
     }
@@ -336,92 +296,140 @@ class _PricingPageState extends State<PricingPage> {
                       ),
                       const SizedBox(height: 40),
                       // Pricing Cards
-                      Center(
-                        child: Wrap(
-                          spacing: 24,
-                          runSpacing: 24,
-                          alignment: WrapAlignment.center,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            // Free Plan Card - Only show for free users
-                            StreamBuilder<User?>(
-                                stream: user != null
-                                    ? FirestoreService()
-                                        .streamUserData(user.uid)
-                                    : Stream.value(null),
-                                builder: (context, snapshot) {
-                                  final currentSubscription =
-                                      snapshot.data?.subscription.type ??
-                                          SubscriptionType.free;
-                                  // Only show Free plan card if user is on free plan
-                                  if (currentSubscription ==
-                                      SubscriptionType.free) {
-                                    return _buildPricingCard(
-                                      title: 'Free',
-                                      price: _getFreePrice(),
-                                      period: 'month',
-                                      features: SubscriptionConstants
-                                          .planBenefits[SubscriptionType.free]!,
-                                      isPopular: false,
-                                      isSelected: true,
-                                      onSelect: () => _updateSubscription(
-                                          SubscriptionType.free),
-                                    );
-                                  }
-                                  return const SizedBox.shrink();
-                                }),
-                            // Starter Plan Card
-                            StreamBuilder<User?>(
-                                stream: user != null
-                                    ? FirestoreService()
-                                        .streamUserData(user.uid)
-                                    : Stream.value(null),
-                                builder: (context, snapshot) {
-                                  final currentSubscription =
-                                      snapshot.data?.subscription.type ??
-                                          SubscriptionType.free;
-                                  return _buildPricingCard(
-                                    title: 'Starter',
-                                    price: _getStarterPriceFromFirestore(),
-                                    regularPrice:
-                                        _getStarterRegularPriceFromFirestore(),
-                                    period: 'month',
-                                    features:
-                                        SubscriptionConstants.planBenefits[
-                                            SubscriptionType.starter]!,
-                                    isPopular: true,
-                                    isSelected: currentSubscription ==
-                                        SubscriptionType.starter,
-                                    onSelect: () => _updateSubscription(
-                                        SubscriptionType.starter),
-                                  );
-                                }),
-                            // Pro Plan Card
-                            StreamBuilder<User?>(
-                                stream: user != null
-                                    ? FirestoreService()
-                                        .streamUserData(user.uid)
-                                    : Stream.value(null),
-                                builder: (context, snapshot) {
-                                  final currentSubscription =
-                                      snapshot.data?.subscription.type ??
-                                          SubscriptionType.free;
-                                  return _buildPricingCard(
-                                    title: 'Pro',
-                                    price:
-                                        '\$0.00', // Will be updated when Pro plan is available
-                                    period: 'month',
-                                    features: SubscriptionConstants
-                                        .planBenefits[SubscriptionType.pro]!,
-                                    isPopular: false,
-                                    isSelected: currentSubscription ==
-                                        SubscriptionType.pro,
-                                    onSelect: null,
-                                    isConstruction: true,
-                                  );
-                                }),
-                          ],
-                        ),
+                      ListenableBuilder(
+                        listenable: _pricingService,
+                        builder: (context, _) {
+                          if (_pricingService.hasError) {
+                            return Column(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  size: 48,
+                                  color: Color(0xFFDC2626),
+                                ),
+                                const SizedBox(height: 16),
+                                const Text(
+                                  'Failed to load pricing information',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    color: Color(0xFF1E293B),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                ElevatedButton(
+                                  onPressed: _pricingService.retry,
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF1E3A8A),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 12,
+                                    ),
+                                  ),
+                                  child: const Text('Retry'),
+                                ),
+                              ],
+                            );
+                          }
+
+                          if (!_pricingService.hasData) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xFF1E3A8A),
+                              ),
+                            );
+                          }
+
+                          return Center(
+                            child: Wrap(
+                              spacing: 24,
+                              runSpacing: 24,
+                              alignment: WrapAlignment.center,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                // Free Plan Card - Only show for free users
+                                StreamBuilder<User?>(
+                                    stream: user != null
+                                        ? FirestoreService()
+                                            .streamUserData(user.uid)
+                                        : Stream.value(null),
+                                    builder: (context, snapshot) {
+                                      final currentSubscription =
+                                          snapshot.data?.subscription.type ??
+                                              SubscriptionType.free;
+                                      // Only show Free plan card if user is on free plan
+                                      if (currentSubscription ==
+                                          SubscriptionType.free) {
+                                        return _buildPricingCard(
+                                          title: 'Free',
+                                          price: _getFreePrice(),
+                                          period: 'month',
+                                          features: SubscriptionConstants
+                                                  .planBenefits[
+                                              SubscriptionType.free]!,
+                                          isPopular: false,
+                                          isSelected: true,
+                                          onSelect: () => _updateSubscription(
+                                              SubscriptionType.free),
+                                        );
+                                      }
+                                      return const SizedBox.shrink();
+                                    }),
+                                // Starter Plan Card
+                                StreamBuilder<User?>(
+                                    stream: user != null
+                                        ? FirestoreService()
+                                            .streamUserData(user.uid)
+                                        : Stream.value(null),
+                                    builder: (context, snapshot) {
+                                      final currentSubscription =
+                                          snapshot.data?.subscription.type ??
+                                              SubscriptionType.free;
+                                      return _buildPricingCard(
+                                        title: 'Starter',
+                                        price: _getStarterPriceFromFirestore(),
+                                        regularPrice:
+                                            _getStarterRegularPriceFromFirestore(),
+                                        period: 'month',
+                                        features:
+                                            SubscriptionConstants.planBenefits[
+                                                SubscriptionType.starter]!,
+                                        isPopular: true,
+                                        isSelected: currentSubscription ==
+                                            SubscriptionType.starter,
+                                        onSelect: () => _updateSubscription(
+                                            SubscriptionType.starter),
+                                      );
+                                    }),
+                                // Pro Plan Card
+                                StreamBuilder<User?>(
+                                    stream: user != null
+                                        ? FirestoreService()
+                                            .streamUserData(user.uid)
+                                        : Stream.value(null),
+                                    builder: (context, snapshot) {
+                                      final currentSubscription =
+                                          snapshot.data?.subscription.type ??
+                                              SubscriptionType.free;
+                                      return _buildPricingCard(
+                                        title: 'Pro',
+                                        price:
+                                            '\$0.00', // Will be updated when Pro plan is available
+                                        period: 'month',
+                                        features:
+                                            SubscriptionConstants.planBenefits[
+                                                SubscriptionType.pro]!,
+                                        isPopular: false,
+                                        isSelected: currentSubscription ==
+                                            SubscriptionType.pro,
+                                        onSelect: null,
+                                        isConstruction: true,
+                                      );
+                                    }),
+                              ],
+                            ),
+                          );
+                        },
                       ),
                     ],
                   ),
