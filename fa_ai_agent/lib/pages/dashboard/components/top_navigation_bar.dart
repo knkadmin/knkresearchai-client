@@ -62,6 +62,9 @@ class TopNavigationBar extends StatelessWidget {
   }
 
   Widget _buildLeftSection(BuildContext context) {
+    final isFloatingMenu =
+        MediaQuery.of(context).size.width < 850 && !isMenuCollapsed;
+
     return Row(
       children: [
         if (user == null)
@@ -82,22 +85,23 @@ class TopNavigationBar extends StatelessWidget {
         else if (MediaQuery.of(context).size.width < 850 || isMenuCollapsed)
           IconButton(
             onPressed: onMenuToggle,
-            icon: const Icon(
-              Icons.menu,
+            icon: Icon(
+              isFloatingMenu ? Icons.close : Icons.menu,
               size: 24,
-              color: Color(0xFF1E293B),
+              color: const Color(0xFF1E293B),
             ),
-            tooltip: 'Toggle Menu',
+            tooltip: isFloatingMenu ? 'Close Menu' : 'Toggle Menu',
           ),
         const SizedBox(width: 12),
-        const Text(
-          'KNK Research AI',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF1E293B),
+        if (MediaQuery.of(context).size.width >= 850 || isFloatingMenu)
+          const Text(
+            'KNK Research AI',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1E293B),
+            ),
           ),
-        ),
       ],
     );
   }

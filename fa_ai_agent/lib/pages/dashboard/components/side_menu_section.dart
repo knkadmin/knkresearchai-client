@@ -41,13 +41,13 @@ class SideMenuSection extends StatelessWidget {
           : 280,
       child: Stack(
         children: [
-          if (MediaQuery.of(context).size.width < 850 && !isMenuCollapsed)
-            GestureDetector(
-              onTap: () => onMenuCollapse(true),
-              child: Container(
-                color: Colors.black.withOpacity(0.5),
-              ),
-            ),
+          // if (MediaQuery.of(context).size.width < 850 && !isMenuCollapsed)
+          //   GestureDetector(
+          //     onTap: () => onMenuCollapse(true),
+          //     child: Container(
+          //       color: Colors.black.withOpacity(0.5),
+          //     ),
+          //   ),
           SideMenu(
             isMenuCollapsed: isMenuCollapsed,
             isHovered: isHovered,

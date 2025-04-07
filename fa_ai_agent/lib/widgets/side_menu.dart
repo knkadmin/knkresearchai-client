@@ -45,6 +45,9 @@ class SideMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isFloatingMenu =
+        MediaQuery.of(context).size.width < 850 && !isMenuCollapsed;
+
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOutCubic,
@@ -79,7 +82,7 @@ class SideMenu extends StatelessWidget {
               ),
             ),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Padding(
                   padding: const EdgeInsets.only(left: 8),
@@ -92,6 +95,16 @@ class SideMenu extends StatelessWidget {
                     onPressed: () => onMenuCollapse(true),
                   ),
                 ),
+                if (isFloatingMenu)
+                  const Text(
+                    'KNK Research AI',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                  ),
+                const SizedBox(width: 48), // Add spacing for balance
               ],
             ),
           ),
@@ -138,7 +151,12 @@ class SideMenu extends StatelessWidget {
                           color: Colors.transparent,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(8),
-                            onTap: onNewSearch,
+                            onTap: () {
+                              onNewSearch();
+                              if (isFloatingMenu) {
+                                onMenuCollapse(true);
+                              }
+                            },
                             child: Container(
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 16, vertical: 8),
@@ -244,6 +262,9 @@ class SideMenu extends StatelessWidget {
                                             onNavigateToReport(
                                                 item['companyTicker'],
                                                 item['companyName']);
+                                            if (isFloatingMenu) {
+                                              onMenuCollapse(true);
+                                            }
                                           },
                                           child: Container(
                                             padding: const EdgeInsets.symmetric(
@@ -429,6 +450,9 @@ class SideMenu extends StatelessWidget {
                                   onTap: () {
                                     onNavigateToReport(history.companyTicker,
                                         history.companyName);
+                                    if (isFloatingMenu) {
+                                      onMenuCollapse(true);
+                                    }
                                   },
                                   child: Container(
                                     padding: const EdgeInsets.symmetric(

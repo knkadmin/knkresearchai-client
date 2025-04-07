@@ -66,6 +66,7 @@ class _DashboardPageState extends State<DashboardPage>
   late final StreamSubscription<SubscriptionType> _subscriptionSubscription;
   SubscriptionType _currentSubscription = SubscriptionType.free;
   double _opacity = 0.0;
+  double _lastWidth = 0;
 
   static const String _disclaimerText = LegalTexts.disclaimer;
   static const String _termsAndConditionsText = LegalTexts.termsAndConditions;
@@ -674,182 +675,217 @@ class _DashboardPageState extends State<DashboardPage>
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 500),
       opacity: _opacity,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: Stack(
-          children: [
-            // Main Content
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOutCubic,
-              margin: EdgeInsets.only(
-                  left: user != null &&
-                          !_isMenuCollapsed &&
-                          MediaQuery.of(context).size.width >= 850
-                      ? 280
-                      : 0),
-              child: Column(
-                children: [
-                  TopNavigationBar(
-                    user: user,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Only update menu state if width actually changed
+          if (constraints.maxWidth != _lastWidth) {
+            _lastWidth = constraints.maxWidth;
+            if (constraints.maxWidth < 850 && !_isMenuCollapsed) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (mounted) {
+                  setState(() {
+                    _isMenuCollapsed = true;
+                  });
+                }
+              });
+            }
+          }
+
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: Stack(
+              children: [
+                // Main Content
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOutCubic,
+                  margin: EdgeInsets.only(
+                      left: user != null &&
+                              !_isMenuCollapsed &&
+                              constraints.maxWidth >= 850
+                          ? 280
+                          : 0),
+                  child: Column(
+                    children: [
+                      TopNavigationBar(
+                        user: user,
+                        isMenuCollapsed: _isMenuCollapsed,
+                        onMenuToggle: () => setState(
+                            () => _isMenuCollapsed = !_isMenuCollapsed),
+                        currentSubscription: _currentSubscription,
+                        onSignOut: _handleSignOut,
+                        reportPage: _reportPage,
+                        searchBarKey: _searchBarKey,
+                        searchController: searchController,
+                        searchFocusNode: _searchFocusNode,
+                        onSearchChanged: _onSearchChanged,
+                        onClearSearch: () {
+                          searchController.clear();
+                          searchResults = [];
+                          setState(() {});
+                        },
+                        onClearReportView: () {
+                          setState(() {
+                            _reportPage = null;
+                            searchController.clear();
+                            searchResults = [];
+                          });
+                        },
+                      ),
+                      // Main Content
+                      Expanded(
+                        child: _reportPage ??
+                            Center(
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    if (user == null) ...[
+                                      HeroSection(
+                                        searchController: searchController,
+                                        searchFocusNode: _searchFocusNode,
+                                        onSearchChanged: _onSearchChanged,
+                                        onNavigateToReport: _navigateToReport,
+                                        searchResults: searchResults,
+                                        onHideSearchResults: _hideSearchResults,
+                                        searchCardKey: _searchCardKey,
+                                        disclaimerText: _disclaimerText,
+                                      ),
+                                      Mega7Section(
+                                        mega7Companies: _mega7Companies,
+                                        onNavigateToReport: _navigateToReport,
+                                      ),
+                                      const WhyChooseUsSection(),
+                                      FeedbackSection(
+                                        feedbackController: feedbackController,
+                                        emailController: emailController,
+                                        onSendFeedback: () async {
+                                          if (feedbackController.text.isEmpty) {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: const Text(
+                                                    'Please describe your issue in the description field.'),
+                                                backgroundColor: Colors.red,
+                                                behavior:
+                                                    SnackBarBehavior.floating,
+                                                margin:
+                                                    const EdgeInsets.all(16),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                            );
+                                            return;
+                                          }
+
+                                          try {
+                                            service.sendFeedback(
+                                                emailController.text,
+                                                feedbackController.text);
+                                            emailController.text = "";
+                                            feedbackController.text = "";
+
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: const Text(
+                                                    'Thank you for your feedback!'),
+                                                backgroundColor: Colors.green,
+                                                behavior:
+                                                    SnackBarBehavior.floating,
+                                                margin:
+                                                    const EdgeInsets.all(16),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                            );
+                                          } catch (e) {
+                                            Navigator.pop(context);
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                content: const Text(
+                                                    'Failed to send feedback. Please try again later.'),
+                                                backgroundColor: Colors.red,
+                                                behavior:
+                                                    SnackBarBehavior.floating,
+                                                margin:
+                                                    const EdgeInsets.all(16),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                            );
+                                          }
+                                        },
+                                      ),
+                                      FooterSection(
+                                        termsAndConditionsText:
+                                            _termsAndConditionsText,
+                                        privacyPolicyText: _privacyPolicyText,
+                                      ),
+                                    ] else ...[
+                                      AuthenticatedSearchSection(
+                                        searchController: searchController,
+                                        searchFocusNode: _searchFocusNode,
+                                        onSearchChanged: _onSearchChanged,
+                                        onNavigateToReport: _navigateToReport,
+                                        searchResults: searchResults,
+                                        onHideSearchResults: _hideSearchResults,
+                                        searchCardKey: _searchCardKey,
+                                        disclaimerText: _disclaimerText,
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Semi-transparent mask for floating menu
+                if (user != null &&
+                    constraints.maxWidth < 850 &&
+                    !_isMenuCollapsed)
+                  GestureDetector(
+                    onTap: () => setState(() => _isMenuCollapsed = true),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.5),
+                    ),
+                  ),
+                // Side Menu
+                if (user != null)
+                  SideMenuSection(
                     isMenuCollapsed: _isMenuCollapsed,
-                    onMenuToggle: () =>
-                        setState(() => _isMenuCollapsed = !_isMenuCollapsed),
-                    currentSubscription: _currentSubscription,
-                    onSignOut: _handleSignOut,
-                    reportPage: _reportPage,
-                    searchBarKey: _searchBarKey,
-                    searchController: searchController,
-                    searchFocusNode: _searchFocusNode,
-                    onSearchChanged: _onSearchChanged,
-                    onClearSearch: () {
-                      searchController.clear();
-                      searchResults = [];
-                      setState(() {});
-                    },
-                    onClearReportView: () {
+                    isHovered: _isHovered,
+                    onMenuCollapse: (value) =>
+                        setState(() => _isMenuCollapsed = value),
+                    onHoverChange: (value) =>
+                        setState(() => _isHovered = value),
+                    onNewSearch: () {
                       setState(() {
                         _reportPage = null;
                         searchController.clear();
                         searchResults = [];
                       });
+                      _hideSearchResults();
                     },
+                    onNavigateToReport: _navigateToReport,
+                    browseHistory: _browseHistory,
+                    searchController: searchController,
+                    searchResults: searchResults,
+                    onHideSearchResults: _hideSearchResults,
                   ),
-                  // Main Content
-                  Expanded(
-                    child: _reportPage ??
-                        Center(
-                          child: SingleChildScrollView(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                if (user == null) ...[
-                                  HeroSection(
-                                    searchController: searchController,
-                                    searchFocusNode: _searchFocusNode,
-                                    onSearchChanged: _onSearchChanged,
-                                    onNavigateToReport: _navigateToReport,
-                                    searchResults: searchResults,
-                                    onHideSearchResults: _hideSearchResults,
-                                    searchCardKey: _searchCardKey,
-                                    disclaimerText: _disclaimerText,
-                                  ),
-                                  Mega7Section(
-                                    mega7Companies: _mega7Companies,
-                                    onNavigateToReport: _navigateToReport,
-                                  ),
-                                  const WhyChooseUsSection(),
-                                  FeedbackSection(
-                                    feedbackController: feedbackController,
-                                    emailController: emailController,
-                                    onSendFeedback: () async {
-                                      if (feedbackController.text.isEmpty) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: const Text(
-                                                'Please describe your issue in the description field.'),
-                                            backgroundColor: Colors.red,
-                                            behavior: SnackBarBehavior.floating,
-                                            margin: const EdgeInsets.all(16),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                        );
-                                        return;
-                                      }
-
-                                      try {
-                                        service.sendFeedback(
-                                            emailController.text,
-                                            feedbackController.text);
-                                        emailController.text = "";
-                                        feedbackController.text = "";
-
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: const Text(
-                                                'Thank you for your feedback!'),
-                                            backgroundColor: Colors.green,
-                                            behavior: SnackBarBehavior.floating,
-                                            margin: const EdgeInsets.all(16),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                        );
-                                      } catch (e) {
-                                        Navigator.pop(context);
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                            content: const Text(
-                                                'Failed to send feedback. Please try again later.'),
-                                            backgroundColor: Colors.red,
-                                            behavior: SnackBarBehavior.floating,
-                                            margin: const EdgeInsets.all(16),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                  ),
-                                  FooterSection(
-                                    termsAndConditionsText:
-                                        _termsAndConditionsText,
-                                    privacyPolicyText: _privacyPolicyText,
-                                  ),
-                                ] else ...[
-                                  AuthenticatedSearchSection(
-                                    searchController: searchController,
-                                    searchFocusNode: _searchFocusNode,
-                                    onSearchChanged: _onSearchChanged,
-                                    onNavigateToReport: _navigateToReport,
-                                    searchResults: searchResults,
-                                    onHideSearchResults: _hideSearchResults,
-                                    searchCardKey: _searchCardKey,
-                                    disclaimerText: _disclaimerText,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ),
-                  ),
-                ],
-              ),
+              ],
             ),
-            // Side Menu
-            if (user != null)
-              SideMenuSection(
-                isMenuCollapsed: _isMenuCollapsed,
-                isHovered: _isHovered,
-                onMenuCollapse: (value) =>
-                    setState(() => _isMenuCollapsed = value),
-                onHoverChange: (value) => setState(() => _isHovered = value),
-                onNewSearch: () {
-                  setState(() {
-                    _reportPage = null;
-                    searchController.clear();
-                    searchResults = [];
-                  });
-                  _hideSearchResults();
-                },
-                onNavigateToReport: _navigateToReport,
-                browseHistory: _browseHistory,
-                searchController: searchController,
-                searchResults: searchResults,
-                onHideSearchResults: _hideSearchResults,
-              ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
