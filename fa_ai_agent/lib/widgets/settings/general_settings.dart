@@ -11,15 +11,6 @@ class GeneralSettings extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'General Settings',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(height: 24),
           Expanded(
             child: ListView(
               children: [

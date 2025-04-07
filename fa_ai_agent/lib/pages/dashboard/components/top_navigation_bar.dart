@@ -40,7 +40,7 @@ class TopNavigationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 65,
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
@@ -77,8 +77,10 @@ class TopNavigationBar extends StatelessWidget {
               color: const Color(0xFF1E293B),
             ),
             tooltip: isFloatingMenu ? 'Close Menu' : 'Toggle Menu',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
           ),
-        SizedBox(width: user == null ? 0 : 12),
+        SizedBox(width: user == null ? 0 : 8),
         if (user == null && reportPage != null)
           IconButton(
             onPressed: onClearReportView,
@@ -90,12 +92,15 @@ class TopNavigationBar extends StatelessWidget {
             tooltip: 'Go to Home',
           ),
         if (user == null || MediaQuery.of(context).size.width >= 850)
-          const Text(
-            'KNK Research AI',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
+          const Padding(
+            padding: EdgeInsets.only(left: 8),
+            child: Text(
+              'KNK Research AI',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
             ),
           ),
       ],

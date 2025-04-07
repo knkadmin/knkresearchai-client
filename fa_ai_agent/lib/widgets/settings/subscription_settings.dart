@@ -29,15 +29,6 @@ class SubscriptionSettings extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Subscription Settings',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-              const SizedBox(height: 24),
               SubscriptionCard(subscription: subscription),
               const SizedBox(height: 24),
               if (subscription.type.isPaid)

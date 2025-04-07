@@ -21,7 +21,7 @@ class CustomSearchBar extends StatelessWidget {
     return Container(
       height: 40,
       constraints: const BoxConstraints(maxWidth: 500),
-      margin: const EdgeInsets.symmetric(horizontal: 24),
+      margin: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
         color: const Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(8),
@@ -30,43 +30,53 @@ class CustomSearchBar extends StatelessWidget {
           width: 1,
         ),
       ),
-      child: Center(
-        child: TextField(
-          controller: controller,
-          focusNode: focusNode,
-          onChanged: onChanged,
-          style: const TextStyle(
-            fontSize: 16,
-            color: Color(0xFF1E293B),
-          ),
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: const TextStyle(
-              fontSize: 16,
-              color: Color(0xFF64748B),
-            ),
-            prefixIcon: const Icon(
+      child: Row(
+        children: [
+          const Padding(
+            padding: EdgeInsets.only(left: 12),
+            child: Icon(
               Icons.search,
               size: 20,
               color: Color(0xFF64748B),
             ),
-            suffixIcon: controller.text.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(
-                      Icons.clear,
-                      size: 20,
-                      color: Color(0xFF64748B),
-                    ),
-                    onPressed: onClear,
-                  )
-                : null,
-            border: InputBorder.none,
-            isDense: true,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-            alignLabelWithHint: true,
           ),
-        ),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              onChanged: onChanged,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFF1E293B),
+              ),
+              decoration: InputDecoration(
+                hintText: hintText,
+                hintStyle: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF64748B),
+                ),
+                border: InputBorder.none,
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                isDense: true,
+              ),
+            ),
+          ),
+          if (controller.text.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.clear,
+                  size: 20,
+                  color: Color(0xFF64748B),
+                ),
+                onPressed: onClear,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+              ),
+            ),
+        ],
       ),
     );
   }
