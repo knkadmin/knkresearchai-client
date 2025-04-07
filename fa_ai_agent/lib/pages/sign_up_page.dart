@@ -5,6 +5,8 @@ import '../services/firestore_service.dart';
 import 'dart:math' show pi;
 import 'package:flutter/gestures.dart';
 import '../widgets/legal_dialog.dart';
+import 'package:fa_ai_agent/pages/dashboard_page.dart';
+import 'package:fa_ai_agent/constants/legal_texts.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -515,10 +517,11 @@ class _SignUpPageState extends State<SignUpPage> {
                                       ..onTap = () {
                                         showDialog(
                                           context: context,
-                                          builder: (context) => LegalDialog(
+                                          builder: (context) =>
+                                              const LegalDialog(
                                             title: 'Terms & Conditions',
                                             content:
-                                                'By accessing or using this website, you agree to be bound by these Terms and Conditions. You acknowledge that all information provided here is for general reference only and not intended as definitive financial or legal advice. We reserve the right to modify or discontinue any aspect of the site at any time, without notice. You are responsible for your own use of the site and any decisions or actions taken based on the content provided. Neither the site nor its contributors shall be liable for any damages or losses arising from your use of—or reliance upon—any information found here. If you do not agree with these terms, please discontinue use of the site immediately.',
+                                                LegalTexts.termsAndConditions,
                                           ),
                                         );
                                       },
@@ -541,8 +544,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                           context: context,
                                           builder: (context) => LegalDialog(
                                             title: 'Privacy Policy',
-                                            content:
-                                                'This website may collect and process certain data (such as cookies or usage analytics) solely to improve user experience and enhance AI-based features. We do not sell or share personal information with third parties except when required by law or to fulfill our services. User data is securely stored, and you may request correction or deletion of your personal information at any time by contacting us. By using this site, you agree to the collection and use of your data in accordance with this policy. We may update this policy occasionally, and your continued use of our services signifies acceptance of any changes.',
+                                            content: LegalTexts.privacyPolicy,
                                           ),
                                         );
                                       },

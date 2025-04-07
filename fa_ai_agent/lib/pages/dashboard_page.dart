@@ -23,6 +23,8 @@ import '../models/user.dart';
 import '../services/subscription_service.dart';
 import '../models/subscription_type.dart';
 import 'package:fa_ai_agent/widgets/feedback_popup.dart';
+import 'package:fa_ai_agent/widgets/legal_dialog.dart';
+import 'package:fa_ai_agent/constants/legal_texts.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -57,8 +59,9 @@ class _DashboardPageState extends State<DashboardPage>
   SubscriptionType _currentSubscription = SubscriptionType.free;
   double _opacity = 0.0;
 
-  static const String _disclaimerText =
-      'Disclaimer: This website uses AI-generated information to offer general stock insights, not definitive financial advice. We encourage you to do your own research or consult a professional, since all investments carry risk, and we cannot be held responsible for any possible losses.';
+  static const String _disclaimerText = LegalTexts.disclaimer;
+  static const String _termsAndConditionsText = LegalTexts.termsAndConditions;
+  static const String _privacyPolicyText = LegalTexts.privacyPolicy;
 
   @override
   void initState() {
@@ -1424,9 +1427,8 @@ class _DashboardPageState extends State<DashboardPage>
                                               horizontal: 12),
                                           child: Text(
                                             _disclaimerText,
-                                            style: const TextStyle(
-                                              color: Color.fromRGBO(
-                                                  255, 255, 255, 0.7),
+                                            style: TextStyle(
+                                              color: Colors.grey[600],
                                               fontSize: 12,
                                               height: 1.5,
                                               fontWeight: FontWeight.w300,
@@ -1755,10 +1757,68 @@ class _DashboardPageState extends State<DashboardPage>
                                     padding: const EdgeInsets.only(bottom: 20),
                                     width: double.infinity,
                                     color: Colors.black,
-                                    child: const Text(
-                                      "© 2025 KNK research",
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        TextButton(
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => LegalDialog(
+                                                title: 'Terms & Conditions',
+                                                content:
+                                                    _termsAndConditionsText,
+                                              ),
+                                            );
+                                          },
+                                          child: const Text(
+                                            'Terms & Conditions',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                        const Text(
+                                          ' • ',
+                                          style: TextStyle(
+                                            color: Color(0xFF64748B),
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            showDialog(
+                                              context: context,
+                                              builder: (context) => LegalDialog(
+                                                title: 'Privacy Policy',
+                                                content: _privacyPolicyText,
+                                              ),
+                                            );
+                                          },
+                                          child: const Text(
+                                            'Privacy Policy',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 12,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.only(bottom: 20),
+                                    width: double.infinity,
+                                    color: Colors.black,
+                                    child: Text(
+                                      '© 2025 KNK Research AI. All rights reserved.',
+                                      style: TextStyle(
+                                        color: Colors.grey[600],
+                                        fontSize: 12,
+                                      ),
                                       textAlign: TextAlign.center,
-                                      style: TextStyle(color: Colors.grey),
                                     ),
                                   ),
                                 ],
