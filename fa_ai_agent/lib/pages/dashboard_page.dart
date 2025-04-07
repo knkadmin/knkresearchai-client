@@ -25,6 +25,14 @@ import '../models/subscription_type.dart';
 import 'package:fa_ai_agent/widgets/feedback_popup.dart';
 import 'package:fa_ai_agent/widgets/legal_dialog.dart';
 import 'package:fa_ai_agent/constants/legal_texts.dart';
+import 'package:fa_ai_agent/pages/dashboard/components/top_navigation_bar.dart';
+import 'package:fa_ai_agent/pages/dashboard/components/hero_section.dart';
+import 'package:fa_ai_agent/pages/dashboard/components/mega7_section.dart';
+import 'package:fa_ai_agent/pages/dashboard/components/why_choose_us_section.dart';
+import 'package:fa_ai_agent/pages/dashboard/components/feedback_section.dart';
+import 'package:fa_ai_agent/pages/dashboard/components/footer_section.dart';
+import 'package:fa_ai_agent/pages/dashboard/components/authenticated_search_section.dart';
+import 'package:fa_ai_agent/pages/dashboard/components/side_menu_section.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -662,8 +670,6 @@ class _DashboardPageState extends State<DashboardPage>
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
-    final userName = user?.displayName ?? user?.email?.split('@')[0] ?? 'User';
-    final userEmail = user?.email ?? '';
 
     return AnimatedOpacity(
       duration: const Duration(milliseconds: 500),
@@ -677,505 +683,37 @@ class _DashboardPageState extends State<DashboardPage>
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOutCubic,
               margin: EdgeInsets.only(
-                  left: user != null && !_isMenuCollapsed ? 280 : 0),
+                  left: user != null &&
+                          !_isMenuCollapsed &&
+                          MediaQuery.of(context).size.width >= 850
+                      ? 280
+                      : 0),
               child: Column(
                 children: [
-                  // Top Navigation Bar
-                  Container(
-                    height: 65,
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: Border(
-                        bottom: BorderSide(
-                          color: Colors.black.withOpacity(0.05),
-                          width: 1,
-                        ),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Left: Logo
-                        Row(
-                          children: [
-                            if (user == null)
-                              IconButton(
-                                onPressed: () async {
-                                  print('Clearing public report cache...');
-                                  await _cacheManager.clearLastViewedReport();
-                                  print(
-                                      'Public report cache cleared successfully');
-                                  setState(() {
-                                    _reportPage = null;
-                                    searchController.clear();
-                                    searchResults = [];
-                                  });
-                                  _hideSearchResults();
-                                  context.go('/');
-                                },
-                                icon: const Icon(
-                                  Icons.home,
-                                  size: 24,
-                                  color: Color(0xFF1E293B),
-                                ),
-                                tooltip: 'Home',
-                              )
-                            else if (_isMenuCollapsed)
-                              IconButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isMenuCollapsed = false;
-                                  });
-                                },
-                                icon: const Icon(
-                                  Icons.menu,
-                                  size: 24,
-                                  color: Color(0xFF1E293B),
-                                ),
-                                tooltip: 'Expand Menu',
-                              ),
-                            const SizedBox(width: 12),
-                            const Text(
-                              'KNK Research AI',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF1E293B),
-                              ),
-                            ),
-                          ],
-                        ),
-                        // Middle: Search Bar (only show when report is open)
-                        if (_reportPage != null)
-                          Expanded(
-                            child: Center(
-                              child: CustomSearchBar(
-                                key: _searchBarKey,
-                                controller: searchController,
-                                focusNode: _searchFocusNode,
-                                onChanged: _onSearchChanged,
-                                hintText: 'Search for a company...',
-                                onClear: () {
-                                  searchController.clear();
-                                  searchResults = [];
-                                  setState(() {});
-                                },
-                              ),
-                            ),
-                          ),
-                        // Right: Action Buttons
-                        Row(
-                          children: [
-                            if (user == null) ...[
-                              // Sign Up Button
-                              SizedBox(
-                                height: 40,
-                                child: OutlinedButton(
-                                  onPressed: () {
-                                    context.go('/signup');
-                                  },
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: const Color(0xFF1E2C3D),
-                                    side: const BorderSide(
-                                      color: Color(0xFF1E2C3D),
-                                      width: 1,
-                                    ),
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Sign Up',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              // Sign In Button
-                              SizedBox(
-                                height: 40,
-                                child: ElevatedButton(
-                                  onPressed: () {
-                                    context.go('/signin');
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    foregroundColor: Colors.white,
-                                    elevation: 0,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    padding: EdgeInsets.zero,
-                                  ),
-                                  child: Ink(
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFF2563EB),
-                                          Color(0xFF1E40AF),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Container(
-                                      width: 100,
-                                      height: 40,
-                                      alignment: Alignment.center,
-                                      child: const Text(
-                                        'Sign In',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ] else ...[
-                              // Membership Badge - Only show for paid plans
-                              if (_currentSubscription.isPaid)
-                                Container(
-                                  margin: const EdgeInsets.only(right: 12),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 6),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF1E3A8A)
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: const Color(0xFF1E3A8A)
-                                          .withOpacity(0.2),
-                                      width: 1,
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      const Icon(
-                                        Icons.workspace_premium,
-                                        size: 16,
-                                        color: Color(0xFF1E3A8A),
-                                      ),
-                                      const SizedBox(width: 6),
-                                      Text(
-                                        '${_currentSubscription.value.toUpperCase()} PLAN',
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
-                                          color: Color(0xFF1E3A8A),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              // Feedback Button
-                              Container(
-                                margin: const EdgeInsets.only(right: 12),
-                                child: IconButton(
-                                  onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (context) =>
-                                          const FeedbackPopup(),
-                                    );
-                                  },
-                                  icon: const Icon(
-                                    Icons.feedback_outlined,
-                                    size: 24,
-                                    color: Color(0xFF1E293B),
-                                  ),
-                                  tooltip: 'Send Feedback',
-                                ),
-                              ),
-                              // User Menu
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF8F9FA),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: Colors.black.withOpacity(0.05),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: PopupMenuButton<String>(
-                                  icon: user?.photoURL != null
-                                      ? ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          child: Image.network(
-                                            user!.photoURL!,
-                                            width: 40,
-                                            height: 40,
-                                            fit: BoxFit.cover,
-                                            cacheWidth: 80,
-                                            cacheHeight: 80,
-                                            loadingBuilder: (context, child,
-                                                loadingProgress) {
-                                              if (loadingProgress == null)
-                                                return child;
-                                              return Container(
-                                                width: 40,
-                                                height: 40,
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      const Color(0xFFF1F5F9),
-                                                  borderRadius:
-                                                      BorderRadius.circular(20),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.person_outline,
-                                                  size: 24,
-                                                  color: Color(0xFF1E293B),
-                                                ),
-                                              );
-                                            },
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
-                                              print(
-                                                  'Error loading dropdown profile image: $error');
-                                              return Container(
-                                                width: 40,
-                                                height: 40,
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      const Color(0xFFF1F5F9),
-                                                  borderRadius:
-                                                      BorderRadius.circular(20),
-                                                ),
-                                                child: const Icon(
-                                                  Icons.person_outline,
-                                                  size: 24,
-                                                  color: Color(0xFF1E293B),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        )
-                                      : Container(
-                                          width: 40,
-                                          height: 40,
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFF1F5F9),
-                                            borderRadius:
-                                                BorderRadius.circular(20),
-                                          ),
-                                          child: const Icon(
-                                            Icons.person_outline,
-                                            size: 24,
-                                            color: Color(0xFF1E293B),
-                                          ),
-                                        ),
-                                  position: PopupMenuPosition.under,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  elevation: 4,
-                                  color: Colors.white,
-                                  itemBuilder: (BuildContext context) => [
-                                    PopupMenuItem<String>(
-                                      enabled: false,
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 12),
-                                      child: Row(
-                                        children: [
-                                          if (user?.photoURL != null)
-                                            ClipRRect(
-                                              borderRadius:
-                                                  BorderRadius.circular(20),
-                                              child: Image.network(
-                                                user!.photoURL!,
-                                                width: 40,
-                                                height: 40,
-                                                fit: BoxFit.cover,
-                                                cacheWidth: 80,
-                                                cacheHeight: 80,
-                                                loadingBuilder: (context, child,
-                                                    loadingProgress) {
-                                                  if (loadingProgress == null)
-                                                    return child;
-                                                  return Container(
-                                                    width: 40,
-                                                    height: 40,
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(
-                                                          0xFFF1F5F9),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              20),
-                                                    ),
-                                                    child: const Icon(
-                                                      Icons.person_outline,
-                                                      size: 24,
-                                                      color: Color(0xFF1E293B),
-                                                    ),
-                                                  );
-                                                },
-                                                errorBuilder: (context, error,
-                                                    stackTrace) {
-                                                  print(
-                                                      'Error loading dropdown profile image: $error');
-                                                  return Container(
-                                                    width: 40,
-                                                    height: 40,
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(
-                                                          0xFFF1F5F9),
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              20),
-                                                    ),
-                                                    child: const Icon(
-                                                      Icons.person_outline,
-                                                      size: 24,
-                                                      color: Color(0xFF1E293B),
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            )
-                                          else
-                                            Container(
-                                              width: 40,
-                                              height: 40,
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFF1F5F9),
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                              ),
-                                              child: const Icon(
-                                                Icons.person_outline,
-                                                size: 24,
-                                                color: Color(0xFF1E293B),
-                                              ),
-                                            ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  userName,
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Color(0xFF1E293B),
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Text(
-                                                  userEmail,
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    color: Color(0xFF64748B),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    PopupMenuItem<String>(
-                                      value: 'upgrade',
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 12),
-                                      child: const Row(
-                                        children: [
-                                          Icon(
-                                            Icons.workspace_premium,
-                                            size: 20,
-                                            color: Color(0xFF1E293B),
-                                          ),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Upgrade Plan',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Color(0xFF1E293B),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    PopupMenuItem<String>(
-                                      value: 'settings',
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 12),
-                                      child: const Row(
-                                        children: [
-                                          Icon(
-                                            Icons.settings,
-                                            size: 20,
-                                            color: Color(0xFF1E293B),
-                                          ),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Settings',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Color(0xFF1E293B),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    PopupMenuItem<String>(
-                                      value: 'signout',
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 16, vertical: 12),
-                                      child: const Row(
-                                        children: [
-                                          Icon(
-                                            Icons.logout,
-                                            size: 20,
-                                            color: Color(0xFF1E293B),
-                                          ),
-                                          SizedBox(width: 8),
-                                          Text(
-                                            'Sign Out',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: Color(0xFF1E293B),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                  onSelected: (String value) async {
-                                    if (value == 'signout') {
-                                      _handleSignOut();
-                                    } else if (value == 'upgrade') {
-                                      if (context.mounted) {
-                                        context.push('/pricing');
-                                      }
-                                    } else if (value == 'settings') {
-                                      if (context.mounted) {
-                                        showDialog(
-                                          context: context,
-                                          builder: (context) => SettingsPopup(
-                                            onLogout: _handleSignOut,
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
-                    ),
+                  TopNavigationBar(
+                    user: user,
+                    isMenuCollapsed: _isMenuCollapsed,
+                    onMenuToggle: () =>
+                        setState(() => _isMenuCollapsed = !_isMenuCollapsed),
+                    currentSubscription: _currentSubscription,
+                    onSignOut: _handleSignOut,
+                    reportPage: _reportPage,
+                    searchBarKey: _searchBarKey,
+                    searchController: searchController,
+                    searchFocusNode: _searchFocusNode,
+                    onSearchChanged: _onSearchChanged,
+                    onClearSearch: () {
+                      searchController.clear();
+                      searchResults = [];
+                      setState(() {});
+                    },
+                    onClearReportView: () {
+                      setState(() {
+                        _reportPage = null;
+                        searchController.clear();
+                        searchResults = [];
+                      });
+                    },
                   ),
                   // Main Content
                   Expanded(
@@ -1186,636 +724,98 @@ class _DashboardPageState extends State<DashboardPage>
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 if (user == null) ...[
-                                  // Combined Header and Search Section
-                                  Container(
-                                    width: double.infinity,
-                                    decoration: const BoxDecoration(
-                                      image: DecorationImage(
-                                        image: AssetImage('assets/home.jpg'),
-                                        fit: BoxFit.cover,
-                                      ),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: <Widget>[
-                                        const SizedBox(height: 100),
-                                        const Text(
-                                          "AI-Powered Financial Analyst",
-                                          style: TextStyle(
-                                            fontSize: 64,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                            letterSpacing: -1,
-                                          ),
-                                        ),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 80),
-                                          height: 50,
-                                          child: const Text(
-                                            "Delivering in-depth research to empower informed investment decisions and optimize returns.",
-                                            textAlign: TextAlign.center,
-                                            style: TextStyle(
-                                              fontSize: 18,
-                                              color: Colors.white70,
-                                              fontWeight: FontWeight.normal,
-                                              height: 1.5,
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 40),
-                                        Container(
-                                          constraints: const BoxConstraints(
-                                              maxWidth: 800),
-                                          margin: const EdgeInsets.symmetric(
-                                              horizontal: 12),
-                                          child: Card(
-                                            elevation: 20,
-                                            shadowColor: Colors.black26,
+                                  HeroSection(
+                                    searchController: searchController,
+                                    searchFocusNode: _searchFocusNode,
+                                    onSearchChanged: _onSearchChanged,
+                                    onNavigateToReport: _navigateToReport,
+                                    searchResults: searchResults,
+                                    onHideSearchResults: _hideSearchResults,
+                                    searchCardKey: _searchCardKey,
+                                    disclaimerText: _disclaimerText,
+                                  ),
+                                  Mega7Section(
+                                    mega7Companies: _mega7Companies,
+                                    onNavigateToReport: _navigateToReport,
+                                  ),
+                                  const WhyChooseUsSection(),
+                                  FeedbackSection(
+                                    feedbackController: feedbackController,
+                                    emailController: emailController,
+                                    onSendFeedback: () async {
+                                      if (feedbackController.text.isEmpty) {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: const Text(
+                                                'Please describe your issue in the description field.'),
+                                            backgroundColor: Colors.red,
+                                            behavior: SnackBarBehavior.floating,
+                                            margin: const EdgeInsets.all(16),
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
-                                                  BorderRadius.circular(16),
-                                            ),
-                                            child: Container(
-                                              padding: const EdgeInsets.all(12),
-                                              child: CenterSearchCard(
-                                                searchController:
-                                                    searchController,
-                                                searchFocusNode:
-                                                    _searchFocusNode,
-                                                onSearchChanged:
-                                                    _onSearchChanged,
-                                                onNavigateToReport:
-                                                    _navigateToReport,
-                                                searchResults: searchResults,
-                                                onHideSearchResults:
-                                                    _hideSearchResults,
-                                                searchCardKey: _searchCardKey,
-                                              ),
+                                                  BorderRadius.circular(8),
                                             ),
                                           ),
-                                        ),
-                                        const SizedBox(height: 24),
-                                        Container(
-                                          constraints: const BoxConstraints(
-                                              maxWidth: 600),
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12),
-                                          child: Text(
-                                            _disclaimerText,
-                                            style: const TextStyle(
-                                              color: Color.fromRGBO(
-                                                  255, 255, 255, 0.7),
-                                              fontSize: 12,
-                                              height: 1.5,
-                                              fontWeight: FontWeight.w300,
+                                        );
+                                        return;
+                                      }
+
+                                      try {
+                                        service.sendFeedback(
+                                            emailController.text,
+                                            feedbackController.text);
+                                        emailController.text = "";
+                                        feedbackController.text = "";
+
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: const Text(
+                                                'Thank you for your feedback!'),
+                                            backgroundColor: Colors.green,
+                                            behavior: SnackBarBehavior.floating,
+                                            margin: const EdgeInsets.all(16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
-                                            textAlign: TextAlign.center,
                                           ),
-                                        ),
-                                        const SizedBox(height: 60),
-                                      ],
-                                    ),
+                                        );
+                                      } catch (e) {
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                            content: const Text(
+                                                'Failed to send feedback. Please try again later.'),
+                                            backgroundColor: Colors.red,
+                                            behavior: SnackBarBehavior.floating,
+                                            margin: const EdgeInsets.all(16),
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
                                   ),
-                                  // Mag 7 Section for non-authenticated users
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 20, vertical: 40),
-                                    child: Column(
-                                      children: [
-                                        const Text(
-                                          "Quick Start with Mag 7 Companies for FREE. No Signup Required.",
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            fontSize: 28,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF1E2C3D),
-                                            height: 1.2,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 30),
-                                        Container(
-                                          width: 900,
-                                          child: Center(
-                                            child: Wrap(
-                                              spacing: 12,
-                                              runSpacing: 12,
-                                              alignment: WrapAlignment.center,
-                                              children: _mega7Companies
-                                                  .map((company) {
-                                                final companyName = company
-                                                    .values
-                                                    .toList()
-                                                    .first;
-                                                final ticker =
-                                                    company.keys.toList().first;
-                                                return Material(
-                                                  color: Colors.transparent,
-                                                  child: InkWell(
-                                                    onTap: () =>
-                                                        _navigateToReport(
-                                                            ticker,
-                                                            companyName),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            25),
-                                                    hoverColor:
-                                                        const Color(0xFF2E4B6F)
-                                                            .withOpacity(0.1),
-                                                    child: Container(
-                                                      decoration: BoxDecoration(
-                                                        border: Border.all(
-                                                          color: const Color(
-                                                              0xFF2E4B6F),
-                                                          width: 1.5,
-                                                        ),
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(25),
-                                                        boxShadow: [
-                                                          BoxShadow(
-                                                            color: Colors.black
-                                                                .withOpacity(
-                                                                    0.05),
-                                                            blurRadius: 10,
-                                                            offset:
-                                                                const Offset(
-                                                                    0, 2),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                      padding: const EdgeInsets
-                                                          .symmetric(
-                                                        horizontal: 20,
-                                                        vertical: 12,
-                                                      ),
-                                                      child: Row(
-                                                        mainAxisSize:
-                                                            MainAxisSize.min,
-                                                        children: [
-                                                          Text(
-                                                            ticker,
-                                                            style:
-                                                                const TextStyle(
-                                                              fontSize: 16,
-                                                              fontWeight:
-                                                                  FontWeight
-                                                                      .bold,
-                                                              color: Color(
-                                                                  0xFF2E4B6F),
-                                                            ),
-                                                          ),
-                                                          Container(
-                                                            height: 20,
-                                                            width: 1,
-                                                            margin:
-                                                                const EdgeInsets
-                                                                    .symmetric(
-                                                                    horizontal:
-                                                                        12),
-                                                            color: const Color(
-                                                                    0xFF2E4B6F)
-                                                                .withOpacity(
-                                                                    0.3),
-                                                          ),
-                                                          Text(
-                                                            companyName,
-                                                            style: TextStyle(
-                                                              fontSize: 14,
-                                                              color: Colors
-                                                                  .grey[800],
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                );
-                                              }).toList(),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                  FooterSection(
+                                    termsAndConditionsText:
+                                        _termsAndConditionsText,
+                                    privacyPolicyText: _privacyPolicyText,
                                   ),
                                 ] else ...[
-                                  // Search Card for authenticated users
-                                  Padding(
-                                    padding: const EdgeInsets.all(24.0),
-                                    child: Column(
-                                      children: [
-                                        CenterSearchCard(
-                                          searchController: searchController,
-                                          searchFocusNode: _searchFocusNode,
-                                          onSearchChanged: _onSearchChanged,
-                                          onNavigateToReport: _navigateToReport,
-                                          searchResults: searchResults,
-                                          onHideSearchResults:
-                                              _hideSearchResults,
-                                          searchCardKey: _searchCardKey,
-                                        ),
-                                        const SizedBox(height: 24),
-                                        Container(
-                                          constraints: const BoxConstraints(
-                                              maxWidth: 600),
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 12),
-                                          child: Text(
-                                            _disclaimerText,
-                                            style: TextStyle(
-                                              color: Colors.grey[600],
-                                              fontSize: 12,
-                                              height: 1.5,
-                                              fontWeight: FontWeight.w300,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                                if (user == null) ...[
-                                  const SizedBox(height: 32),
-                                  // Why Choose Us Section
-                                  Container(
-                                    width: double.infinity,
-                                    color: const Color(0xFFF8F9FA),
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 80),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        gradientTitle(
-                                            "Why choose AI agent with us?", 32),
-                                        const SizedBox(height: 60),
-                                        Center(
-                                          child: SingleChildScrollView(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 40),
-                                            scrollDirection: Axis.horizontal,
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                showcaseCard(
-                                                  "Quick Insights",
-                                                  "Understand a U.S.-listed company in just 2 minutes",
-                                                  "Get a comprehensive overview of any U.S.-listed company in just two minutes, including business model, financials, and market performance.",
-                                                  Icons.speed,
-                                                ),
-                                                const SizedBox(width: 24),
-                                                showcaseCard(
-                                                  "Instant Updates",
-                                                  "Refresh reports in just 30 seconds",
-                                                  "No need to search for updates manually—simply refresh the report and get the latest company news and market changes in 30 seconds.",
-                                                  Icons.update,
-                                                ),
-                                                const SizedBox(width: 24),
-                                                showcaseCard(
-                                                  "Comprehensive View",
-                                                  "Full industry landscape & competitor analysis",
-                                                  "Easily see where a company fits within its industry, from upstream and downstream supply chains to key competitors, all in one clear report.",
-                                                  Icons.view_comfy,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  // Feedback Form Section
-                                  Stack(
-                                    children: [
-                                      Container(
-                                        width: double.infinity,
-                                        height: 700,
-                                        color: Colors.black,
-                                      ),
-                                      Align(
-                                        alignment: Alignment.center,
-                                        child: Container(
-                                          constraints: const BoxConstraints(
-                                              maxWidth: 900),
-                                          color: Colors.black,
-                                          padding: const EdgeInsets.all(80),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const SizedBox(height: 10),
-                                              const Text(
-                                                "We would like to hear your feedback.",
-                                                textAlign: TextAlign.center,
-                                                style: TextStyle(
-                                                  fontSize: 30,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 40),
-                                              const Text(
-                                                'Issue description (* Required)',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 5),
-                                              TextField(
-                                                controller: feedbackController,
-                                                maxLines: 5,
-                                                style: const TextStyle(
-                                                    color: Color(0xFF1E293B)),
-                                                decoration: InputDecoration(
-                                                  hintText:
-                                                      'Please tell us what you were trying to achieve and what unexpected results or false information you noticed from AI agent reports.',
-                                                  hintStyle: const TextStyle(
-                                                      color: Color(0xFF94A3B8)),
-                                                  filled: true,
-                                                  fillColor:
-                                                      const Color(0xFFF8FAFC),
-                                                  border: OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    borderSide: BorderSide(
-                                                        color:
-                                                            Colors.grey[300]!),
-                                                  ),
-                                                  enabledBorder:
-                                                      OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    borderSide: BorderSide(
-                                                        color:
-                                                            Colors.grey[300]!),
-                                                  ),
-                                                  focusedBorder:
-                                                      OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    borderSide:
-                                                        const BorderSide(
-                                                            color: Color(
-                                                                0xFF2563EB)),
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 20),
-                                              const Text(
-                                                'Your email',
-                                                style: TextStyle(
-                                                  fontSize: 16,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Color(0xFF64748B),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 5),
-                                              TextField(
-                                                controller: emailController,
-                                                keyboardType:
-                                                    TextInputType.emailAddress,
-                                                style: const TextStyle(
-                                                    color: Color(0xFF1E293B)),
-                                                decoration: InputDecoration(
-                                                  hintText: 'Enter your email',
-                                                  hintStyle: const TextStyle(
-                                                      color: Color(0xFF94A3B8)),
-                                                  filled: true,
-                                                  fillColor:
-                                                      const Color(0xFFF8FAFC),
-                                                  border: OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    borderSide: BorderSide(
-                                                        color:
-                                                            Colors.grey[300]!),
-                                                  ),
-                                                  enabledBorder:
-                                                      OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    borderSide: BorderSide(
-                                                        color:
-                                                            Colors.grey[300]!),
-                                                  ),
-                                                  focusedBorder:
-                                                      OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                    borderSide:
-                                                        const BorderSide(
-                                                            color: Color(
-                                                                0xFF2563EB)),
-                                                  ),
-                                                ),
-                                              ),
-                                              const SizedBox(height: 30),
-                                              Container(
-                                                child: ElevatedButton(
-                                                  onPressed: () async {
-                                                    if (feedbackController
-                                                        .text.isEmpty) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                          content: const Text(
-                                                              'Please describe your issue in the description field.'),
-                                                          backgroundColor:
-                                                              Colors.red,
-                                                          behavior:
-                                                              SnackBarBehavior
-                                                                  .floating,
-                                                          margin:
-                                                              const EdgeInsets
-                                                                  .all(16),
-                                                          shape:
-                                                              RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                          ),
-                                                        ),
-                                                      );
-                                                      return;
-                                                    }
-
-                                                    try {
-                                                      service.sendFeedback(
-                                                          emailController.text,
-                                                          feedbackController
-                                                              .text);
-                                                      emailController.text = "";
-                                                      feedbackController.text =
-                                                          "";
-
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                          content: const Text(
-                                                              'Thank you for your feedback!'),
-                                                          backgroundColor:
-                                                              Colors.green,
-                                                          behavior:
-                                                              SnackBarBehavior
-                                                                  .floating,
-                                                          margin:
-                                                              const EdgeInsets
-                                                                  .all(16),
-                                                          shape:
-                                                              RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    } catch (e) {
-                                                      Navigator.pop(context);
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                          content: const Text(
-                                                              'Failed to send feedback. Please try again later.'),
-                                                          backgroundColor:
-                                                              Colors.red,
-                                                          behavior:
-                                                              SnackBarBehavior
-                                                                  .floating,
-                                                          margin:
-                                                              const EdgeInsets
-                                                                  .all(16),
-                                                          shape:
-                                                              RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                          ),
-                                                        ),
-                                                      );
-                                                    }
-                                                  },
-                                                  style: ButtonStyle(
-                                                    backgroundColor:
-                                                        MaterialStateProperty
-                                                            .resolveWith<Color>(
-                                                      (Set<MaterialState>
-                                                          states) {
-                                                        if (states.contains(
-                                                            MaterialState
-                                                                .hovered)) {
-                                                          return Colors.white60;
-                                                        }
-                                                        return Colors.white;
-                                                      },
-                                                    ),
-                                                  ),
-                                                  child: Container(
-                                                    width: 100,
-                                                    height: 40,
-                                                    child: const Center(
-                                                      child: Text(
-                                                        'Send',
-                                                        style: TextStyle(
-                                                          color: Colors.black,
-                                                          fontSize: 18,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.only(bottom: 20),
-                                    width: double.infinity,
-                                    color: Colors.black,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        TextButton(
-                                          onPressed: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (context) => LegalDialog(
-                                                title: 'Terms & Conditions',
-                                                content:
-                                                    _termsAndConditionsText,
-                                              ),
-                                            );
-                                          },
-                                          child: const Text(
-                                            'Terms & Conditions',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ),
-                                        const Text(
-                                          ' • ',
-                                          style: TextStyle(
-                                            color: Color(0xFF64748B),
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            showDialog(
-                                              context: context,
-                                              builder: (context) => LegalDialog(
-                                                title: 'Privacy Policy',
-                                                content: _privacyPolicyText,
-                                              ),
-                                            );
-                                          },
-                                          child: const Text(
-                                            'Privacy Policy',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.only(bottom: 20),
-                                    width: double.infinity,
-                                    color: Colors.black,
-                                    child: Text(
-                                      '© 2025 KNK Research AI. All rights reserved.',
-                                      style: TextStyle(
-                                        color: Colors.grey[600],
-                                        fontSize: 12,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
+                                  AuthenticatedSearchSection(
+                                    searchController: searchController,
+                                    searchFocusNode: _searchFocusNode,
+                                    onSearchChanged: _onSearchChanged,
+                                    onNavigateToReport: _navigateToReport,
+                                    searchResults: searchResults,
+                                    onHideSearchResults: _hideSearchResults,
+                                    searchCardKey: _searchCardKey,
+                                    disclaimerText: _disclaimerText,
                                   ),
                                 ],
                               ],
@@ -1826,116 +826,28 @@ class _DashboardPageState extends State<DashboardPage>
                 ],
               ),
             ),
-            // Side Menu (only show if user is signed in)
+            // Side Menu
             if (user != null)
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOutCubic,
-                left: _isMenuCollapsed ? -280 : 0,
-                top: 0,
-                bottom: 0,
-                width: 280,
-                child: SideMenu(
-                  isMenuCollapsed: _isMenuCollapsed,
-                  isHovered: _isHovered,
-                  onMenuCollapse: (value) =>
-                      setState(() => _isMenuCollapsed = value),
-                  onHoverChange: (value) => setState(() => _isHovered = value),
-                  onNewSearch: () {
-                    setState(() {
-                      _reportPage = null;
-                      searchController.clear();
-                      searchResults = [];
-                    });
-                    _hideSearchResults();
-                  },
-                  onNavigateToReport: _navigateToReport,
-                  browseHistory: _browseHistory,
-                  searchController: searchController,
-                  searchResults: searchResults,
-                  onHideSearchResults: _hideSearchResults,
-                ),
+              SideMenuSection(
+                isMenuCollapsed: _isMenuCollapsed,
+                isHovered: _isHovered,
+                onMenuCollapse: (value) =>
+                    setState(() => _isMenuCollapsed = value),
+                onHoverChange: (value) => setState(() => _isHovered = value),
+                onNewSearch: () {
+                  setState(() {
+                    _reportPage = null;
+                    searchController.clear();
+                    searchResults = [];
+                  });
+                  _hideSearchResults();
+                },
+                onNavigateToReport: _navigateToReport,
+                browseHistory: _browseHistory,
+                searchController: searchController,
+                searchResults: searchResults,
+                onHideSearchResults: _hideSearchResults,
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget gradientTitle(String text, double fontSize) {
-    return ShaderMask(
-      shaderCallback: (bounds) => const LinearGradient(
-        colors: [Color(0xFF1E2C3D), Color(0xFF2E4B6F)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ).createShader(bounds),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: fontSize,
-          fontWeight: FontWeight.bold,
-          color: Colors.white,
-        ),
-      ),
-    );
-  }
-
-  Widget showcaseCard(
-      String title, String subtitle, String description, IconData iconName) {
-    return Card(
-      elevation: 8,
-      shadowColor: Colors.black12,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(40),
-        width: 350,
-        height: 420,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1E2C3D).withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(
-                iconName,
-                color: const Color(0xFF1E2C3D),
-                size: 32,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E2C3D),
-                height: 1.2,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              subtitle,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Color(0xFF1E2C3D),
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              description,
-              style: TextStyle(
-                fontSize: 16,
-                height: 1.6,
-                color: Colors.grey[500],
-              ),
-            ),
           ],
         ),
       ),

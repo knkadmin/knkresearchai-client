@@ -88,9 +88,9 @@ class CustomSearchBar extends StatelessWidget {
                   )
                 : null,
             border: InputBorder.none,
-            isDense: false,
+            isDense: true,
             contentPadding: contentPadding ??
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             alignLabelWithHint: true,
           ),
         ),
