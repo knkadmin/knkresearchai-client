@@ -627,7 +627,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
         if (isFullWidth)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 32),
+            padding: const EdgeInsets.symmetric(horizontal: 0),
             child: section.buildContent(),
           )
         else

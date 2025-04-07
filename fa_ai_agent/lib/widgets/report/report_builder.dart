@@ -129,7 +129,7 @@ class ReportBuilder extends StatelessWidget {
                 maxWidth: LayoutConstants.maxWidth,
               ),
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

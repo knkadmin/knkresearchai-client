@@ -165,7 +165,7 @@ class ReportContentLayout extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Text(
             _disclaimer,
             style: TextStyle(
