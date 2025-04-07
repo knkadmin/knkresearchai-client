@@ -523,44 +523,48 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
           builder: (context, constraints) {
             if (constraints.maxWidth >= 1000) return const SizedBox.shrink();
 
-            return Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: ReportStickyHeader(
-                tickerCode: widget.tickerCode,
-                companyName: widget.companyName,
-                showCompanyNameInTitle: _showCompanyNameInTitle,
-                cacheTimeSubject: widget.cacheTimeSubject,
-                watchlistService: _watchlistService,
-                isRefreshing: _isRefreshing,
-                onRefresh: _handleRefresh,
-                onWatch: () async {
-                  try {
-                    final isInWatchlist = await _watchlistService
-                        .isInWatchlist(widget.tickerCode)
-                        .first;
-                    if (isInWatchlist) {
-                      await _watchlistService
-                          .removeFromWatchlist(widget.tickerCode);
-                    } else {
-                      await _watchlistService.addToWatchlist(
-                        companyName: widget.companyName,
-                        companyTicker: widget.tickerCode,
-                      );
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Error: ${e.toString()}'),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  }
-                },
-              ),
+            return Stack(
+              children: [
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: ReportStickyHeader(
+                    tickerCode: widget.tickerCode,
+                    companyName: widget.companyName,
+                    showCompanyNameInTitle: _showCompanyNameInTitle,
+                    cacheTimeSubject: widget.cacheTimeSubject,
+                    watchlistService: _watchlistService,
+                    isRefreshing: _isRefreshing,
+                    onRefresh: _handleRefresh,
+                    onWatch: () async {
+                      try {
+                        final isInWatchlist = await _watchlistService
+                            .isInWatchlist(widget.tickerCode)
+                            .first;
+                        if (isInWatchlist) {
+                          await _watchlistService
+                              .removeFromWatchlist(widget.tickerCode);
+                        } else {
+                          await _watchlistService.addToWatchlist(
+                            companyName: widget.companyName,
+                            companyTicker: widget.tickerCode,
+                          );
+                        }
+                      } catch (e) {
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error: ${e.toString()}'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ),
+              ],
             );
           },
         ),
