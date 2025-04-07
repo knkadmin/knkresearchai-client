@@ -28,49 +28,50 @@ class SubscriptionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 6,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E3A8A).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.workspace_premium,
+                  size: 16,
+                  color: Color(0xFF1E3A8A),
                 ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.workspace_premium,
-                      size: 16,
-                      color: Color(0xFF1E3A8A),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${subscription.type.value.toUpperCase()} PLAN',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1E3A8A),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const Spacer(),
-              if (subscription.type.isPaid)
+                const SizedBox(width: 6),
                 Text(
-                  subscription.cancelAtPeriodEnd
-                      ? 'Your plan will be cancelled on: ${subscription.cancelAt?.toString().split(' ')[0] ?? 'N/A'}'
-                      : 'Your plan auto-renews on: ${subscription.currentPeriodEnd?.toString().split(' ')[0] ?? 'N/A'}',
+                  '${subscription.type.value.toUpperCase()} PLAN',
                   style: const TextStyle(
                     fontSize: 14,
-                    color: Color(0xFF64748B),
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E3A8A),
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
+          if (subscription.type.isPaid) ...[
+            const SizedBox(height: 12),
+            Text(
+              subscription.cancelAtPeriodEnd
+                  ? 'Your plan will be cancelled on: ${subscription.cancelAt?.toString().split(' ')[0] ?? 'N/A'}'
+                  : 'Your plan auto-renews on: ${subscription.currentPeriodEnd?.toString().split(' ')[0] ?? 'N/A'}',
+              style: TextStyle(
+                fontSize: 14,
+                color: subscription.cancelAtPeriodEnd
+                    ? const Color(0xFFDC2626) // Red color for cancellation
+                    : const Color(
+                        0xFF64748B), // Original gray color for auto-renew
+              ),
+            ),
+          ],
           const SizedBox(height: 24),
           const Text(
             'Current Benefits',

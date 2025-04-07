@@ -67,22 +67,8 @@ class TopNavigationBar extends StatelessWidget {
 
     return Row(
       children: [
-        if (user == null)
-          IconButton(
-            onPressed: () {
-              if (context.mounted) {
-                onClearReportView();
-                context.go('/');
-              }
-            },
-            icon: const Icon(
-              Icons.home,
-              size: 24,
-              color: Color(0xFF1E293B),
-            ),
-            tooltip: 'Home',
-          )
-        else if (MediaQuery.of(context).size.width < 850 || isMenuCollapsed)
+        if (user != null &&
+            (MediaQuery.of(context).size.width < 850 || isMenuCollapsed))
           IconButton(
             onPressed: onMenuToggle,
             icon: Icon(
@@ -92,8 +78,8 @@ class TopNavigationBar extends StatelessWidget {
             ),
             tooltip: isFloatingMenu ? 'Close Menu' : 'Toggle Menu',
           ),
-        const SizedBox(width: 12),
-        if (MediaQuery.of(context).size.width >= 850 || isFloatingMenu)
+        SizedBox(width: user == null ? 0 : 12),
+        if (user == null || MediaQuery.of(context).size.width >= 850)
           const Text(
             'KNK Research AI',
             style: TextStyle(

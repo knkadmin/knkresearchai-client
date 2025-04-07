@@ -27,7 +27,7 @@ class _SettingsPopupState extends State<SettingsPopup> {
       backgroundColor: Colors.transparent,
       child: Container(
         constraints:
-            const BoxConstraints(minHeight: 200, maxHeight: 600, maxWidth: 850),
+            const BoxConstraints(minHeight: 200, maxHeight: 700, maxWidth: 850),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),

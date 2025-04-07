@@ -39,6 +39,7 @@ class HeroSection extends StatelessWidget {
           const SizedBox(height: 100),
           const Text(
             "AI-Powered Financial Analyst",
+            textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 64,
               fontWeight: FontWeight.bold,
