@@ -5,6 +5,7 @@ import '../../services/firestore_service.dart';
 import '../../models/user.dart';
 import 'subscription_card.dart';
 import 'subscription_actions.dart';
+import 'package:go_router/go_router.dart';
 
 class SubscriptionSettings extends StatelessWidget {
   const SubscriptionSettings({super.key});
@@ -40,7 +41,50 @@ class SubscriptionSettings extends StatelessWidget {
               SubscriptionCard(subscription: subscription),
               const SizedBox(height: 24),
               if (subscription.type.isPaid)
-                SubscriptionActions(subscription: subscription),
+                SubscriptionActions(subscription: subscription)
+              else
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      context.push('/pricing');
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0xFF2563EB),
+                            Color(0xFF1E40AF),
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'Upgrade Plan',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
         );

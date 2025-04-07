@@ -79,6 +79,16 @@ class TopNavigationBar extends StatelessWidget {
             tooltip: isFloatingMenu ? 'Close Menu' : 'Toggle Menu',
           ),
         SizedBox(width: user == null ? 0 : 12),
+        if (user == null && reportPage != null)
+          IconButton(
+            onPressed: onClearReportView,
+            icon: const Icon(
+              Icons.home,
+              size: 24,
+              color: Color(0xFF1E293B),
+            ),
+            tooltip: 'Go to Home',
+          ),
         if (user == null || MediaQuery.of(context).size.width >= 850)
           const Text(
             'KNK Research AI',

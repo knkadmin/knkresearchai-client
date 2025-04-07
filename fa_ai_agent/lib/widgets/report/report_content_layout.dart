@@ -37,8 +37,8 @@ class ReportContentLayout extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: EdgeInsets.only(
-        left: isNarrow ? 24.0 : 264.0,
-        right: 24.0,
+        left: isNarrow ? 12.0 : 264.0,
+        right: 12.0,
       ),
       child: LayoutBuilder(
         builder: (BuildContext context, BoxConstraints constraints) {
@@ -110,7 +110,7 @@ class ReportContentLayout extends StatelessWidget {
   Widget _buildNarrowLayout(
       List<Widget> contentSections, bool shouldShowMetrics) {
     return Padding(
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -186,7 +186,7 @@ class ReportContentLayout extends StatelessWidget {
     bool shouldShowMetrics,
   ) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 32),
+      padding: const EdgeInsets.symmetric(horizontal: 0),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
