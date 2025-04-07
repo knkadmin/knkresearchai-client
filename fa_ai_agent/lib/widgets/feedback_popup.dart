@@ -90,7 +90,7 @@ class _FeedbackPopupState extends State<FeedbackPopup> {
             ),
             const SizedBox(height: 24),
             const Text(
-              'Your email',
+              'Your email (Optional)',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
@@ -154,23 +154,8 @@ class _FeedbackPopupState extends State<FeedbackPopup> {
                       );
                       return;
                     }
-                    if (emailController.text.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content:
-                              const Text('Please enter your email address.'),
-                          backgroundColor: Colors.red,
-                          behavior: SnackBarBehavior.floating,
-                          margin: const EdgeInsets.all(16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                      );
-                      return;
-                    }
                     try {
-                      await service.sendFeedback(
+                      service.sendFeedback(
                           emailController.text, feedbackController.text);
                       emailController.text = "";
                       feedbackController.text = "";

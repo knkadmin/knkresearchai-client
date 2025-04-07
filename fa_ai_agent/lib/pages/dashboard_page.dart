@@ -1590,44 +1590,16 @@ class _DashboardPageState extends State<DashboardPage>
                                                       );
                                                       return;
                                                     }
-                                                    if (emailController
-                                                        .text.isEmpty) {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                          content: const Text(
-                                                              'Please enter your email address.'),
-                                                          backgroundColor:
-                                                              Colors.red,
-                                                          behavior:
-                                                              SnackBarBehavior
-                                                                  .floating,
-                                                          margin:
-                                                              const EdgeInsets
-                                                                  .all(16),
-                                                          shape:
-                                                              RoundedRectangleBorder(
-                                                            borderRadius:
-                                                                BorderRadius
-                                                                    .circular(
-                                                                        8),
-                                                          ),
-                                                        ),
-                                                      );
-                                                      return;
-                                                    }
+
                                                     try {
-                                                      await service
-                                                          .sendFeedback(
-                                                              emailController
-                                                                  .text,
-                                                              feedbackController
-                                                                  .text);
+                                                      service.sendFeedback(
+                                                          emailController.text,
+                                                          feedbackController
+                                                              .text);
                                                       emailController.text = "";
                                                       feedbackController.text =
                                                           "";
-                                                      Navigator.pop(context);
+
                                                       ScaffoldMessenger.of(
                                                               context)
                                                           .showSnackBar(
