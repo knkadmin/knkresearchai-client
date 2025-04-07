@@ -20,6 +20,8 @@ import 'services/public_user_last_viewed_report_tracker.dart';
 import 'dart:async';
 import 'services/subscription_service.dart';
 import 'package:hive/hive.dart';
+import 'package:intl/intl.dart';
+import 'package:fa_ai_agent/widgets/report/report_sticky_header.dart';
 
 /// Configuration for a section
 class SectionConfig {
@@ -480,35 +482,89 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       );
     }
 
-    return SingleChildScrollView(
-      controller: _scrollController,
-      child: Center(
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: LayoutConstants.maxWidth),
-          child: LayoutBuilder(
-            builder: (BuildContext context, BoxConstraints constraints) {
-              final bool isNarrow = constraints.maxWidth < 1000;
-              return ReportContentLayout(
-                sections: sections,
-                isAuthenticated: isAuthenticated,
-                isMag7Company: isMag7Company,
-                userSubscriptionType: userSubscriptionType,
-                isNarrow: isNarrow,
-                buildSection: _buildSection,
-                headerView: (title) => ReportHeader(
-                  companyName: widget.companyName,
-                  cacheTimeSubject: widget.cacheTimeSubject,
-                  sectorSubject: widget.sectorSubject,
-                  language: widget.language,
-                ),
-                sectionCache: _sectionCache,
-                tickerCode: widget.tickerCode,
-                language: widget.language.value,
-              );
-            },
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          controller: _scrollController,
+          child: Center(
+            child: Container(
+              constraints:
+                  const BoxConstraints(maxWidth: LayoutConstants.maxWidth),
+              child: LayoutBuilder(
+                builder: (BuildContext context, BoxConstraints constraints) {
+                  final bool isNarrow = constraints.maxWidth < 1000;
+                  return Padding(
+                    padding: EdgeInsets.only(top: isNarrow ? 60 : 0),
+                    child: ReportContentLayout(
+                      sections: sections,
+                      isAuthenticated: isAuthenticated,
+                      isMag7Company: isMag7Company,
+                      userSubscriptionType: userSubscriptionType,
+                      isNarrow: isNarrow,
+                      buildSection: _buildSection,
+                      headerView: (title) => ReportHeader(
+                        companyName: widget.companyName,
+                        cacheTimeSubject: widget.cacheTimeSubject,
+                        sectorSubject: widget.sectorSubject,
+                        language: widget.language,
+                      ),
+                      sectionCache: _sectionCache,
+                      tickerCode: widget.tickerCode,
+                      language: widget.language.value,
+                    ),
+                  );
+                },
+              ),
+            ),
           ),
         ),
-      ),
+        // Add sticky header for narrow screens
+        LayoutBuilder(
+          builder: (context, constraints) {
+            if (constraints.maxWidth >= 1000) return const SizedBox.shrink();
+
+            return Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: ReportStickyHeader(
+                tickerCode: widget.tickerCode,
+                companyName: widget.companyName,
+                showCompanyNameInTitle: _showCompanyNameInTitle,
+                cacheTimeSubject: widget.cacheTimeSubject,
+                watchlistService: _watchlistService,
+                isRefreshing: _isRefreshing,
+                onRefresh: _handleRefresh,
+                onWatch: () async {
+                  try {
+                    final isInWatchlist = await _watchlistService
+                        .isInWatchlist(widget.tickerCode)
+                        .first;
+                    if (isInWatchlist) {
+                      await _watchlistService
+                          .removeFromWatchlist(widget.tickerCode);
+                    } else {
+                      await _watchlistService.addToWatchlist(
+                        companyName: widget.companyName,
+                        companyTicker: widget.tickerCode,
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Error: ${e.toString()}'),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+                    }
+                  }
+                },
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 
