@@ -1190,13 +1190,9 @@ class _DashboardPageState extends State<DashboardPage>
                                   Container(
                                     width: double.infinity,
                                     decoration: const BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          Color(0xFF1E40AF),
-                                          Color(0xFF1E3A8A),
-                                        ],
+                                      image: DecorationImage(
+                                        image: AssetImage('assets/home.jpg'),
+                                        fit: BoxFit.cover,
                                       ),
                                     ),
                                     child: Column(

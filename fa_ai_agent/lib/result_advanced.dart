@@ -525,6 +525,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       cacheTimeStream: widget.cacheTimeSubject.stream,
       onSectionTap: _scrollToSection,
       onRefresh: _handleRefresh,
+      isRefreshing: _isRefreshing,
       onWatch: () async {
         try {
           // Get the current value from the stream
@@ -553,7 +554,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       isHovered: _isHovered,
       loadingStateStream: widget.service.loadingStateSubject.stream,
       watchlistService: _watchlistService,
-      isRefreshing: _isRefreshing,
     );
   }
 

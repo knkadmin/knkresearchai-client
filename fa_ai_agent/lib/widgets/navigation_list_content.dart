@@ -174,41 +174,68 @@ class NavigationListContent extends StatelessWidget {
                                             onExit: (_) => setState(
                                                 () => isHovered = false),
                                             child: showCompanyName
-                                                ? IconButton(
-                                                    onPressed: onRefresh,
-                                                    icon: Icon(
-                                                      Icons.refresh,
-                                                      size: 16,
-                                                      color: isHovered
-                                                          ? Colors.white
-                                                          : const Color(
-                                                              0xFF1E3A8A),
-                                                    ),
-                                                    style: IconButton.styleFrom(
-                                                      backgroundColor: isHovered
-                                                          ? const Color(
-                                                              0xFF1E3A8A)
-                                                          : Colors.white,
-                                                      padding: EdgeInsets.zero,
-                                                      minimumSize:
-                                                          const Size(32, 32),
-                                                      shape:
-                                                          RoundedRectangleBorder(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(8),
-                                                        side: BorderSide(
-                                                          color: isHovered
-                                                              ? const Color(
-                                                                  0xFF1E3A8A)
-                                                              : const Color(
+                                                ? ValueListenableBuilder<bool>(
+                                                    valueListenable:
+                                                        isRefreshing,
+                                                    builder: (context,
+                                                        isRefreshing, child) {
+                                                      return IconButton(
+                                                        onPressed: isRefreshing
+                                                            ? null
+                                                            : onRefresh,
+                                                        icon: isRefreshing
+                                                            ? const SizedBox(
+                                                                width: 16,
+                                                                height: 16,
+                                                                child:
+                                                                    ThinkingAnimation(
+                                                                  size: 16,
+                                                                  color: Color(
+                                                                      0xFF1E3A8A),
+                                                                ),
+                                                              )
+                                                            : Icon(
+                                                                Icons.refresh,
+                                                                size: 16,
+                                                                color: isHovered
+                                                                    ? Colors
+                                                                        .white
+                                                                    : const Color(
+                                                                        0xFF1E3A8A),
+                                                              ),
+                                                        style: IconButton
+                                                            .styleFrom(
+                                                          backgroundColor:
+                                                              isHovered
+                                                                  ? const Color(
                                                                       0xFF1E3A8A)
-                                                                  .withOpacity(
-                                                                      0.2),
-                                                          width: 1,
+                                                                  : Colors
+                                                                      .white,
+                                                          padding:
+                                                              EdgeInsets.zero,
+                                                          minimumSize:
+                                                              const Size(
+                                                                  32, 32),
+                                                          shape:
+                                                              RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                            side: BorderSide(
+                                                              color: isHovered
+                                                                  ? const Color(
+                                                                      0xFF1E3A8A)
+                                                                  : const Color(
+                                                                          0xFF1E3A8A)
+                                                                      .withOpacity(
+                                                                          0.2),
+                                                              width: 1,
+                                                            ),
+                                                          ),
                                                         ),
-                                                      ),
-                                                    ),
+                                                      );
+                                                    },
                                                   )
                                                 : _buildRefreshButton(
                                                     context, isHovered),
