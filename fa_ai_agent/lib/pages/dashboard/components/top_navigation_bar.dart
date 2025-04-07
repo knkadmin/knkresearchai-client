@@ -38,32 +38,80 @@ class TopNavigationBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 65,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.black.withOpacity(0.05),
-            width: 1,
+    final isSmallScreen = MediaQuery.of(context).size.width < 850;
+    final isNonAuthed = user == null;
+    final isSearchFocused = searchFocusNode.hasFocus;
+    final shouldExpandSearch =
+        isNonAuthed && isSmallScreen && isSearchFocused && reportPage != null;
+    final shouldStackButtons =
+        isNonAuthed && isSmallScreen && reportPage != null;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          height: 65,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.black.withOpacity(0.05),
+                width: 1,
+              ),
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              if (!shouldExpandSearch) _buildLeftSection(context),
+              if (reportPage != null)
+                shouldExpandSearch
+                    ? Expanded(child: _buildSearchBar(context))
+                    : _buildSearchBar(context),
+              if (!isNonAuthed || !shouldStackButtons)
+                _buildRightSection(context),
+            ],
           ),
         ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildLeftSection(context),
-          if (reportPage != null) _buildSearchBar(),
-          _buildRightSection(context),
-        ],
-      ),
+        if (shouldStackButtons)
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border(
+                bottom: BorderSide(
+                  color: Colors.black.withOpacity(0.05),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: _buildSignUpButton(context),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 1,
+                  child: _buildSignInButton(context),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
   Widget _buildLeftSection(BuildContext context) {
     final isFloatingMenu =
         MediaQuery.of(context).size.width < 850 && !isMenuCollapsed;
+    final isSmallScreen = MediaQuery.of(context).size.width < 850;
+    final isNonAuthed = user == null;
+    final isSearchFocused = searchFocusNode.hasFocus;
+    final shouldHideLabel =
+        isNonAuthed && isSmallScreen && isSearchFocused && reportPage != null;
 
     return Row(
       children: [
@@ -91,7 +139,8 @@ class TopNavigationBar extends StatelessWidget {
             ),
             tooltip: 'Go to Home',
           ),
-        if (user == null || MediaQuery.of(context).size.width >= 850)
+        if ((user == null || MediaQuery.of(context).size.width >= 850) &&
+            !shouldHideLabel)
           const Padding(
             padding: EdgeInsets.only(left: 8),
             child: Text(
@@ -107,19 +156,33 @@ class TopNavigationBar extends StatelessWidget {
     );
   }
 
-  Widget _buildSearchBar() {
-    return Expanded(
-      child: Center(
-        child: CustomSearchBar(
-          key: searchBarKey,
-          controller: searchController,
-          focusNode: searchFocusNode,
-          onChanged: onSearchChanged,
-          hintText: 'Search for a company...',
-          onClear: onClearSearch,
-        ),
-      ),
-    );
+  Widget _buildSearchBar(BuildContext context) {
+    final isSmallScreen = MediaQuery.of(context).size.width < 850;
+    final isNonAuthed = user == null;
+    final isSearchFocused = searchFocusNode.hasFocus;
+    final shouldExpand = isNonAuthed && isSmallScreen && isSearchFocused;
+
+    return shouldExpand
+        ? CustomSearchBar(
+            key: searchBarKey,
+            controller: searchController,
+            focusNode: searchFocusNode,
+            onChanged: onSearchChanged,
+            hintText: 'Search for a company...',
+            onClear: onClearSearch,
+          )
+        : Expanded(
+            child: Center(
+              child: CustomSearchBar(
+                key: searchBarKey,
+                controller: searchController,
+                focusNode: searchFocusNode,
+                onChanged: onSearchChanged,
+                hintText: 'Search for a company...',
+                onClear: onClearSearch,
+              ),
+            ),
+          );
   }
 
   Widget _buildRightSection(BuildContext context) {
@@ -143,6 +206,7 @@ class TopNavigationBar extends StatelessWidget {
   Widget _buildSignUpButton(BuildContext context) {
     return SizedBox(
       height: 40,
+      width: 120,
       child: OutlinedButton(
         onPressed: () => context.go('/signup'),
         style: OutlinedButton.styleFrom(
@@ -169,6 +233,7 @@ class TopNavigationBar extends StatelessWidget {
   Widget _buildSignInButton(BuildContext context) {
     return SizedBox(
       height: 40,
+      width: 120,
       child: ElevatedButton(
         onPressed: () => context.go('/signin'),
         style: ElevatedButton.styleFrom(
@@ -193,7 +258,6 @@ class TopNavigationBar extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Container(
-            width: 100,
             height: 40,
             alignment: Alignment.center,
             child: const Text(

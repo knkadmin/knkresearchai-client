@@ -41,7 +41,7 @@ class ReportHeader extends StatelessWidget {
               ),
             ],
           ),
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 40),
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 18),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

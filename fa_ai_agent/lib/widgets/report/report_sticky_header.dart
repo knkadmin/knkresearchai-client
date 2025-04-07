@@ -138,9 +138,9 @@ class _ReportStickyHeaderState extends State<ReportStickyHeader> {
                   );
                 },
               ),
-              if (isAuthenticated)
-                Row(
-                  children: [
+              Row(
+                children: [
+                  if (isAuthenticated)
                     MouseRegion(
                       cursor: SystemMouseCursors.click,
                       onEnter: (_) => setState(() => _isHoveredWatch = true),
@@ -217,54 +217,52 @@ class _ReportStickyHeaderState extends State<ReportStickyHeader> {
                               ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      onEnter: (_) => setState(() => _isHoveredRefresh = true),
-                      onExit: (_) => setState(() => _isHoveredRefresh = false),
-                      child: ValueListenableBuilder<bool>(
-                        valueListenable: widget.isRefreshing,
-                        builder: (context, isRefreshing, child) {
-                          return IconButton(
-                            onPressed: isRefreshing ? null : widget.onRefresh,
-                            icon: isRefreshing
-                                ? const SizedBox(
-                                    width: 16,
-                                    height: 16,
-                                    child: ThinkingAnimation(
-                                      size: 16,
-                                      color: Color(0xFF1E3A8A),
-                                    ),
-                                  )
-                                : Icon(
-                                    Icons.refresh,
+                  if (isAuthenticated) const SizedBox(width: 8),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    onEnter: (_) => setState(() => _isHoveredRefresh = true),
+                    onExit: (_) => setState(() => _isHoveredRefresh = false),
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable: widget.isRefreshing,
+                      builder: (context, isRefreshing, child) {
+                        return IconButton(
+                          onPressed: isRefreshing ? null : widget.onRefresh,
+                          icon: isRefreshing
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: ThinkingAnimation(
                                     size: 16,
-                                    color: _isHoveredRefresh
-                                        ? Colors.white
-                                        : const Color(0xFF1E3A8A),
+                                    color: Color(0xFF1E3A8A),
                                   ),
-                            style: IconButton.styleFrom(
-                              backgroundColor: _isHoveredRefresh
-                                  ? const Color(0xFF1E3A8A)
-                                  : Colors.white,
-                              minimumSize: const Size(32, 32),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                side: BorderSide(
+                                )
+                              : Icon(
+                                  Icons.refresh,
+                                  size: 16,
                                   color: _isHoveredRefresh
-                                      ? const Color(0xFF1E3A8A)
-                                      : const Color(0xFF1E3A8A)
-                                          .withOpacity(0.2),
-                                  width: 1,
+                                      ? Colors.white
+                                      : const Color(0xFF1E3A8A),
                                 ),
+                          style: IconButton.styleFrom(
+                            backgroundColor: _isHoveredRefresh
+                                ? const Color(0xFF1E3A8A)
+                                : Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(
+                                color: _isHoveredRefresh
+                                    ? const Color(0xFF1E3A8A)
+                                    : const Color(0xFF1E3A8A).withOpacity(0.2),
+                                width: 1,
                               ),
                             ),
-                          );
-                        },
-                      ),
+                          ),
+                        );
+                      },
                     ),
-                  ],
-                ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),
