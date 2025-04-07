@@ -94,6 +94,7 @@ flutter:
   assets:
     - assets/charts-demo.jpeg
     - assets/google-sign-in.jpg
+    - assets/knkresearch-logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
