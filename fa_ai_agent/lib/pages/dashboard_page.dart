@@ -57,6 +57,9 @@ class _DashboardPageState extends State<DashboardPage>
   SubscriptionType _currentSubscription = SubscriptionType.free;
   double _opacity = 0.0;
 
+  static const String _disclaimerText =
+      'Disclaimer: This website uses AI-generated information to offer general stock insights, not definitive financial advice. We encourage you to do your own research or consult a professional, since all investments carry risk, and we cannot be held responsible for any possible losses.';
+
   @override
   void initState() {
     super.initState();
@@ -731,7 +734,7 @@ class _DashboardPageState extends State<DashboardPage>
                               ),
                             const SizedBox(width: 12),
                             const Text(
-                              'KNK Research',
+                              'KNK Research AI',
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -797,18 +800,37 @@ class _DashboardPageState extends State<DashboardPage>
                                     context.go('/signin');
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF1E2C3D),
+                                    backgroundColor: Colors.transparent,
                                     foregroundColor: Colors.white,
                                     elevation: 0,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
+                                    padding: EdgeInsets.zero,
                                   ),
-                                  child: const Text(
-                                    'Sign In',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
+                                  child: Ink(
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFF2563EB),
+                                          Color(0xFF1E40AF),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Container(
+                                      width: 100,
+                                      height: 40,
+                                      alignment: Alignment.center,
+                                      child: const Text(
+                                        'Sign In',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1169,8 +1191,8 @@ class _DashboardPageState extends State<DashboardPage>
                                         begin: Alignment.topCenter,
                                         end: Alignment.bottomCenter,
                                         colors: [
-                                          Color(0xFF1E2C3D),
-                                          Color(0xFF2E4B6F),
+                                          Color(0xFF1E40AF),
+                                          Color(0xFF1E3A8A),
                                         ],
                                       ),
                                     ),
@@ -1233,6 +1255,24 @@ class _DashboardPageState extends State<DashboardPage>
                                                 searchCardKey: _searchCardKey,
                                               ),
                                             ),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 24),
+                                        Container(
+                                          constraints: const BoxConstraints(
+                                              maxWidth: 600),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12),
+                                          child: Text(
+                                            _disclaimerText,
+                                            style: const TextStyle(
+                                              color: Color.fromRGBO(
+                                                  255, 255, 255, 0.7),
+                                              fontSize: 12,
+                                              height: 1.5,
+                                              fontWeight: FontWeight.w300,
+                                            ),
+                                            textAlign: TextAlign.center,
                                           ),
                                         ),
                                         const SizedBox(height: 60),
@@ -1364,14 +1404,37 @@ class _DashboardPageState extends State<DashboardPage>
                                   // Search Card for authenticated users
                                   Padding(
                                     padding: const EdgeInsets.all(24.0),
-                                    child: CenterSearchCard(
-                                      searchController: searchController,
-                                      searchFocusNode: _searchFocusNode,
-                                      onSearchChanged: _onSearchChanged,
-                                      onNavigateToReport: _navigateToReport,
-                                      searchResults: searchResults,
-                                      onHideSearchResults: _hideSearchResults,
-                                      searchCardKey: _searchCardKey,
+                                    child: Column(
+                                      children: [
+                                        CenterSearchCard(
+                                          searchController: searchController,
+                                          searchFocusNode: _searchFocusNode,
+                                          onSearchChanged: _onSearchChanged,
+                                          onNavigateToReport: _navigateToReport,
+                                          searchResults: searchResults,
+                                          onHideSearchResults:
+                                              _hideSearchResults,
+                                          searchCardKey: _searchCardKey,
+                                        ),
+                                        const SizedBox(height: 24),
+                                        Container(
+                                          constraints: const BoxConstraints(
+                                              maxWidth: 600),
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 12),
+                                          child: Text(
+                                            _disclaimerText,
+                                            style: const TextStyle(
+                                              color: Color.fromRGBO(
+                                                  255, 255, 255, 0.7),
+                                              fontSize: 12,
+                                              height: 1.5,
+                                              fontWeight: FontWeight.w300,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
