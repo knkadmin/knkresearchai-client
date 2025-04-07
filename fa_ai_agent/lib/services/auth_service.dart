@@ -109,7 +109,15 @@ class AuthService {
   // Sign out
   Future<void> signOut() async {
     try {
+      // Clear any pending operations
+      await _auth.currentUser?.reload();
+
+      // Sign out from Firebase Auth
       await _auth.signOut();
+
+      // Clear any cached data
+      await _auth.currentUser?.reload();
+
       print('Successfully signed out');
     } catch (e) {
       print('Error signing out: $e');

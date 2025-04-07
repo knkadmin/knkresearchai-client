@@ -19,6 +19,17 @@ class FirestoreService {
     );
   }
 
+  // Add method to clean up Firestore listeners
+  Future<void> cleanup() async {
+    try {
+      // Clear any pending operations
+      await _firestore.terminate();
+      await _firestore.clearPersistence();
+    } catch (e) {
+      print('Error cleaning up Firestore: $e');
+    }
+  }
+
   bool isCurrentUserAuthed() {
     return _auth.currentUser != null;
   }

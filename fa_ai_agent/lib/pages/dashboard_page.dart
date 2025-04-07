@@ -645,7 +645,14 @@ class _DashboardPageState extends State<DashboardPage>
 
   Future<void> _handleSignOut() async {
     try {
+      // Cancel all user-related listeners
+      _authStateSubscription.cancel();
+      _subscriptionSubscription.cancel();
+      _browseHistory = []; // Clear browse history
+
+      // Sign out from Auth
       await AuthService().signOut();
+
       if (mounted) {
         setState(() {
           _reportPage = null;
