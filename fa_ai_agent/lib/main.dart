@@ -48,9 +48,9 @@ void main() async {
     await Firebase.initializeApp(
       options: const FirebaseOptions(
           apiKey: "AIzaSyCfP_7S5823KOdftkK2z_UyZ6aRvr8kZZU",
-          authDomain: "knkresearchai.firebaseapp.com",
+          authDomain: "knkresearchai.com",
           projectId: "knkresearchai",
-          storageBucket: "knkresearchai.firebaseapp.com",
+          storageBucket: "knkresearchai.com",
           messagingSenderId: "1067859590559",
           appId: "1:1067859590559:web:0c9ae04b3b08b215338598",
           measurementId: "G-T9CGSRZCR2"),
