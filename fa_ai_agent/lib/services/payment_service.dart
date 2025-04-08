@@ -6,8 +6,13 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:fa_ai_agent/services/auth_service.dart';
 import 'package:fa_ai_agent/constants/api_constants.dart';
+import 'package:fa_ai_agent/services/firestore_service.dart';
+import 'package:rxdart/rxdart.dart';
 
 class PaymentService {
+  static final BehaviorSubject<bool> _isLoadingSubject = BehaviorSubject.seeded(false);
+  static Stream<bool> get isLoadingStream => _isLoadingSubject.stream;
+
   static Future<void> initiateCheckout(String stripeProductId) async {
     try {
       final checkoutSession = await _createCheckoutSession(stripeProductId);
@@ -94,6 +99,51 @@ class PaymentService {
 
     if (response.statusCode != 200) {
       throw Exception('Failed to resume subscription: ${response.body}');
+    }
+  }
+
+  static Future<void> openCustomerPortal() async {
+    try {
+      _isLoadingSubject.add(true);
+      final user = AuthService().currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final userData = await FirestoreService().getUserData(user.uid);
+      final stripeCustomerId = userData?.subscription.stripeCustomerId;
+      if (stripeCustomerId == null) {
+        throw Exception('No Stripe customer ID found');
+      }
+
+      final url = Uri.parse('${ApiConstants.baseUrl}/create-customer-portal-session');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'stripeCustomerId': stripeCustomerId,
+          'returnUrl': 'https://knkresearchai.com',
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to create customer portal session: ${response.body}');
+      }
+
+      final session = json.decode(response.body);
+      final portalUrl = session['url'];
+
+      if (kIsWeb) {
+        html.window.location.href = portalUrl;
+      } else {
+        if (await canLaunchUrl(Uri.parse(portalUrl))) {
+          await launchUrl(Uri.parse(portalUrl));
+        } else {
+          throw Exception('Could not open billing portal');
+        }
+      }
+    } finally {
+      _isLoadingSubject.add(false);
     }
   }
 }

@@ -8,6 +8,7 @@ class Subscription {
   final DateTime? currentPeriodEnd;
   final DateTime? cancelAt;
   final bool cancelAtPeriodEnd;
+  final String? stripeCustomerId;
 
   const Subscription({
     required this.type,
@@ -16,6 +17,7 @@ class Subscription {
     this.currentPeriodEnd,
     this.cancelAt,
     this.cancelAtPeriodEnd = false,
+    this.stripeCustomerId,
   });
 
   factory Subscription.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,7 @@ class Subscription {
           ? DateTime.fromMillisecondsSinceEpoch(json['cancelAt'] * 1000)
           : null,
       cancelAtPeriodEnd: json['cancelAtPeriodEnd'] ?? false,
+      stripeCustomerId: json['stripeCustomerId'],
     );
   }
 
@@ -45,6 +48,7 @@ class Subscription {
         'currentPeriodEnd': currentPeriodEnd!.toIso8601String(),
       if (cancelAt != null) 'cancelAt': cancelAt!.toIso8601String(),
       'cancelAtPeriodEnd': cancelAtPeriodEnd,
+      if (stripeCustomerId != null) 'stripeCustomerId': stripeCustomerId,
     };
   }
 }
@@ -56,6 +60,7 @@ class User {
   final Subscription subscription;
   final DateTime createdAt;
   final DateTime lastLoginAt;
+  final String? stripeCustomerId;
 
   const User({
     required this.uid,
@@ -64,6 +69,7 @@ class User {
     required this.subscription,
     required this.createdAt,
     required this.lastLoginAt,
+    this.stripeCustomerId,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -80,6 +86,7 @@ class User {
           ? (json['lastLoginAt'] as Timestamp).toDate()
           : DateTime.parse(
               json['lastLoginAt'] ?? DateTime.now().toIso8601String()),
+      stripeCustomerId: json['stripeCustomerId'],
     );
   }
 
@@ -91,6 +98,7 @@ class User {
       'subscription': subscription.toJson(),
       'createdAt': createdAt.toIso8601String(),
       'lastLoginAt': lastLoginAt.toIso8601String(),
+      if (stripeCustomerId != null) 'stripeCustomerId': stripeCustomerId,
     };
   }
 
@@ -101,6 +109,7 @@ class User {
     Subscription? subscription,
     DateTime? createdAt,
     DateTime? lastLoginAt,
+    String? stripeCustomerId,
   }) {
     return User(
       uid: uid ?? this.uid,
@@ -109,6 +118,7 @@ class User {
       subscription: subscription ?? this.subscription,
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
+      stripeCustomerId: stripeCustomerId ?? this.stripeCustomerId,
     );
   }
 }
