@@ -5,25 +5,33 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "fa_ai_agent",
+            "name": "fa_ai_agent (staging)",
             "request": "launch",
             "type": "dart",
             "args": [
-                "--web-port",
-                "5000" // Change this to your preferred port
+                "--web-port=3001",
+                "--dart-define=FLUTTER_ENV_STAGING=true"
             ]
         },
         {
             "name": "fa_ai_agent (profile mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "flutterMode": "profile",
+            "args": [
+                "--web-port=3001",
+                "--dart-define=FLUTTER_ENV_STAGING=true"
+            ]
         },
         {
             "name": "fa_ai_agent (release mode)",
             "request": "launch",
             "type": "dart",
-            "flutterMode": "release"
+            "flutterMode": "release",
+            "args": [
+                "--web-port=3001",
+                "--dart-define=FLUTTER_ENV_PRODUCTION=true"
+            ]
         }
     ]
 }

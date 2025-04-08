@@ -125,4 +125,4 @@ flutter:
 
 # Custom scripts that can be run with 'flutter pub run'
 scripts:
-  web: flutter run -d chrome --web-port=3001
+  web: flutter run -d chrome --web-port=3001 --dart-define=FLUTTER_ENV_STAGING=true

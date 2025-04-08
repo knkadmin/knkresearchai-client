@@ -1,4 +1,5 @@
+import '../config/environment.dart';
+
 class ApiConstants {
-  static const String baseUrl =
-      'https://knkresearchai-server-1067859590559.australia-southeast1.run.app';
+  static String get baseUrl => EnvironmentConfig.current.baseUrl;
 }

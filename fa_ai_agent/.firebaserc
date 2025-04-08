@@ -1,12 +1,20 @@
 {
   "projects": {
-    "default": "knkresearchai"
+    "default": "knkresearchai",
+    "staging": "knkresearchai-staging"
   },
   "targets": {
     "knkresearchai": {
       "hosting": {
         "knkresearchai": [
           "knkresearchai"
+        ]
+      }
+    },
+    "knkresearchai-staging": {
+      "hosting": {
+        "knkresearchai-staging": [
+          "knkresearchai-staging"
         ]
       }
     }

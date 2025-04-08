@@ -1,21 +1,42 @@
 {
-  "hosting": {
-    "source": ".",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
-    ],
-    "frameworksBackend": {
-      "region": "us-central1"
+  "hosting": [
+    {
+      "target": "knkresearchai",
+      "public": "build/web",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "frameworksBackend": {
+        "region": "us-central1"
+      },
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
     },
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  },
+    {
+      "target": "knkresearchai-staging",
+      "public": "build/web",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**"
+      ],
+      "frameworksBackend": {
+        "region": "us-central1"
+      },
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
+    }
+  ],
   "flutter": {
     "platforms": {
       "android": {
@@ -47,7 +68,7 @@
           "configurations": {
             "android": "1:754540534666:android:60c07fb04046acb8b38673",
             "ios": "1:754540534666:ios:eb57c6187429520db38673",
-            "macos": "1:754540534666:ios:eb57c6187429520db38673",
+            "macos": "1:754540534666:ios:eb57c6187429520b38673",
             "web": "1:754540534666:web:b64ab809db245190b38673",
             "windows": "1:754540534666:web:8b3a9081389f7160b38673"
           }

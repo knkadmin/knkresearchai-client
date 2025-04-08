@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:flutter_stripe_web/flutter_stripe_web.dart';
@@ -19,9 +19,26 @@ import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:fa_ai_agent/pages/error_page.dart';
 import 'package:fa_ai_agent/pages/payment_success_page.dart';
 import 'package:fa_ai_agent/pages/payment_cancel_page.dart';
+import 'package:fa_ai_agent/config/environment.dart';
+import 'package:fa_ai_agent/config/environments.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize environment based on FLUTTER_ENV or debug mode
+  const isStaging = bool.fromEnvironment('FLUTTER_ENV_STAGING', defaultValue: false);
+  const isProduction = bool.fromEnvironment('FLUTTER_ENV_PRODUCTION', defaultValue: false);
+  
+  if (isStaging) {
+    EnvironmentConfig.setEnvironment(Environment.staging);
+  } else if (isProduction) {
+    EnvironmentConfig.setEnvironment(Environment.production);
+  } else if (kDebugMode) {
+    EnvironmentConfig.setEnvironment(Environment.development);
+  } else {
+    EnvironmentConfig.setEnvironment(Environment.production);
+  }
+
   setPathUrlStrategy();
   if (kIsWeb) {
     // Register the web implementation
@@ -44,19 +61,34 @@ void main() async {
   await Hive.openBox('settings');
 
   try {
-    // Initialize Firebase first
-    await Firebase.initializeApp(
-      options: const FirebaseOptions(
-          apiKey: "AIzaSyCfP_7S5823KOdftkK2z_UyZ6aRvr8kZZU",
-          authDomain: "knkresearchai.com",
-          projectId: "knkresearchai",
-          storageBucket: "knkresearchai.com",
-          messagingSenderId: "1067859590559",
-          appId: "1:1067859590559:web:0c9ae04b3b08b215338598",
-          measurementId: "G-T9CGSRZCR2"),
-    );
+    // Initialize Firebase with environment-specific options
+    FirebaseOptions firebaseOptions;
+    
+    if (isStaging || kDebugMode) {
+      firebaseOptions = const FirebaseOptions(
+        apiKey: "AIzaSyAMuu7xA038G02LXURG-eyyfDS-kSz4Fag",
+        authDomain: "knkresearchai-staging.firebaseapp.com",
+        projectId: "knkresearchai-staging",
+        storageBucket: "knkresearchai-staging.firebasestorage.app",
+        messagingSenderId: "57077865056",
+        appId: "1:57077865056:web:a83baa56f428add233c105",
+        measurementId: "G-Z7967LYT1Z"
+      );
+    } else {
+      // Production configuration
+      firebaseOptions = const FirebaseOptions(
+        apiKey: "AIzaSyCfP_7S5823KOdftkK2z_UyZ6aRvr8kZZU",
+        authDomain: "knkresearchai.com",
+        projectId: "knkresearchai",
+        storageBucket: "knkresearchai.com",
+        messagingSenderId: "1067859590559",
+        appId: "1:1067859590559:web:0c9ae04b3b08b215338598",
+        measurementId: "G-T9CGSRZCR2"
+      );
+    }
 
-    print('Firebase initialized successfully');
+    await Firebase.initializeApp(options: firebaseOptions);
+    print('Firebase initialized successfully with ${firebaseOptions.projectId} configuration');
 
     // Configure Firestore settings
     if (kIsWeb) {
