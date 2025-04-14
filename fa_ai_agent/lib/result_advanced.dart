@@ -23,6 +23,7 @@ import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/widgets/report/report_sticky_header.dart';
 import 'services/firestore_service.dart';
+import 'package:fa_ai_agent/widgets/report/chart_builder.dart';
 
 /// Configuration for a section
 class SectionConfig {
@@ -401,6 +402,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       _imageCache.clear(); // Clear image cache
       _imageUrlCache.clear(); // Clear image URL cache
       _sectionCache.clear(); // Clear section cache
+      ChartBuilder.clearSignedUrlCache(); // Clear signed URL cache
       forceRefresh = true; // Set force refresh flag
 
       // Reinitialize the report widgets with the updated forceRefresh value

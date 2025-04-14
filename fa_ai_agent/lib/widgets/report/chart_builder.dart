@@ -17,6 +17,11 @@ class ChartBuilder extends StatefulWidget {
   final String title;
   final bool showTitle;
 
+  // Static method to clear the signed URL cache
+  static void clearSignedUrlCache() {
+    _ChartBuilderState.clearSignedUrlCache();
+  }
+
   const ChartBuilder({
     super.key,
     required this.stream,
@@ -34,6 +39,14 @@ class ChartBuilder extends StatefulWidget {
 }
 
 class _ChartBuilderState extends State<ChartBuilder> {
+  // Static cache for signed URLs
+  static final Map<String, String> _signedUrlCache = {};
+
+  // Static method to clear the signed URL cache
+  static void clearSignedUrlCache() {
+    _signedUrlCache.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<Map<String, dynamic>>(
@@ -97,11 +110,34 @@ class _ChartBuilderState extends State<ChartBuilder> {
               errorMessage: "No image URL found for ${widget.chartKey}");
         }
 
+        // Check if we have a cached signed URL
+        final String? cachedSignedUrl = _signedUrlCache[imageUrl];
+        if (cachedSignedUrl != null) {
+          final Image image = Image.network(
+            cachedSignedUrl,
+            cacheWidth: LayoutConstants.maxWidth.toInt(),
+            filterQuality: FilterQuality.high,
+          );
+          final content = _buildChartContent(context, image, markdown);
+          widget.onContentBuilt?.call(content);
+          return content;
+        }
+
         // Load the image from URL
         return FutureBuilder<String>(
           future: ImageUtils.getSignedUrl(imageUrl),
           builder: (context, signedUrlSnapshot) {
             if (signedUrlSnapshot.connectionState == ConnectionState.waiting) {
+              // Show cached image if available while loading
+              if (widget.cachedImage != null) {
+                final content = _buildChartContent(
+                  context,
+                  widget.cachedImage! as Image,
+                  markdown,
+                );
+                widget.onContentBuilt?.call(content);
+                return content;
+              }
               return Center(
                 child: LayoutBuilder(
                   builder: (context, constraints) {
@@ -123,6 +159,9 @@ class _ChartBuilderState extends State<ChartBuilder> {
             }
 
             final String signedUrl = signedUrlSnapshot.data!;
+            // Cache the signed URL
+            _signedUrlCache[imageUrl] = signedUrl;
+
             final Image image = Image.network(
               signedUrl,
               cacheWidth: LayoutConstants.maxWidth.toInt(),
