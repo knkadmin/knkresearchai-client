@@ -141,50 +141,122 @@ class _ChartBuilderState extends State<ChartBuilder> {
 
   Widget _buildChartContent(
       BuildContext context, Image image, String? markdown) {
-    final content = Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.grey.shade200,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.showTitle) ...[
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: gradientTitle(widget.title, 35),
           ),
+          Container(
+            width: double.infinity,
+            height: 1,
+            color: Colors.grey.shade200,
+          ),
+          const SizedBox(height: 8),
         ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (widget.showTitle) ...[
-            gradientTitle(widget.title, 35),
-            const SizedBox(height: 16),
-          ],
-          ChartImage(image: image),
-          if (markdown != null && markdown.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Container(
+        ChartImage(image: image),
+        if (markdown != null && markdown.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Container(
               width: double.infinity,
               constraints: const BoxConstraints(minHeight: 50),
               child: MarkdownBody(
                 data: markdown,
                 styleSheet: MarkdownStyleSheet(
+                  h1: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF1E293B),
+                    letterSpacing: -0.5,
+                    height: 1.3,
+                  ),
+                  h2: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                    letterSpacing: -0.3,
+                    height: 1.4,
+                  ),
+                  h3: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                    letterSpacing: -0.2,
+                    height: 1.4,
+                  ),
                   p: const TextStyle(
-                    fontSize: 15,
+                    fontSize: 16,
+                    color: Color(0xFF334155),
+                    height: 1.7,
+                    letterSpacing: 0.2,
+                  ),
+                  strong: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                  ),
+                  em: const TextStyle(
+                    fontStyle: FontStyle.italic,
                     color: Color(0xFF475569),
+                  ),
+                  blockquote: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontStyle: FontStyle.italic,
+                    fontSize: 15,
                     height: 1.6,
+                  ),
+                  blockquoteDecoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    border: Border(
+                      left: BorderSide(
+                        color: const Color(0xFFE2E8F0),
+                        width: 4,
+                      ),
+                    ),
+                  ),
+                  code: const TextStyle(
+                    backgroundColor: Color(0xFFF1F5F9),
+                    fontFamily: 'monospace',
+                    fontSize: 14,
+                    color: Color(0xFF0F172A),
+                  ),
+                  codeblockDecoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: const Color(0xFFE2E8F0),
+                    ),
+                  ),
+                  listBullet: const TextStyle(
+                    color: Color(0xFF1E293B),
+                  ),
+                  tableHead: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                  ),
+                  tableBody: const TextStyle(
+                    color: Color(0xFF334155),
+                  ),
+                  tableBorder: TableBorder.all(
+                    color: const Color(0xFFE2E8F0),
+                    width: 1,
+                  ),
+                  tableCellsPadding: const EdgeInsets.all(12),
+                  tableCellsDecoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(
+                      color: const Color(0xFFE2E8F0),
+                    ),
                   ),
                 ),
               ),
             ),
-          ],
+          ),
         ],
-      ),
+      ],
     );
-
-    return content;
   }
 }
