@@ -4,10 +4,8 @@ import 'package:fa_ai_agent/widgets/error_display.dart';
 import 'package:fa_ai_agent/widgets/report/chart_image.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:http/http.dart' as http;
 import 'package:fa_ai_agent/gradient_text.dart';
-import 'package:fa_ai_agent/constants/api_constants.dart';
-import 'dart:convert';
+import 'package:fa_ai_agent/utils/image_utils.dart';
 
 class ChartBuilder extends StatelessWidget {
   final Future<Map<String, dynamic>> future;
@@ -28,19 +26,6 @@ class ChartBuilder extends StatelessWidget {
     required this.title,
     this.showTitle = true,
   });
-
-  Future<String> _getSignedUrl(String fileName) async {
-    final url = Uri.parse('${ApiConstants.baseUrl}/signed-image-url')
-        .replace(queryParameters: {'filename': fileName});
-    final response = await http.get(url);
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to get signed URL: ${response.body}');
-    }
-    final body = jsonDecode(response.body);
-    final imageUrl = body['url'];
-    return imageUrl;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -151,7 +136,7 @@ class ChartBuilder extends StatelessWidget {
           }
 
           return FutureBuilder<String>(
-            future: _getSignedUrl(imageUrl),
+            future: ImageUtils.getSignedUrl(imageUrl),
             builder: (context, signedUrlSnapshot) {
               if (signedUrlSnapshot.connectionState == ConnectionState.done) {
                 if (signedUrlSnapshot.hasError) {

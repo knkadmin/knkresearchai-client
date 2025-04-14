@@ -24,6 +24,7 @@ class FinancialReport {
   final IndustrialRelationship? industrialRelationship;
   final SectorComparison? sectorComparison;
   final EpsVsStockPriceChart? epsVsStockPriceChart;
+  final FinancialMetrics? financialMetrics;
 
   FinancialReport({
     this.shortname,
@@ -49,6 +50,7 @@ class FinancialReport {
     this.industrialRelationship,
     this.sectorComparison,
     this.epsVsStockPriceChart,
+    this.financialMetrics,
   });
 
   factory FinancialReport.fromJson(Map<String, dynamic> json) {
@@ -129,6 +131,10 @@ class FinancialReport {
           ? EpsVsStockPriceChart.fromJson(
               json['epsVsStockPriceChart'] as Map<String, dynamic>)
           : null,
+      financialMetrics: json['financialMetrics'] != null
+          ? FinancialMetrics.fromJson(
+              json['financialMetrics'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -158,6 +164,7 @@ class FinancialReport {
       'industrialRelationship': industrialRelationship?.toJson(),
       'sectorComparison': sectorComparison?.toJson(),
       'epsVsStockPriceChart': epsVsStockPriceChart?.toJson(),
+      'financialMetrics': financialMetrics?.toJson(),
     };
   }
 }
@@ -407,5 +414,24 @@ class EpsVsStockPriceChart {
   Map<String, dynamic> toJson() => {
         'imageUrl': imageUrl,
         'md': md,
+      };
+}
+
+class FinancialMetrics {
+  final String? md;
+  final String? imageUrl;
+
+  FinancialMetrics({this.md, this.imageUrl});
+
+  factory FinancialMetrics.fromJson(Map<String, dynamic> json) {
+    return FinancialMetrics(
+      md: json['md'] as String?,
+      imageUrl: json['imageUrl'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'md': md,
+        'imageUrl': imageUrl,
       };
 }

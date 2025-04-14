@@ -427,12 +427,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       await box.delete(key);
     }
 
-    // Wait for all sections to finish loading
-    while (widget.service.loadingStateSubject.value.values
-        .any((isLoading) => isLoading)) {
-      await Future.delayed(const Duration(milliseconds: 100));
-    }
-
     _isRefreshing.value = false;
     forceRefresh = false; // Reset force refresh flag after refresh is complete
   }

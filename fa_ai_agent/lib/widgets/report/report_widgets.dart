@@ -9,6 +9,7 @@ import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:fa_ai_agent/constants/api_constants.dart';
+import 'package:fa_ai_agent/utils/image_utils.dart';
 
 /// A class that provides methods to build various report widgets
 class ReportWidgets {
@@ -35,19 +36,6 @@ class ReportWidgets {
         _futureCache = futureCache,
         _cacheTimeSubject = cacheTimeSubject,
         _forceRefresh = forceRefresh;
-
-  Future<String> _getSignedUrl(String fileName) async {
-    final url = Uri.parse('${ApiConstants.baseUrl}/signed-image-url')
-        .replace(queryParameters: {'filename': fileName});
-    final response = await http.get(url);
-
-    if (response.statusCode != 200) {
-      throw Exception('Failed to get signed URL: ${response.body}');
-    }
-    final body = jsonDecode(response.body);
-    final imageUrl = body['url'];
-    return imageUrl;
-  }
 
   /// Gets a cached future or creates a new one
   Future<Map<String, dynamic>> _getCachedFuture(
@@ -312,11 +300,11 @@ class ReportWidgets {
           final redFlags = data['accountingRedflags'];
           if (redFlags['incomeStatement'] != null) {
             redFlags['incomeStatement'] =
-                await _getSignedUrl(redFlags['incomeStatement']);
+                await ImageUtils.getSignedUrl(redFlags['incomeStatement']);
           }
           if (redFlags['balanceSheet'] != null) {
             redFlags['balanceSheet'] =
-                await _getSignedUrl(redFlags['balanceSheet']);
+                await ImageUtils.getSignedUrl(redFlags['balanceSheet']);
           }
         }
         return data;

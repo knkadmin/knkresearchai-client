@@ -159,6 +159,9 @@ class AgentService {
         if (report.epsVsStockPriceChart != null) {
           data['epsVsStockPriceChart'] = report.epsVsStockPriceChart!.toJson();
         }
+        if (report.financialMetrics != null) {
+          data['financialMetrics'] = report.financialMetrics!.toJson();
+        }
 
         // Add cache timestamp
         data['cachedAt'] = report.lastUpdated?.microsecondsSinceEpoch;
@@ -175,9 +178,29 @@ class AgentService {
     return _activeStreams[streamKey]!;
   }
 
+  // Clean up streams when they're no longer needed
+  void disposeStream(String ticker, String language) {
+    final streamKey = '$ticker-$language';
+    _activeStreams.remove(streamKey);
+    _latestData.remove(streamKey);
+    _sectionStreams.remove(streamKey);
+  }
+
+  // Clear all active streams
+  void clearStreams() {
+    _activeStreams.clear();
+    _latestData.clear();
+    _sectionStreams.clear();
+  }
+
   // Get a section-specific stream
   Stream<Map<String, dynamic>> getSectionStream(
-      String ticker, String language, String section) {
+      String ticker, String language, String section,
+      {bool forceRefresh = false}) {
+    if (forceRefresh) {
+      clearStreams();
+    }
+
     final streamKey = '$ticker-$language';
     final sectionStreams = _sectionStreams.putIfAbsent(streamKey, () => {});
 
@@ -194,123 +217,134 @@ class AgentService {
   // They will now use the section-specific streams
   Future<Map<String, dynamic>> getBusinessOverview(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'businessOverview');
+    final stream = getSectionStream(ticker, language, 'businessOverview',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getFinancialPerformance(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'financialPerformance');
+    final stream = getSectionStream(ticker, language, 'financialPerformance',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getAccountingRedFlags(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'accountingRedflags');
+    final stream = getSectionStream(ticker, language, 'accountingRedflags',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getCompetitorLandscape(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'competitorLandscape');
+    final stream = getSectionStream(ticker, language, 'competitorLandscape',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getStrategicOutlooks(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'strategicOutlooks');
+    final stream = getSectionStream(ticker, language, 'strategicOutlooks',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getSupplyChain(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'supplyChain');
+    final stream = getSectionStream(ticker, language, 'supplyChain',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getRecentNews(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'recentNews');
+    final stream = getSectionStream(ticker, language, 'recentNews',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getPEPBRatioBand(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'pePbRatioBand');
+    final stream = getSectionStream(ticker, language, 'pePbRatioBand',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getSectorStocks(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'sectorStocks');
+    final stream = getSectionStream(ticker, language, 'sectorStocks',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getStockPriceTarget(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'stockPriceTarget');
+    final stream = getSectionStream(ticker, language, 'stockPriceTarget',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getInsiderTrading(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'insiderTrading');
+    final stream = getSectionStream(ticker, language, 'insiderTrading',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getCandleStickChart(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'candleStickChart');
+    final stream = getSectionStream(ticker, language, 'candleStickChart',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getCombinedCharts(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'combinedCharts');
+    final stream = getSectionStream(ticker, language, 'combinedCharts',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getCashFlowChart(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'cashFlowChart');
+    final stream = getSectionStream(ticker, language, 'cashFlowChart',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getIndustrialRelationship(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'industrialRelationship');
+    final stream = getSectionStream(ticker, language, 'industrialRelationship',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getSectorComparison(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'sectorComparison');
+    final stream = getSectionStream(ticker, language, 'sectorComparison',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getShareholderChart(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'shareholderChart');
+    final stream = getSectionStream(ticker, language, 'shareholderChart',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getEPSvsStockPriceChart(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'epsVsStockPriceChart');
+    final stream = getSectionStream(ticker, language, 'epsVsStockPriceChart',
+        forceRefresh: forceRefresh);
     return await stream.first;
   }
 
   Future<Map<String, dynamic>> getFinancialMetrics(
       String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'financialMetrics');
+    final stream = getSectionStream(ticker, language, 'financialMetrics',
+        forceRefresh: forceRefresh);
     return await stream.first;
-  }
-
-  // Clean up streams when they're no longer needed
-  void disposeStream(String ticker, String language) {
-    final streamKey = '$ticker-$language';
-    _activeStreams.remove(streamKey);
-    _latestData.remove(streamKey);
-    _sectionStreams.remove(streamKey);
   }
 }
