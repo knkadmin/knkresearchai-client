@@ -19,6 +19,7 @@ class PremiumSectionManager {
   // List of sections that can be shown as preview with blur overlay
   final List<String> previewSections = [
     'Price Target',
+    'EPS vs Stock Price',
   ];
 
   /// Checks if a section is premium

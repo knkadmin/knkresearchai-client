@@ -9,6 +9,7 @@ import '../services/premium_section_manager.dart';
 class SectionVisibilityManager {
   static final List<String> freeSections = [
     'Company Overview',
+    'Financial Metrics',
   ];
 
   static final PremiumSectionManager _premiumSectionManager =
