@@ -1,155 +1,147 @@
 import 'package:flutter/material.dart';
+import 'package:fa_ai_agent/widgets/animations/thinking_animation.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
-import 'package:fa_ai_agent/widgets/animations/loading_spinner.dart';
-import 'package:fa_ai_agent/widgets/error_display.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
-import 'package:fa_ai_agent/gradient_text.dart';
-import 'package:url_launcher/url_launcher.dart';
 
-class ReportBuilder extends StatelessWidget {
-  final Future<Map<String, dynamic>> future;
+class ReportBuilder extends StatefulWidget {
+  final Stream<Map<String, dynamic>> stream;
   final String title;
   final String reportKey;
   final bool showTitle;
+  final Function(Widget)? onContentBuilt;
 
   const ReportBuilder({
-    super.key,
-    required this.future,
+    Key? key,
+    required this.stream,
     required this.title,
     required this.reportKey,
     this.showTitle = true,
-  });
+    this.onContentBuilt,
+  }) : super(key: key);
 
   @override
+  State<ReportBuilder> createState() => _ReportBuilderState();
+}
+
+class _ReportBuilderState extends State<ReportBuilder> {
+  @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: future,
-      builder:
-          (BuildContext context, AsyncSnapshot<Map<String, dynamic>> snapshot) {
-        if (snapshot.connectionState == ConnectionState.done) {
-          final Map<String, dynamic> data = snapshot.data ?? {};
-          if (data.isEmpty) {
-            return ErrorDisplayWidget(
-                errorMessage: "Failed to load $reportKey");
-          }
-
-          final Map<String, dynamic> payload = data[reportKey];
-          final String markdown = payload["md"] ?? "";
-          if (markdown.isEmpty) {
-            return ErrorDisplayWidget(
-                errorMessage: "Unable to find any content on $reportKey");
-          }
-          final markdownWithNoHeading = markdown.replaceAll("## $title", "");
-
-          final markdownBody = MarkdownBody(
-            data: markdownWithNoHeading,
-            selectable: true,
-            onTapLink: (text, href, title) async {
-              if (href != null) {
-                final uri = Uri.parse(href);
-                if (await canLaunchUrl(uri)) {
-                  await launchUrl(uri, mode: LaunchMode.platformDefault);
-                }
-              }
-            },
-            styleSheetTheme: MarkdownStyleSheetBaseTheme.material,
-            styleSheet: MarkdownStyleSheet(
-              p: const TextStyle(
-                fontSize: 16,
-                height: 1.6,
-                color: Color(0xFF1F2937),
-              ),
-              blockquote: TextStyle(
-                fontStyle: FontStyle.italic,
-                color: Colors.grey.shade700,
-                fontSize: 16,
-                height: 1.6,
-              ),
-              code: TextStyle(
-                fontFamily: 'Menlo',
-                fontSize: 14,
-                color: Colors.blue.shade800,
-                backgroundColor: Colors.grey.shade100,
-              ),
-              h1: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                color: Color(0xFF1E3A8A),
-                height: 1.4,
-              ),
-              h2: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E3A8A),
-                height: 1.4,
-              ),
-              h3: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E3A8A),
-                height: 1.4,
-              ),
-              a: TextStyle(
-                color: Colors.blue.shade700,
-                decoration: TextDecoration.underline,
-              ),
-              tableHead: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E3A8A),
-                fontSize: 14,
-              ),
-              tableBody: const TextStyle(
-                fontSize: 14,
-                color: Color(0xFF1F2937),
-              ),
-              tableBorder: TableBorder.all(
-                color: Colors.grey.shade200,
-                width: 1,
-              ),
-              tableCellsPadding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 8.0,
-              ),
-              tableColumnWidth: const FlexColumnWidth(),
-            ),
-          );
-
-          if (!showTitle) {
-            return markdownBody;
-          }
-
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: LayoutConstants.maxWidth,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    gradientTitle(title, 35),
-                    const SizedBox(height: 24),
-                    markdownBody,
-                  ],
-                ),
-              ),
-            ),
-          );
-        } else {
-          final loadingSpinner = LoadingSpinner();
-          if (!showTitle) {
-            return loadingSpinner;
-          }
-          return Center(
-            child: Container(
-              constraints: const BoxConstraints(
-                maxWidth: LayoutConstants.maxWidth,
-              ),
-              child: loadingSpinner,
+    return StreamBuilder<Map<String, dynamic>>(
+      stream: widget.stream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(
+            child: ThinkingAnimation(
+              size: 24,
+              color: Color(0xFF1E3A8A),
             ),
           );
         }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Text(
+              'Error loading report: ${snapshot.error}',
+              style: const TextStyle(color: Colors.red),
+            ),
+          );
+        }
+
+        if (!snapshot.hasData) {
+          return const Center(
+            child: Text('No data available'),
+          );
+        }
+
+        final data = snapshot.data!;
+        final markdown = data[widget.reportKey]?['md'] as String?;
+
+        if (markdown == null || markdown.isEmpty) {
+          return const Center(
+            child: Text('No content available'),
+          );
+        }
+
+        final content = Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.grey.shade200,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (widget.showTitle) ...[
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    widget.title,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E3A8A),
+                    ),
+                  ),
+                ),
+                Container(
+                  width: double.infinity,
+                  height: 1,
+                  color: Colors.grey.shade200,
+                ),
+              ],
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: MarkdownBody(
+                  data: markdown,
+                  styleSheet: MarkdownStyleSheet(
+                    p: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF475569),
+                      height: 1.6,
+                    ),
+                    strong: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E293B),
+                    ),
+                    em: const TextStyle(
+                      fontStyle: FontStyle.italic,
+                    ),
+                    blockquote: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontStyle: FontStyle.italic,
+                    ),
+                    code: const TextStyle(
+                      backgroundColor: Color(0xFFF8FAFC),
+                      fontFamily: 'monospace',
+                      fontSize: 14,
+                    ),
+                    codeblockDecoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFFE5E7EB),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+
+        // Notify parent widget that content has been built
+        widget.onContentBuilt?.call(content);
+
+        return content;
       },
     );
   }

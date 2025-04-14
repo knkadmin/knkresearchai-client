@@ -1,6 +1,8 @@
+import 'package:fa_ai_agent/utils/image_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:fa_ai_agent/widgets/animations/thinking_animation.dart';
+import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
 import 'package:markdown/markdown.dart' as md;
 import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/services/agent_service.dart';
@@ -9,17 +11,18 @@ import 'package:fa_ai_agent/widgets/report/chart_image.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
 
 class AlertReportBuilder extends StatelessWidget {
-  final Future<Map<String, dynamic>> future;
+  final Stream<Map<String, dynamic>> stream;
   final String title;
   final String reportKey;
   final Function(DateTime)? onCacheTimeUpdate;
-
+  final Function(Widget)? onContentBuilt;
   const AlertReportBuilder({
     Key? key,
-    required this.future,
+    required this.stream,
     required this.title,
     required this.reportKey,
     this.onCacheTimeUpdate,
+    this.onContentBuilt,
   }) : super(key: key);
 
   @override
@@ -30,8 +33,8 @@ class AlertReportBuilder extends StatelessWidget {
         final loadingStates = loadingSnapshot.data ?? {};
         final isLoading = loadingStates[reportKey] == true;
 
-        return FutureBuilder<Map<String, dynamic>>(
-          future: future,
+        return StreamBuilder<Map<String, dynamic>>(
+          stream: stream,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting ||
                 isLoading) {
@@ -58,159 +61,173 @@ class AlertReportBuilder extends StatelessWidget {
               );
             }
 
-            final data = snapshot.data!;
-            final markdown = data['accountingRedflags']?['md'] as String?;
-            final rating =
-                data['accountingRedflags']?['mScoreRating'] as String?;
-            final incomeStatement =
-                data['accountingRedflags']?['incomeStatement'] as String?;
-            final balanceSheet =
-                data['accountingRedflags']?['balanceSheet'] as String?;
-
-            // Determine theme based on rating
-            final statusColor = _getStatusColor(rating);
-            final borderColor = _getBorderColor(rating);
-
-            if (markdown == null || markdown.isEmpty) {
-              return const Center(
-                child: Text('No content available'),
-              );
-            }
-
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: borderColor,
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(data),
-                  if (incomeStatement != null || balanceSheet != null) ...[
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (incomeStatement != null) ...[
-                            const Text(
-                              'Income Statement',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1E3A8A),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            ChartImage(
-                              image: Image.network(
-                                incomeStatement,
-                                cacheWidth: LayoutConstants.maxWidth.toInt(),
-                                filterQuality: FilterQuality.high,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                          ],
-                          if (balanceSheet != null) ...[
-                            const Text(
-                              'Balance Sheet',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1E3A8A),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            ChartImage(
-                              image: Image.network(
-                                balanceSheet,
-                                cacheWidth: LayoutConstants.maxWidth.toInt(),
-                                filterQuality: FilterQuality.high,
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+            return FutureBuilder<Widget>(
+              future: _buildReportContent(snapshot.data!),
+              builder: (context, contentSnapshot) {
+                if (contentSnapshot.connectionState ==
+                    ConnectionState.waiting) {
+                  return const Center(
+                    child: ThinkingAnimation(
+                      size: 24,
+                      color: Color(0xFF1E3A8A),
                     ),
-                    Container(
-                      width: double.infinity,
-                      height: 1,
-                      color: Colors.grey.shade200,
-                    ),
-                  ],
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: MarkdownBody(
-                      data: markdown,
-                      builders: {
-                        'ul': UnorderedListBuilder(),
-                        'ol': OrderedListBuilder(),
-                      },
-                      styleSheet: MarkdownStyleSheet(
-                        h1: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: statusColor,
-                        ),
-                        h2: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: statusColor,
-                        ),
-                        h3: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w300,
-                          color: statusColor,
-                        ),
-                        p: const TextStyle(
-                          fontSize: 15,
-                          color: Color(0xFF475569),
-                          height: 1.6,
-                        ),
-                        strong: TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: statusColor,
-                        ),
-                        em: const TextStyle(
-                          fontStyle: FontStyle.italic,
-                        ),
-                        blockquote: const TextStyle(
-                          color: Color(0xFF64748B),
-                          fontStyle: FontStyle.italic,
-                        ),
-                        code: const TextStyle(
-                          backgroundColor: Color(0xFFF8FAFC),
-                          fontFamily: 'monospace',
-                          fontSize: 14,
-                        ),
-                        codeblockDecoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: const Color(0xFFE5E7EB),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                  );
+                }
+                return contentSnapshot.data ??
+                    const Center(child: Text('No content available'));
+              },
             );
           },
         );
       },
     );
+  }
+
+  Future<Widget> _buildReportContent(Map<String, dynamic> data) async {
+    final markdown = data['accountingRedflags']?['md'] as String?;
+    final rating = data['accountingRedflags']?['mScoreRating'] as String?;
+    final incomeStatement =
+        data['accountingRedflags']?['incomeStatement'] as String?;
+    final balanceSheet = data['accountingRedflags']?['balanceSheet'] as String?;
+
+    final incomeStatementImageUrl =
+        await ImageUtils.getSignedUrl(incomeStatement ?? '');
+    final balanceSheetImageUrl =
+        await ImageUtils.getSignedUrl(balanceSheet ?? '');
+
+    final widget = Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: _getBorderColor(rating),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeader(data),
+          if (incomeStatementImageUrl != '' || balanceSheetImageUrl != '') ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (incomeStatement != null) ...[
+                    const Text(
+                      'Income Statement',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ChartImage(
+                      image: Image.network(
+                        incomeStatementImageUrl,
+                        cacheWidth: LayoutConstants.maxWidth.toInt(),
+                        filterQuality: FilterQuality.high,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (balanceSheet != null) ...[
+                    const Text(
+                      'Balance Sheet',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    ChartImage(
+                      image: Image.network(
+                        balanceSheetImageUrl,
+                        cacheWidth: LayoutConstants.maxWidth.toInt(),
+                        filterQuality: FilterQuality.high,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            Container(
+              width: double.infinity,
+              height: 1,
+              color: Colors.grey.shade200,
+            ),
+          ],
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: MarkdownBody(
+              data: markdown ?? '',
+              builders: {
+                'ul': UnorderedListBuilder(),
+                'ol': OrderedListBuilder(),
+              },
+              styleSheet: MarkdownStyleSheet(
+                h1: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: _getStatusColor(rating),
+                ),
+                h2: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: _getStatusColor(rating),
+                ),
+                h3: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w300,
+                  color: _getStatusColor(rating),
+                ),
+                p: const TextStyle(
+                  fontSize: 15,
+                  color: Color(0xFF475569),
+                  height: 1.6,
+                ),
+                strong: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: _getStatusColor(rating),
+                ),
+                em: const TextStyle(
+                  fontStyle: FontStyle.italic,
+                ),
+                blockquote: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontStyle: FontStyle.italic,
+                ),
+                code: const TextStyle(
+                  backgroundColor: Color(0xFFF8FAFC),
+                  fontFamily: 'monospace',
+                  fontSize: 14,
+                ),
+                codeblockDecoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFFE5E7EB),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    onContentBuilt?.call(widget);
+    return widget;
   }
 
   Color _getStatusColor(String? rating) {

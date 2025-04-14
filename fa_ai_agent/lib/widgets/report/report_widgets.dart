@@ -16,9 +16,8 @@ class ReportWidgets {
   final AgentService _service;
   final Map<String, Widget> _imageCache;
   final Map<String, String> _imageUrlCache;
-  final Map<String, Widget> _sectionCache;
-  final Map<String, Future<Map<String, dynamic>>> _futureCache;
-  final BehaviorSubject _cacheTimeSubject;
+  final Map<String, Stream<Map<String, dynamic>>> _streamCache;
+  final Map<String, Widget> _widgetContentCache;
   final bool _forceRefresh;
 
   ReportWidgets({
@@ -26,43 +25,56 @@ class ReportWidgets {
     required Map<String, Widget> imageCache,
     required Map<String, String> imageUrlCache,
     required Map<String, Widget> sectionCache,
-    required Map<String, Future<Map<String, dynamic>>> futureCache,
+    required Map<String, Stream<Map<String, dynamic>>> streamCache,
     required BehaviorSubject cacheTimeSubject,
     required bool forceRefresh,
   })  : _service = service,
         _imageCache = imageCache,
         _imageUrlCache = imageUrlCache,
-        _sectionCache = sectionCache,
-        _futureCache = futureCache,
-        _cacheTimeSubject = cacheTimeSubject,
+        _streamCache = streamCache,
+        _widgetContentCache = {},
         _forceRefresh = forceRefresh;
 
   /// Gets a cached future or creates a new one
-  Future<Map<String, dynamic>> _getCachedFuture(
-      String key, Future<Map<String, dynamic>> Function() createFuture) {
-    if (!_futureCache.containsKey(key)) {
-      _futureCache[key] = createFuture();
+  Stream<Map<String, dynamic>> _getCachedStream(
+      String key, Stream<Map<String, dynamic>> Function() createStream) {
+    if (!_streamCache.containsKey(key)) {
+      _streamCache[key] = createStream();
     }
-    return _futureCache[key]!;
+    return _streamCache[key]!;
   }
 
   /// Builds a report widget
   Widget getReport(
-      Future<Map<String, dynamic>> future, String title, String key,
+      Stream<Map<String, dynamic>> stream, String title, String key,
       {bool showTitle = true}) {
-    return ReportBuilder(
-      future: future,
+    final cacheKey = '$key-$showTitle';
+    if (_widgetContentCache.containsKey(cacheKey)) {
+      return _widgetContentCache[cacheKey]!;
+    }
+
+    final widget = ReportBuilder(
+      stream: stream,
       title: title,
       reportKey: key,
       showTitle: showTitle,
+      onContentBuilt: (Widget content) {
+        _widgetContentCache[cacheKey] = content;
+      },
     );
+    return widget;
   }
 
   /// Builds a chart widget
-  Widget getChart(Future<Map<String, dynamic>> future, String key,
+  Widget getChart(Stream<Map<String, dynamic>> stream, String key,
       {required String title, bool showTitle = true}) {
-    return ChartBuilder(
-      future: future,
+    final cacheKey = '$key-$showTitle';
+    if (_widgetContentCache.containsKey(cacheKey)) {
+      return _widgetContentCache[cacheKey]!;
+    }
+
+    final widget = ChartBuilder(
+      stream: stream,
       chartKey: key,
       cachedImage: (!_forceRefresh && _imageCache.containsKey(key))
           ? _imageCache[key]
@@ -74,15 +86,19 @@ class ReportWidgets {
         _imageCache[key] = image;
         _imageUrlCache[key] = imageUrl;
       },
+      onContentBuilt: (Widget content) {
+        _widgetContentCache[cacheKey] = content;
+      },
       title: title,
       showTitle: showTitle,
     );
+    return widget;
   }
 
   /// Gets the business overview report
   Widget getBusinessOverview(String ticker, String language) {
     return getReport(
-        _getCachedFuture(
+        _getCachedStream(
             'businessOverview',
             () =>
                 _service.getBusinessOverview(ticker, language, _forceRefresh)),
@@ -93,7 +109,7 @@ class ReportWidgets {
   /// Gets the EPS vs Stock Price chart
   Widget getEPSvsStockPriceChart(String ticker, String language) {
     return getChart(
-        _getCachedFuture(
+        _getCachedStream(
             'epsVsStockPriceChart',
             () => _service.getEPSvsStockPriceChart(
                 ticker, language, _forceRefresh)),
@@ -104,7 +120,7 @@ class ReportWidgets {
   /// Gets the financial metrics report
   Widget getFinancialMetrics(String ticker, String language) {
     return getReport(
-        _getCachedFuture(
+        _getCachedStream(
             'financialMetrics',
             () =>
                 _service.getFinancialMetrics(ticker, language, _forceRefresh)),
@@ -116,7 +132,7 @@ class ReportWidgets {
   /// Gets the financial performance report
   Widget getFinancialPerformance(String ticker, String language) {
     return getReport(
-        _getCachedFuture(
+        _getCachedStream(
             'financialPerformance',
             () => _service.getFinancialPerformance(
                 ticker, language, _forceRefresh)),
@@ -127,7 +143,7 @@ class ReportWidgets {
   /// Gets the competitor landscape report
   Widget getCompetitorLandscape(String ticker, String language) {
     return getReport(
-        _getCachedFuture(
+        _getCachedStream(
             'competitorLandscape',
             () => _service.getCompetitorLandscape(
                 ticker, language, _forceRefresh)),
@@ -138,7 +154,7 @@ class ReportWidgets {
   /// Gets the supply chain report
   Widget getSupplyChain(String ticker, String language) {
     return getReport(
-        _getCachedFuture('supplyChain',
+        _getCachedStream('supplyChain',
             () => _service.getSupplyChain(ticker, language, _forceRefresh)),
         "Supply Chain Feedbacks",
         "supplyChain");
@@ -147,7 +163,7 @@ class ReportWidgets {
   /// Gets the strategic outlooks report
   Widget getStrategicOutlooks(String ticker, String language) {
     return getReport(
-        _getCachedFuture(
+        _getCachedStream(
             'strategicOutlooks',
             () =>
                 _service.getStrategicOutlooks(ticker, language, _forceRefresh)),
@@ -158,7 +174,7 @@ class ReportWidgets {
   /// Gets the recent news report
   Widget getRecentNews(String ticker, String language) {
     return getReport(
-        _getCachedFuture('recentNews',
+        _getCachedStream('recentNews',
             () => _service.getRecentNews(ticker, language, _forceRefresh)),
         "Recent News",
         "recentNews");
@@ -167,7 +183,7 @@ class ReportWidgets {
   /// Gets the stock price target chart
   Widget getStockPriceTarget(String ticker, String language) {
     return getChart(
-        _getCachedFuture(
+        _getCachedStream(
             'stockPriceTarget',
             () =>
                 _service.getStockPriceTarget(ticker, language, _forceRefresh)),
@@ -179,7 +195,7 @@ class ReportWidgets {
   /// Gets the insider trading chart
   Widget getInsiderTrading(String ticker, String language) {
     return getChart(
-        _getCachedFuture('insiderTrading',
+        _getCachedStream('insiderTrading',
             () => _service.getInsiderTrading(ticker, language, _forceRefresh)),
         'insiderTrading',
         title: 'Insider Trading');
@@ -188,7 +204,7 @@ class ReportWidgets {
   /// Gets the PE/PB ratio band chart
   Widget getPEPBRatioBandChart(String ticker, String language) {
     return getChart(
-        _getCachedFuture('pbRatioBand',
+        _getCachedStream('pbRatioBand',
             () => _service.getPEPBRatioBand(ticker, language, _forceRefresh)),
         'pePbRatioBand',
         title: 'PE/PB Ratio');
@@ -197,7 +213,7 @@ class ReportWidgets {
   /// Gets the sector stocks chart
   Widget getSectorStocksChart(String ticker, String language) {
     return getChart(
-        _getCachedFuture('sectorStocks',
+        _getCachedStream('sectorStocks',
             () => _service.getSectorStocks(ticker, language, _forceRefresh)),
         'sectorStocks',
         title: 'Sector Stocks');
@@ -206,7 +222,7 @@ class ReportWidgets {
   /// Gets the candle stick chart
   Widget getCandleStickChart(String ticker, String language) {
     return getChart(
-        _getCachedFuture(
+        _getCachedStream(
             'candleStickChart',
             () =>
                 _service.getCandleStickChart(ticker, language, _forceRefresh)),
@@ -219,7 +235,7 @@ class ReportWidgets {
     return Column(
       children: [
         getChart(
-          _getCachedFuture(
+          _getCachedStream(
               'combinedCharts',
               () =>
                   _service.getCombinedCharts(ticker, language, _forceRefresh)),
@@ -228,7 +244,7 @@ class ReportWidgets {
         ),
         const SizedBox(height: 24),
         getReport(
-          _getCachedFuture(
+          _getCachedStream(
               'financialPerformance',
               () => _service.getFinancialPerformance(
                   ticker, language, _forceRefresh)),
@@ -243,7 +259,7 @@ class ReportWidgets {
   /// Gets the cash flow chart
   Widget getCashFlowChart(String ticker, String language) {
     return getChart(
-        _getCachedFuture('cashFlowChart',
+        _getCachedStream('cashFlowChart',
             () => _service.getCashFlowChart(ticker, language, _forceRefresh)),
         'cashFlowChart',
         title: 'Cash Flow');
@@ -252,7 +268,7 @@ class ReportWidgets {
   /// Gets the industrial relationship chart
   Widget getIndustrialRelationship(String ticker, String language) {
     return getChart(
-        _getCachedFuture(
+        _getCachedStream(
             'industrialRelationship',
             () => _service.getIndustrialRelationship(
                 ticker, language, _forceRefresh)),
@@ -263,7 +279,7 @@ class ReportWidgets {
   /// Gets the sector comparison chart
   Widget getSectorComparison(String ticker, String language) {
     return getChart(
-        _getCachedFuture(
+        _getCachedStream(
             'sectorComparison',
             () =>
                 _service.getSectorComparison(ticker, language, _forceRefresh)),
@@ -274,7 +290,7 @@ class ReportWidgets {
   /// Gets the shareholder chart
   Widget getShareholderChart(String ticker, String language) {
     return getChart(
-        _getCachedFuture(
+        _getCachedStream(
             'shareholderChart',
             () =>
                 _service.getShareholderChart(ticker, language, _forceRefresh)),
@@ -292,25 +308,20 @@ class ReportWidgets {
 
   /// Gets the accounting red flags report
   Widget getAccountingRedFlags(String ticker, String language) {
+    const cacheKey = 'accountingRedFlags';
+    if (_widgetContentCache.containsKey(cacheKey)) {
+      return _widgetContentCache[cacheKey]!;
+    }
     return AlertReportBuilder(
-      future: _getCachedFuture('accountingRedFlags', () async {
-        final data = await _service.getAccountingRedFlags(
-            ticker, language, _forceRefresh);
-        if (data['accountingRedflags'] != null) {
-          final redFlags = data['accountingRedflags'];
-          if (redFlags['incomeStatement'] != null) {
-            redFlags['incomeStatement'] =
-                await ImageUtils.getSignedUrl(redFlags['incomeStatement']);
-          }
-          if (redFlags['balanceSheet'] != null) {
-            redFlags['balanceSheet'] =
-                await ImageUtils.getSignedUrl(redFlags['balanceSheet']);
-          }
-        }
-        return data;
-      }),
+      stream: _getCachedStream(
+          'accountingRedFlags',
+          () =>
+              _service.getAccountingRedFlags(ticker, language, _forceRefresh)),
       title: "Accounting Red Flags",
-      reportKey: "accountingRedflags",
+      onContentBuilt: (Widget content) {
+        _widgetContentCache[cacheKey] = content;
+      },
+      reportKey: 'accountingRedFlags',
     );
   }
 }

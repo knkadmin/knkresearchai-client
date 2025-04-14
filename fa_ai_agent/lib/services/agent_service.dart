@@ -215,136 +215,117 @@ class AgentService {
 
   // Keep the individual getter methods for backward compatibility
   // They will now use the section-specific streams
-  Future<Map<String, dynamic>> getBusinessOverview(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'businessOverview',
+  Stream<Map<String, dynamic>> getBusinessOverview(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'businessOverview',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getFinancialPerformance(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'financialPerformance',
+  Stream<Map<String, dynamic>> getFinancialPerformance(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'financialPerformance',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getAccountingRedFlags(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'accountingRedflags',
+  Stream<Map<String, dynamic>> getAccountingRedFlags(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'accountingRedflags',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getCompetitorLandscape(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'competitorLandscape',
+  Stream<Map<String, dynamic>> getCompetitorLandscape(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'competitorLandscape',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getStrategicOutlooks(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'strategicOutlooks',
+  Stream<Map<String, dynamic>> getStrategicOutlooks(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'strategicOutlooks',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getSupplyChain(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'supplyChain',
+  Stream<Map<String, dynamic>> getSupplyChain(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'supplyChain',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getRecentNews(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'recentNews',
+  Stream<Map<String, dynamic>> getRecentNews(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'recentNews',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getPEPBRatioBand(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'pePbRatioBand',
+  Stream<Map<String, dynamic>> getPEPBRatioBand(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'pePbRatioBand',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getSectorStocks(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'sectorStocks',
+  Stream<Map<String, dynamic>> getSectorStocks(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'sectorStocks',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getStockPriceTarget(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'stockPriceTarget',
+  Stream<Map<String, dynamic>> getStockPriceTarget(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'stockPriceTarget',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getInsiderTrading(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'insiderTrading',
+  Stream<Map<String, dynamic>> getInsiderTrading(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'insiderTrading',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getCandleStickChart(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'candleStickChart',
+  Stream<Map<String, dynamic>> getCandleStickChart(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'candleStickChart',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getCombinedCharts(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'combinedCharts',
+  Stream<Map<String, dynamic>> getCombinedCharts(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'combinedCharts',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getCashFlowChart(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'cashFlowChart',
+  Stream<Map<String, dynamic>> getCashFlowChart(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'cashFlowChart',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getIndustrialRelationship(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'industrialRelationship',
+  Stream<Map<String, dynamic>> getIndustrialRelationship(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'industrialRelationship',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getSectorComparison(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'sectorComparison',
+  Stream<Map<String, dynamic>> getSectorComparison(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'sectorComparison',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getShareholderChart(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'shareholderChart',
+  Stream<Map<String, dynamic>> getShareholderChart(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'shareholderChart',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getEPSvsStockPriceChart(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'epsVsStockPriceChart',
+  Stream<Map<String, dynamic>> getEPSvsStockPriceChart(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'epsVsStockPriceChart',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getFinancialMetrics(
-      String ticker, String language, bool forceRefresh) async {
-    final stream = getSectionStream(ticker, language, 'financialMetrics',
+  Stream<Map<String, dynamic>> getFinancialMetrics(
+      String ticker, String language, bool forceRefresh) {
+    return getSectionStream(ticker, language, 'financialMetrics',
         forceRefresh: forceRefresh);
-    return await stream.first;
   }
 }

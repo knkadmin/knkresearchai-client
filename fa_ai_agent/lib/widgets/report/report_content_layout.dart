@@ -114,10 +114,6 @@ class ReportContentLayout extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (shouldShowMetrics) ...[
-            getMetricsTable(true),
-            const SizedBox(height: 48),
-          ],
           ...contentSections,
           const SizedBox(height: 48),
           Container(
@@ -145,82 +141,99 @@ class ReportContentLayout extends StatelessWidget {
     int accountingRedFlagsIndex,
     bool shouldShowMetrics,
   ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (contentSections.isNotEmpty) contentSections[0],
-        const SizedBox(height: 8),
-        _buildMainSections(
-          contentSections,
-          accountingRedFlagsIndex,
-          shouldShowMetrics,
-        ),
-        if (accountingRedFlagsIndex >= 0)
-          ...contentSections.skip(accountingRedFlagsIndex),
-        const SizedBox(height: 48),
-        Container(
-          width: double.infinity,
-          height: 1,
-          color: Colors.grey[300],
-        ),
-        const SizedBox(height: 16),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: Text(
-            _disclaimer,
-            style: TextStyle(
-              color: Colors.grey[600],
-              fontSize: 12,
-              height: 1.5,
-            ),
-          ),
-        ),
-        const SizedBox(height: 32),
-      ],
-    );
-  }
+    // Find the Financial Metrics section
+    final financialMetricsIndex =
+        sections.indexWhere((s) => s.title == 'Financial Metrics');
+    final financialMetrics = financialMetricsIndex >= 0 &&
+            financialMetricsIndex < contentSections.length
+        ? contentSections[financialMetricsIndex]
+        : null;
 
-  Widget _buildMainSections(
-    List<Widget> contentSections,
-    int accountingRedFlagsIndex,
-    bool shouldShowMetrics,
-  ) {
+    // Split sections into two groups:
+    // 1. Sections before Accounting Red Flags (left side with metrics)
+    // 2. Sections from Accounting Red Flags onwards (full width)
+    final sectionsBeforeRedFlags = accountingRedFlagsIndex >= 0
+        ? contentSections.take(accountingRedFlagsIndex).toList()
+        : contentSections;
+    final sectionsAfterRedFlags = accountingRedFlagsIndex >= 0
+        ? contentSections.skip(accountingRedFlagsIndex).toList()
+        : [];
+
+    // Remove Financial Metrics from left side sections
+    final leftSections = sectionsBeforeRedFlags
+        .where((section) => section != financialMetrics)
+        .toList();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 0),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (contentSections.length > 1) contentSections[1],
-                const SizedBox(height: 48),
-                if (contentSections.length > 2) contentSections[2],
-                const SizedBox(height: 48),
-                if (contentSections.length > 3) contentSections[3],
-                const SizedBox(height: 48),
-                if (accountingRedFlagsIndex > 4)
-                  ...contentSections.skip(4).take(accountingRedFlagsIndex - 4),
+          // Top row with left content and metrics
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Left side - sections before Accounting Red Flags
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...leftSections.map((section) => Column(
+                          children: [
+                            section,
+                            const SizedBox(height: 48),
+                          ],
+                        )),
+                  ],
+                ),
+              ),
+              // Right side - Financial Metrics
+              if (financialMetrics != null) ...[
+                const SizedBox(width: 24),
+                SizedBox(
+                  width: 280,
+                  child: Column(
+                    children: [
+                      financialMetrics,
+                      const SizedBox(height: 48),
+                    ],
+                  ),
+                ),
               ],
+            ],
+          ),
+          // Full width sections (Accounting Red Flags onwards)
+          ...sectionsAfterRedFlags.map((section) => Column(
+                children: [
+                  section,
+                  const SizedBox(height: 48),
+                ],
+              )),
+          // Footer
+          Container(
+            width: double.infinity,
+            height: 1,
+            color: Colors.grey[300],
+          ),
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text(
+              _disclaimer,
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+                height: 1.5,
+              ),
             ),
           ),
-          if (shouldShowMetrics) ...[
-            const SizedBox(width: 24),
-            SizedBox(
-              width: 280,
-              child: getMetricsTable(false),
-            ),
-          ],
+          const SizedBox(height: 32),
         ],
       ),
     );
   }
 
   Widget getMetricsTable(bool isNarrow) {
-    return SizedBox(
-      width: isNarrow ? double.infinity : 280,
-      child: sectionCache['financialMetrics'] ?? const SizedBox.shrink(),
-    );
+    return const SizedBox.shrink();
   }
 }

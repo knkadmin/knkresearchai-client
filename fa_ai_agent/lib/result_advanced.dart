@@ -45,6 +45,12 @@ class SectionConstants {
           ReportWidgets reportWidgets) =>
       [
         SectionConfig(
+          title: 'Financial Metrics',
+          cacheKey: 'financial-metrics',
+          icon: Icons.analytics,
+          builder: reportWidgets.getFinancialMetrics,
+        ),
+        SectionConfig(
           title: 'Price Target',
           cacheKey: 'stock-price-target',
           icon: Icons.trending_up,
@@ -153,7 +159,7 @@ class SectionConstants {
         imageCache: {},
         imageUrlCache: {},
         sectionCache: {},
-        futureCache: {},
+        streamCache: {},
         cacheTimeSubject: BehaviorSubject(),
         forceRefresh: false,
       )).map((config) => config.title).toList();
@@ -168,7 +174,7 @@ class SectionConstants {
           imageCache: {},
           imageUrlCache: {},
           sectionCache: {},
-          futureCache: {},
+          streamCache: {},
           cacheTimeSubject: BehaviorSubject(),
           forceRefresh: false,
         )))
@@ -207,7 +213,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   final Map<String, Widget> _imageCache = {};
   final Map<String, String> _imageUrlCache = {};
   final Map<String, Widget> _sectionCache = {};
-  final Map<String, Future<Map<String, dynamic>>> _futureCache = {};
+  final Map<String, Stream<Map<String, dynamic>>> _streamCache = {};
   final Map<String, bool> _sectionLoadingStates = {};
   final ValueNotifier<bool> _showCompanyNameInTitle =
       ValueNotifier<bool>(false);
@@ -232,14 +238,12 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     imageCache: {},
     imageUrlCache: {},
     sectionCache: {},
-    futureCache: {},
+    streamCache: {},
     cacheTimeSubject: BehaviorSubject(),
     forceRefresh: false,
   );
 
   late List<Section> sections;
-
-  final FirestoreService _firestoreService = FirestoreService();
 
   @override
   void initState() {
@@ -296,7 +300,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       imageCache: _imageCache,
       imageUrlCache: _imageUrlCache,
       sectionCache: _sectionCache,
-      futureCache: _futureCache,
+      streamCache: _streamCache,
       cacheTimeSubject: widget.cacheTimeSubject,
       forceRefresh: forceRefresh,
     );
@@ -309,7 +313,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     widget.sectorSubject.close();
     _imageCache.clear();
     _sectionCache.clear();
-    _futureCache.clear();
+    _streamCache.clear();
     _sectionLoadingStates.clear();
     for (var notifier in _tickAnimationStates.values) {
       notifier.dispose();
@@ -381,7 +385,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
         notifier.dispose();
       }
       _tickAnimationStates.clear();
-      _futureCache.clear(); // Clear the future cache to force new requests
+      _streamCache.clear(); // Clear the future cache to force new requests
       _imageCache.clear(); // Clear image cache
       _imageUrlCache.clear(); // Clear image URL cache
       _sectionCache.clear(); // Clear section cache
@@ -393,7 +397,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
         imageCache: _imageCache,
         imageUrlCache: _imageUrlCache,
         sectionCache: _sectionCache,
-        futureCache: _futureCache,
+        streamCache: _streamCache,
         cacheTimeSubject: widget.cacheTimeSubject,
         forceRefresh: forceRefresh,
       );
@@ -471,14 +475,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
   Widget _buildMainContent(List<Section> sections, bool isAuthenticated,
       bool isMag7Company, SubscriptionType? userSubscriptionType) {
-    // Create the metrics table if it doesn't exist in the cache
-    if (!_sectionCache.containsKey('financialMetrics')) {
-      _sectionCache['financialMetrics'] = _reportWidgets.getFinancialMetrics(
-        widget.tickerCode,
-        widget.language.value,
-      );
-    }
-
     return Stack(
       children: [
         SingleChildScrollView(
