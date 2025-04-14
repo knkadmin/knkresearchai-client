@@ -304,6 +304,15 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       cacheTimeSubject: widget.cacheTimeSubject,
       forceRefresh: forceRefresh,
     );
+
+    // Subscribe to the financial report stream and update cacheTimeSubject
+    FirestoreService()
+        .streamFinancialReport(widget.tickerCode)
+        .listen((report) {
+      if (report != null && report.lastUpdated != null) {
+        widget.cacheTimeSubject.add(report.lastUpdated!.microsecondsSinceEpoch);
+      }
+    });
   }
 
   @override

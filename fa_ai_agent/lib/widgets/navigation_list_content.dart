@@ -111,7 +111,7 @@ class NavigationListContent extends StatelessWidget {
                                         if (snapshot.hasData &&
                                             snapshot.data != null) {
                                           return Text(
-                                            'Report Generated: ${DateFormat('dd MMM yyyy').format(snapshot.data as DateTime)}',
+                                            'Report Generated: ${DateFormat('dd MMM yyyy').format(DateTime.fromMicrosecondsSinceEpoch(snapshot.data))}',
                                             style: TextStyle(
                                               fontSize: 12,
                                               color:

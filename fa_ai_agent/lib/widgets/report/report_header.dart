@@ -112,7 +112,7 @@ class ReportHeader extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           const Text(
-                            "Report Generated",
+                            "Last Updated",
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.white70,
@@ -121,7 +121,9 @@ class ReportHeader extends StatelessWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            DateFormat('dd MMMM, yyyy').format(snapshot.data),
+                            DateFormat('dd MMMM, yyyy').format(
+                                DateTime.fromMicrosecondsSinceEpoch(
+                                    snapshot.data)),
                             style: const TextStyle(
                               fontSize: 16,
                               color: Colors.white,
