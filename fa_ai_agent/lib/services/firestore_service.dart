@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
 import 'package:fa_ai_agent/models/user.dart';
 import 'package:fa_ai_agent/models/subscription_type.dart';
+import 'package:fa_ai_agent/models/financial_report.dart';
 
 class FirestoreService {
   static final FirestoreService _instance = FirestoreService._internal();
@@ -255,5 +256,15 @@ class FirestoreService {
       print('Error checking Firestore connection: $e');
       return false;
     }
+  }
+
+  // Stream financial reports for a specific ticker
+  Stream<FinancialReport?> streamFinancialReport(String ticker) {
+    return _firestore
+        .collection('financialReports')
+        .doc(ticker.toLowerCase())
+        .snapshots()
+        .map(
+            (doc) => doc.exists ? FinancialReport.fromJson(doc.data()!) : null);
   }
 }

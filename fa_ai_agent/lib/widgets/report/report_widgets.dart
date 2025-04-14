@@ -5,30 +5,49 @@ import 'package:fa_ai_agent/widgets/report/alert_report_builder.dart';
 import 'package:fa_ai_agent/widgets/trading_view_chart.dart';
 import 'package:fa_ai_agent/services/agent_service.dart';
 import 'package:rxdart/subjects.dart';
+import 'package:fa_ai_agent/constants/layout_constants.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:fa_ai_agent/constants/api_constants.dart';
 
 /// A class that provides methods to build various report widgets
 class ReportWidgets {
   final AgentService _service;
   final Map<String, Widget> _imageCache;
-  final Map<String, String> _encodedImageCache;
+  final Map<String, String> _imageUrlCache;
+  final Map<String, Widget> _sectionCache;
   final Map<String, Future<Map<String, dynamic>>> _futureCache;
-  final BehaviorSubject<dynamic> _cacheTimeSubject;
+  final BehaviorSubject _cacheTimeSubject;
   final bool _forceRefresh;
 
   ReportWidgets({
     required AgentService service,
     required Map<String, Widget> imageCache,
-    required Map<String, String> encodedImageCache,
+    required Map<String, String> imageUrlCache,
     required Map<String, Widget> sectionCache,
     required Map<String, Future<Map<String, dynamic>>> futureCache,
-    required BehaviorSubject<dynamic> cacheTimeSubject,
+    required BehaviorSubject cacheTimeSubject,
     required bool forceRefresh,
   })  : _service = service,
         _imageCache = imageCache,
-        _encodedImageCache = encodedImageCache,
+        _imageUrlCache = imageUrlCache,
+        _sectionCache = sectionCache,
         _futureCache = futureCache,
         _cacheTimeSubject = cacheTimeSubject,
         _forceRefresh = forceRefresh;
+
+  Future<String> _getSignedUrl(String fileName) async {
+    final url = Uri.parse('${ApiConstants.baseUrl}/signed-image-url')
+        .replace(queryParameters: {'filename': fileName});
+    final response = await http.get(url);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to get signed URL: ${response.body}');
+    }
+    final body = jsonDecode(response.body);
+    final imageUrl = body['url'];
+    return imageUrl;
+  }
 
   /// Gets a cached future or creates a new one
   Future<Map<String, dynamic>> _getCachedFuture(
@@ -48,9 +67,6 @@ class ReportWidgets {
       title: title,
       reportKey: key,
       showTitle: showTitle,
-      onCacheTimeUpdate: (DateTime cacheTime) {
-        _cacheTimeSubject.add(cacheTime);
-      },
     );
   }
 
@@ -63,13 +79,12 @@ class ReportWidgets {
       cachedImage: (!_forceRefresh && _imageCache.containsKey(key))
           ? _imageCache[key]
           : null,
-      cachedEncodedImage:
-          (!_forceRefresh && _encodedImageCache.containsKey(key))
-              ? _encodedImageCache[key]
-              : null,
-      onImageCached: (Widget image, String encodedImage) {
+      cachedImageUrl: (!_forceRefresh && _imageUrlCache.containsKey(key))
+          ? _imageUrlCache[key]
+          : null,
+      onImageCached: (Widget image, String imageUrl) {
         _imageCache[key] = image;
-        _encodedImageCache[key] = encodedImage;
+        _imageUrlCache[key] = imageUrl;
       },
       title: title,
       showTitle: showTitle,
@@ -118,7 +133,7 @@ class ReportWidgets {
             () => _service.getFinancialPerformance(
                 ticker, language, _forceRefresh)),
         "Financial Performance",
-        "financialReport");
+        "financialPerformance");
   }
 
   /// Gets the competitor landscape report
@@ -129,7 +144,7 @@ class ReportWidgets {
             () => _service.getCompetitorLandscape(
                 ticker, language, _forceRefresh)),
         "Competitive Landscape",
-        "competitorReport");
+        "competitorLandscape");
   }
 
   /// Gets the supply chain report
@@ -138,7 +153,7 @@ class ReportWidgets {
         _getCachedFuture('supplyChain',
             () => _service.getSupplyChain(ticker, language, _forceRefresh)),
         "Supply Chain Feedbacks",
-        "supplyChainReport");
+        "supplyChain");
   }
 
   /// Gets the strategic outlooks report
@@ -149,7 +164,7 @@ class ReportWidgets {
             () =>
                 _service.getStrategicOutlooks(ticker, language, _forceRefresh)),
         "Strategic Outlooks",
-        "strategicOutlooksReport");
+        "strategicOutlooks");
   }
 
   /// Gets the recent news report
@@ -187,7 +202,7 @@ class ReportWidgets {
     return getChart(
         _getCachedFuture('pbRatioBand',
             () => _service.getPEPBRatioBand(ticker, language, _forceRefresh)),
-        'pbRatioBand',
+        'pePbRatioBand',
         title: 'PE/PB Ratio');
   }
 
@@ -230,7 +245,7 @@ class ReportWidgets {
               () => _service.getFinancialPerformance(
                   ticker, language, _forceRefresh)),
           "Financial Performance",
-          "financialReport",
+          "financialPerformance",
           showTitle: false,
         ),
       ],
@@ -290,15 +305,24 @@ class ReportWidgets {
   /// Gets the accounting red flags report
   Widget getAccountingRedFlags(String ticker, String language) {
     return AlertReportBuilder(
-      future: _getCachedFuture(
-          'accountingRedFlags',
-          () =>
-              _service.getAccountingRedFlags(ticker, language, _forceRefresh)),
+      future: _getCachedFuture('accountingRedFlags', () async {
+        final data = await _service.getAccountingRedFlags(
+            ticker, language, _forceRefresh);
+        if (data['accountingRedflags'] != null) {
+          final redFlags = data['accountingRedflags'];
+          if (redFlags['incomeStatement'] != null) {
+            redFlags['incomeStatement'] =
+                await _getSignedUrl(redFlags['incomeStatement']);
+          }
+          if (redFlags['balanceSheet'] != null) {
+            redFlags['balanceSheet'] =
+                await _getSignedUrl(redFlags['balanceSheet']);
+          }
+        }
+        return data;
+      }),
       title: "Accounting Red Flags",
       reportKey: "accountingRedflags",
-      onCacheTimeUpdate: (DateTime cacheTime) {
-        _cacheTimeSubject.add(cacheTime);
-      },
     );
   }
 }

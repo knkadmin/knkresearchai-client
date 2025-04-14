@@ -11,7 +11,6 @@ class ReportBuilder extends StatelessWidget {
   final String title;
   final String reportKey;
   final bool showTitle;
-  final Function(DateTime) onCacheTimeUpdate;
 
   const ReportBuilder({
     super.key,
@@ -19,7 +18,6 @@ class ReportBuilder extends StatelessWidget {
     required this.title,
     required this.reportKey,
     this.showTitle = true,
-    required this.onCacheTimeUpdate,
   });
 
   @override
@@ -34,10 +32,7 @@ class ReportBuilder extends StatelessWidget {
             return ErrorDisplayWidget(
                 errorMessage: "Failed to load $reportKey");
           }
-          final int cachedTimestamp = data["cachedAt"];
-          final DateTime cacheTime =
-              DateTime.fromMicrosecondsSinceEpoch(cachedTimestamp);
-          onCacheTimeUpdate(cacheTime);
+
           final Map<String, dynamic> payload = data[reportKey];
           final String markdown = payload["md"] ?? "";
           if (markdown.isEmpty) {

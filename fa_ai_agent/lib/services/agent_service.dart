@@ -7,11 +7,20 @@ import 'package:fa_ai_agent/config.dart';
 import 'package:fa_ai_agent/services/search_cache_service.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:fa_ai_agent/constants/api_constants.dart';
+import 'package:fa_ai_agent/models/financial_report.dart';
 
 class AgentService {
   static final _log = Logger('AgentService');
   final _searchCacheService = SearchCacheService();
   final _firestoreService = FirestoreService();
+
+  // Cache for active streams
+  final Map<String, Stream<Map<String, dynamic>>> _activeStreams = {};
+  // Cache for the latest data
+  final Map<String, Map<String, dynamic>> _latestData = {};
+  // Cache for section-specific streams
+  final Map<String, Map<String, Stream<Map<String, dynamic>>>> _sectionStreams =
+      {};
 
   AgentService() {
     Logger.root.level = Level.INFO;
@@ -80,178 +89,228 @@ class AgentService {
     }
   }
 
+  // Get or create a shared stream for a ticker
+  Stream<Map<String, dynamic>> _getSharedStream(
+      String ticker, String language) {
+    final streamKey = '$ticker-$language';
+
+    if (!_activeStreams.containsKey(streamKey)) {
+      _log.info('Creating new stream for $streamKey');
+
+      final stream =
+          _firestoreService.streamFinancialReport(ticker).map((report) {
+        if (report == null) return <String, dynamic>{};
+
+        // Convert FinancialReport to Map<String, dynamic>
+        final Map<String, dynamic> data = <String, dynamic>{};
+
+        if (report.businessOverview != null) {
+          data['businessOverview'] = report.businessOverview!.toJson();
+        }
+        if (report.financialPerformance != null) {
+          data['financialPerformance'] = report.financialPerformance!.toJson();
+        }
+        if (report.accountingRedFlags != null) {
+          data['accountingRedflags'] = report.accountingRedFlags!.toJson();
+        }
+        if (report.competitorLandscape != null) {
+          data['competitorLandscape'] = report.competitorLandscape!.toJson();
+        }
+        if (report.strategicOutlooks != null) {
+          data['strategicOutlooks'] = report.strategicOutlooks!.toJson();
+        }
+        if (report.supplyChain != null) {
+          data['supplyChain'] = report.supplyChain!.toJson();
+        }
+        if (report.recentNews != null) {
+          data['recentNews'] = report.recentNews!.toJson();
+        }
+        if (report.cashFlowChart != null) {
+          data['cashFlowChart'] = report.cashFlowChart!.toJson();
+        }
+        if (report.pePbRatioBand != null) {
+          data['pePbRatioBand'] = report.pePbRatioBand!.toJson();
+        }
+        if (report.sectorStocks != null) {
+          data['sectorStocks'] = report.sectorStocks!.toJson();
+        }
+        if (report.combinedCharts != null) {
+          data['combinedCharts'] = report.combinedCharts!.toJson();
+        }
+        if (report.stockPriceTarget != null) {
+          data['stockPriceTarget'] = report.stockPriceTarget!.toJson();
+        }
+        if (report.insiderTrading != null) {
+          data['insiderTrading'] = report.insiderTrading!.toJson();
+        }
+        if (report.candleStickChart != null) {
+          data['candleStickChart'] = report.candleStickChart!.toJson();
+        }
+        if (report.shareholderChart != null) {
+          data['shareholderChart'] = report.shareholderChart!.toJson();
+        }
+        if (report.industrialRelationship != null) {
+          data['industrialRelationship'] =
+              report.industrialRelationship!.toJson();
+        }
+        if (report.sectorComparison != null) {
+          data['sectorComparison'] = report.sectorComparison!.toJson();
+        }
+        if (report.epsVsStockPriceChart != null) {
+          data['epsVsStockPriceChart'] = report.epsVsStockPriceChart!.toJson();
+        }
+
+        // Add cache timestamp
+        data['cachedAt'] = report.lastUpdated?.microsecondsSinceEpoch;
+
+        // Update latest data cache
+        _latestData[streamKey] = data;
+
+        return data;
+      }).asBroadcastStream();
+
+      _activeStreams[streamKey] = stream;
+    }
+
+    return _activeStreams[streamKey]!;
+  }
+
+  // Get a section-specific stream
+  Stream<Map<String, dynamic>> getSectionStream(
+      String ticker, String language, String section) {
+    final streamKey = '$ticker-$language';
+    final sectionStreams = _sectionStreams.putIfAbsent(streamKey, () => {});
+
+    if (!sectionStreams.containsKey(section)) {
+      final sharedStream = _getSharedStream(ticker, language);
+      sectionStreams[section] =
+          sharedStream.map((data) => {section: data[section]});
+    }
+
+    return sectionStreams[section]!;
+  }
+
+  // Keep the individual getter methods for backward compatibility
+  // They will now use the section-specific streams
   Future<Map<String, dynamic>> getBusinessOverview(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/report-advanced/business-overview", ticker, language,
-        forceRefresh, "business-overview");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'businessOverview');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getFinancialPerformance(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/report-advanced/financial-performance", ticker, language,
-        forceRefresh, "financial-performance");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'financialPerformance');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getAccountingRedFlags(
-      String ticker, String language, bool forceRefresh) {
-    _log.info("Requesting accounting red flags for $ticker");
-    return getOutput("/report-advanced/accounting-redflags", ticker, language,
-        forceRefresh, "accounting-redflags");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'accountingRedflags');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getCompetitorLandscape(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/report-advanced/competitor-landscape", ticker, language,
-        forceRefresh, "competitor-landscape");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'competitorLandscape');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getStrategicOutlooks(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/report-advanced/strategic-outlooks", ticker, language,
-        forceRefresh, "strategic-outlooks");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'strategicOutlooks');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getSupplyChain(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/report-advanced/supply-chain", ticker, language,
-        forceRefresh, "supply-chain");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'supplyChain');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getRecentNews(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/report-advanced/recent-news", ticker, language,
-        forceRefresh, "recent-news");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'recentNews');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getPEPBRatioBand(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/charts-advanced/pe-pb-ratio-band", ticker, language,
-        forceRefresh, "pe-pb-ratio-band");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'pePbRatioBand');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getSectorStocks(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/charts-advanced/sector-stocks", ticker, language,
-        forceRefresh, "sector-stocks");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'sectorStocks');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getStockPriceTarget(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/charts-advanced/stock-price-target", ticker, language,
-        forceRefresh, "stock-price-target");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'stockPriceTarget');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getInsiderTrading(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/charts-advanced/insider-trading", ticker, language,
-        forceRefresh, "insider-trading");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'insiderTrading');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getCandleStickChart(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/charts-advanced/candle-stick-chart", ticker, language,
-        forceRefresh, "candle-stick-chart");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'candleStickChart');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getCombinedCharts(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/charts-advanced/combined-charts", ticker, language,
-        forceRefresh, "combined-charts");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'combinedCharts');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getCashFlowChart(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/charts-advanced/cash-flow-chart", ticker, language,
-        forceRefresh, "cash-flow-chart");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'cashFlowChart');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getIndustrialRelationship(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/charts-advanced/industrial-relationship", ticker,
-        language, forceRefresh, "industrial-relationship");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'industrialRelationship');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getSectorComparison(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/charts-advanced/sector-comparison", ticker, language,
-        forceRefresh, "sector-comparison");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'sectorComparison');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getShareholderChart(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/charts-advanced/shareholder-chart", ticker, language,
-        forceRefresh, "shareholder-chart");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'shareholderChart');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getEPSvsStockPriceChart(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/charts-advanced/eps-vs-stock-price-chart", ticker,
-        language, forceRefresh, "eps-vs-stock-price-chart");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'epsVsStockPriceChart');
+    return await stream.first;
   }
 
   Future<Map<String, dynamic>> getFinancialMetrics(
-      String ticker, String language, bool forceRefresh) {
-    return getOutput("/tables-advanced/financial-metrics", ticker, language,
-        forceRefresh, "financial-metrics");
+      String ticker, String language, bool forceRefresh) async {
+    final stream = getSectionStream(ticker, language, 'financialMetrics');
+    return await stream.first;
   }
 
-  Future<Map<String, dynamic>> getOutput(String endpoint, String ticker,
-      String language, bool forceRefresh, String cacheKey) async {
-    _log.info("Requesting $endpoint");
-    try {
-      loadingState[cacheKey] = true;
-      loadingStateSubject.add(loadingState);
-
-      final box = Hive.box('settings');
-      final String cacheReportKey = "$ticker-$language-$cacheKey";
-      final String? cachedReport = box.get(cacheReportKey);
-
-      if (cachedReport == null || forceRefresh) {
-        // Get user ID and token from Firestore
-        String userId = '';
-        String token = '';
-        if (_firestoreService.isCurrentUserAuthed()) {
-          final userDoc = await _firestoreService.currentUserDoc.get();
-          userId = userDoc.id;
-          token = userDoc.data()?['token'] as String? ?? '';
-        }
-
-        final url = Uri.https(Uri.parse(baseUrl).host, endpoint, {
-          'code': ticker,
-          'language': language.toLowerCase(),
-          'userId': userId,
-          'token': token,
-        });
-
-        final response = await http.get(url);
-
-        if (response.statusCode == 500) {
-          _log.warning(
-              "Request failed with status code: ${response.statusCode}");
-          loadingState[cacheKey] = false;
-          loadingStateSubject.add(loadingState);
-          return {};
-        }
-
-        final jsonResponse =
-            convert.jsonDecode(response.body) as Map<String, dynamic>;
-        final output = jsonResponse['output'];
-
-        output["cachedAt"] = DateTime.now().microsecondsSinceEpoch;
-        box.put(cacheReportKey, convert.jsonEncode(output));
-        loadingState[cacheKey] = false;
-        loadingStateSubject.add(loadingState);
-        return output;
-      } else {
-        loadingState[cacheKey] = false;
-        loadingStateSubject.add(loadingState);
-        return convert.jsonDecode(cachedReport);
-      }
-    } catch (e) {
-      _log.severe('Error in getOutput: $e');
-      loadingState[cacheKey] = false;
-      loadingStateSubject.add(loadingState);
-      return {};
-    }
+  // Clean up streams when they're no longer needed
+  void disposeStream(String ticker, String language) {
+    final streamKey = '$ticker-$language';
+    _activeStreams.remove(streamKey);
+    _latestData.remove(streamKey);
+    _sectionStreams.remove(streamKey);
   }
 }

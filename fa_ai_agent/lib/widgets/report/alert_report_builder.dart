@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/services/agent_service.dart';
 import 'dart:convert';
 import 'package:fa_ai_agent/widgets/report/chart_image.dart';
+import 'package:fa_ai_agent/constants/layout_constants.dart';
 
 class AlertReportBuilder extends StatelessWidget {
   final Future<Map<String, dynamic>> future;
@@ -70,14 +71,6 @@ class AlertReportBuilder extends StatelessWidget {
             final statusColor = _getStatusColor(rating);
             final borderColor = _getBorderColor(rating);
 
-            final cacheTime = data['cachedAt'] != null
-                ? DateTime.fromMicrosecondsSinceEpoch(data['cachedAt'])
-                : null;
-
-            if (cacheTime != null && onCacheTimeUpdate != null) {
-              onCacheTimeUpdate!(cacheTime);
-            }
-
             if (markdown == null || markdown.isEmpty) {
               return const Center(
                 child: Text('No content available'),
@@ -121,11 +114,11 @@ class AlertReportBuilder extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             ChartImage(
-                              image: Image.memory(
-                                base64Decode(incomeStatement),
-                                fit: BoxFit.contain,
+                              image: Image.network(
+                                incomeStatement,
+                                cacheWidth: LayoutConstants.maxWidth.toInt(),
+                                filterQuality: FilterQuality.high,
                               ),
-                              encodedImage: incomeStatement,
                             ),
                             const SizedBox(height: 8),
                           ],
@@ -140,11 +133,11 @@ class AlertReportBuilder extends StatelessWidget {
                             ),
                             const SizedBox(height: 8),
                             ChartImage(
-                              image: Image.memory(
-                                base64Decode(balanceSheet),
-                                fit: BoxFit.contain,
+                              image: Image.network(
+                                balanceSheet,
+                                cacheWidth: LayoutConstants.maxWidth.toInt(),
+                                filterQuality: FilterQuality.high,
                               ),
-                              encodedImage: balanceSheet,
                             ),
                           ],
                         ],

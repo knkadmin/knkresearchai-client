@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:flutter/gestures.dart';
-import 'dart:convert' as convert;
 
 class ImageViewer extends StatefulWidget {
-  final String encodedImage;
+  final Image? image;
 
   const ImageViewer({
     super.key,
-    required this.encodedImage,
-  });
+    this.image,
+  }) : assert(image != null, 'Either imageUrl or image must be provided');
 
-  static void show(BuildContext context, String encodedImage) {
+  static void show(BuildContext context, Image image) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -19,7 +18,7 @@ class ImageViewer extends StatefulWidget {
         return Dialog(
           backgroundColor: Colors.transparent,
           insetPadding: EdgeInsets.zero,
-          child: ImageViewer(encodedImage: encodedImage),
+          child: ImageViewer(image: image),
         );
       },
     );
@@ -34,135 +33,54 @@ class _ImageViewerState extends State<ImageViewer>
   final PhotoViewScaleStateController _scaleStateController =
       PhotoViewScaleStateController();
   final PhotoViewController _controller = PhotoViewController();
-  late AnimationController _bounceController;
-  late Animation<Offset> _bounceAnimation;
   Offset _position = Offset.zero;
+  double _scale = 1.0;
   Offset? _startPosition;
-  Offset? _lastFocalPoint;
-  bool _isPanning = false;
+  double? _startScale;
 
   @override
   void initState() {
     super.initState();
-    _controller.scale = PhotoViewComputedScale.contained.multiplier;
-    _bounceController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 500),
-    );
-
-    _bounceController.addListener(() {
-      setState(() {
-        _position = _bounceAnimation.value;
-      });
-    });
-  }
-
-  void _handleScroll(PointerScrollEvent event) {
-    const double zoomFactor = 0.25;
-    final double currentScale = _controller.scale ?? 1.0;
-    final double minScale = PhotoViewComputedScale.contained.multiplier;
-    final double maxScale = PhotoViewComputedScale.covered.multiplier * 4;
-
-    final double normalizedDelta = (event.scrollDelta.dy / 30).clamp(-0.3, 0.3);
-
-    double newScale;
-    if (event.scrollDelta.dy < 0) {
-      newScale = currentScale * (1 + (zoomFactor * normalizedDelta.abs()));
-    } else {
-      newScale = currentScale * (1 - (zoomFactor * normalizedDelta.abs()));
-    }
-
-    newScale = newScale.clamp(minScale, maxScale);
-    _controller.scale = newScale;
-
-    // Reset position when zooming out to contained size
-    if (newScale <= minScale) {
-      _position = Offset.zero;
-    }
-  }
-
-  void _onScaleStart(ScaleStartDetails details) {
-    _startPosition = _position;
-    _lastFocalPoint = details.focalPoint;
-    _isPanning = true;
-  }
-
-  void _onScaleUpdate(ScaleUpdateDetails details) {
-    if (!_isPanning || _lastFocalPoint == null || _startPosition == null)
-      return;
-
-    final double scale = _controller.scale ?? 1.0;
-    if (scale <= PhotoViewComputedScale.contained.multiplier) return;
-
-    setState(() {
-      final Offset delta = details.focalPoint - _lastFocalPoint!;
-      _position = _startPosition! + delta;
-      _lastFocalPoint = details.focalPoint;
-    });
-  }
-
-  void _onScaleEnd(ScaleEndDetails details) {
-    if (!_isPanning) return;
-    _isPanning = false;
-    _lastFocalPoint = null;
-
-    final double scale = _controller.scale ?? 1.0;
-    if (scale <= PhotoViewComputedScale.contained.multiplier) {
-      _animatePositionTo(Offset.zero);
-      return;
-    }
-
-    final double maxOffset =
-        (scale - 1) * 150; // Increased max offset for more freedom
-
-    // Calculate the bounded position to bounce back to
-    final Offset targetPosition = Offset(
-      _position.dx.clamp(-maxOffset, maxOffset),
-      _position.dy.clamp(-maxOffset, maxOffset),
-    );
-
-    // Only animate if we need to bounce back
-    if (_position != targetPosition) {
-      _bounceAnimation = Tween<Offset>(
-        begin: _position,
-        end: targetPosition,
-      ).animate(CurvedAnimation(
-        parent: _bounceController,
-        curve: Curves.elasticOut,
-      ));
-
-      _bounceController.reset();
-      _bounceController.forward();
-    }
-  }
-
-  void _animatePositionTo(Offset targetPosition) {
-    _bounceAnimation = Tween<Offset>(
-      begin: _position,
-      end: targetPosition,
-    ).animate(CurvedAnimation(
-      parent: _bounceController,
-      curve: Curves.easeOutBack,
-    ));
-
-    _bounceController
-      ..reset()
-      ..forward();
+    _controller.scale = 1.0;
   }
 
   @override
   void dispose() {
     _controller.dispose();
     _scaleStateController.dispose();
-    _bounceController.dispose();
     super.dispose();
+  }
+
+  void _handleScroll(PointerScrollEvent event) {
+    final double delta = event.scrollDelta.dy;
+    final double newScale = _controller.scale! * (1 - delta * 0.001);
+    _controller.scale = newScale.clamp(0.5, 4.0);
+  }
+
+  void _onScaleStart(ScaleStartDetails details) {
+    _startPosition = _position;
+    _startScale = _controller.scale;
+  }
+
+  void _onScaleUpdate(ScaleUpdateDetails details) {
+    if (_startPosition != null && _startScale != null) {
+      final double newScale = _startScale! * details.scale;
+      _controller.scale = newScale.clamp(0.5, 4.0);
+
+      final Offset newPosition = _startPosition! + details.focalPointDelta;
+      setState(() {
+        _position = newPosition;
+      });
+    }
+  }
+
+  void _onScaleEnd(ScaleEndDetails details) {
+    _startPosition = null;
+    _startScale = null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final decodedImage = convert.base64.decode(widget.encodedImage);
-    final imageProvider = MemoryImage(decodedImage);
-
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -178,44 +96,23 @@ class _ImageViewerState extends State<ImageViewer>
             onScaleEnd: _onScaleEnd,
             child: Transform.translate(
               offset: _position,
-              child: PhotoView(
-                imageProvider: imageProvider,
-                minScale: PhotoViewComputedScale.contained,
-                maxScale: PhotoViewComputedScale.covered * 4,
-                initialScale: PhotoViewComputedScale.contained,
-                backgroundDecoration: const BoxDecoration(
-                  color: Colors.transparent,
-                ),
-                controller: _controller,
-                scaleStateController: _scaleStateController,
-                enableRotation: false,
-                enablePanAlways: false,
-                gestureDetectorBehavior: HitTestBehavior.translucent,
-                basePosition: Alignment.center,
-                scaleStateCycle: (scaleState) {
-                  switch (scaleState) {
-                    case PhotoViewScaleState.initial:
-                      return PhotoViewScaleState.covering;
-                    case PhotoViewScaleState.covering:
-                      return PhotoViewScaleState.originalSize;
-                    case PhotoViewScaleState.originalSize:
-                      return PhotoViewScaleState.initial;
-                    case PhotoViewScaleState.zoomedIn:
-                    case PhotoViewScaleState.zoomedOut:
-                      return PhotoViewScaleState.initial;
-                  }
-                },
-                loadingBuilder: (context, event) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
-                  );
-                },
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Text('Error loading image'),
-                  );
-                },
-              ),
+              child: widget.image != null
+                  ? PhotoView.customChild(
+                      child: widget.image!,
+                      backgroundDecoration: const BoxDecoration(
+                        color: Colors.transparent,
+                      ),
+                      controller: _controller,
+                      scaleStateController: _scaleStateController,
+                    )
+                  : PhotoView(
+                      imageProvider: widget.image!.image,
+                      backgroundDecoration: const BoxDecoration(
+                        color: Colors.transparent,
+                      ),
+                      controller: _controller,
+                      scaleStateController: _scaleStateController,
+                    ),
             ),
           ),
         ),

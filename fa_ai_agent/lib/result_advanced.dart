@@ -22,6 +22,7 @@ import 'services/subscription_service.dart';
 import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/widgets/report/report_sticky_header.dart';
+import 'services/firestore_service.dart';
 
 /// Configuration for a section
 class SectionConfig {
@@ -150,7 +151,7 @@ class SectionConstants {
   static List<String> get allSectionNames => createSectionConfigs(ReportWidgets(
         service: AgentService(),
         imageCache: {},
-        encodedImageCache: {},
+        imageUrlCache: {},
         sectionCache: {},
         futureCache: {},
         cacheTimeSubject: BehaviorSubject(),
@@ -165,7 +166,7 @@ class SectionConstants {
         for (var config in createSectionConfigs(ReportWidgets(
           service: AgentService(),
           imageCache: {},
-          encodedImageCache: {},
+          imageUrlCache: {},
           sectionCache: {},
           futureCache: {},
           cacheTimeSubject: BehaviorSubject(),
@@ -204,7 +205,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       PublicUserLastViewedReportTracker();
   late Future<bool> _isMag7CompanyFuture;
   final Map<String, Widget> _imageCache = {};
-  final Map<String, String> _encodedImageCache = {};
+  final Map<String, String> _imageUrlCache = {};
   final Map<String, Widget> _sectionCache = {};
   final Map<String, Future<Map<String, dynamic>>> _futureCache = {};
   final Map<String, bool> _sectionLoadingStates = {};
@@ -229,7 +230,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   ReportWidgets _reportWidgets = ReportWidgets(
     service: AgentService(),
     imageCache: {},
-    encodedImageCache: {},
+    imageUrlCache: {},
     sectionCache: {},
     futureCache: {},
     cacheTimeSubject: BehaviorSubject(),
@@ -237,6 +238,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   );
 
   late List<Section> sections;
+
+  final FirestoreService _firestoreService = FirestoreService();
 
   @override
   void initState() {
@@ -291,7 +294,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     _reportWidgets = ReportWidgets(
       service: widget.service,
       imageCache: _imageCache,
-      encodedImageCache: _encodedImageCache,
+      imageUrlCache: _imageUrlCache,
       sectionCache: _sectionCache,
       futureCache: _futureCache,
       cacheTimeSubject: widget.cacheTimeSubject,
@@ -380,7 +383,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       _tickAnimationStates.clear();
       _futureCache.clear(); // Clear the future cache to force new requests
       _imageCache.clear(); // Clear image cache
-      _encodedImageCache.clear(); // Clear encoded image cache
+      _imageUrlCache.clear(); // Clear image URL cache
       _sectionCache.clear(); // Clear section cache
       forceRefresh = true; // Set force refresh flag
 
@@ -388,7 +391,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       _reportWidgets = ReportWidgets(
         service: widget.service,
         imageCache: _imageCache,
-        encodedImageCache: _encodedImageCache,
+        imageUrlCache: _imageUrlCache,
         sectionCache: _sectionCache,
         futureCache: _futureCache,
         cacheTimeSubject: widget.cacheTimeSubject,
