@@ -267,4 +267,25 @@ class FirestoreService {
         .map(
             (doc) => doc.exists ? FinancialReport.fromJson(doc.data()!) : null);
   }
+
+  // Update company document ticker field
+  Future<void> checkCompanyExists(String ticker) async {
+    try {
+      final docRef =
+          _firestore.collection('financialReports').doc(ticker.toLowerCase());
+      final doc = await docRef.get();
+
+      if (!doc.exists) {
+        // Document doesn't exist, create it
+        await docRef.set({
+          'ticker': ticker,
+          'createdAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+    } catch (e) {
+      print('Error updating company ticker: $e');
+      rethrow;
+    }
+  }
 }
