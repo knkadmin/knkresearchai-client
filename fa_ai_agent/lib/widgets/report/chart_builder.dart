@@ -72,10 +72,9 @@ class _ChartBuilderState extends State<ChartBuilder> {
               errorMessage: "Failed to load ${widget.chartKey}");
         }
 
-        final Map<String, dynamic> payload = data[widget.chartKey];
+        final Map<String, dynamic>? payload = data[widget.chartKey];
         if (payload == null) {
-          return ErrorDisplayWidget(
-              errorMessage: "No payload found for ${widget.chartKey}");
+          return const LoadingSpinner();
         }
 
         final String? imageUrl = payload['imageUrl'];

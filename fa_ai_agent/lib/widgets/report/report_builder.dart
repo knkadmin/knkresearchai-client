@@ -1,3 +1,4 @@
+import 'package:fa_ai_agent/widgets/animations/loading_spinner.dart';
 import 'package:flutter/material.dart';
 import 'package:fa_ai_agent/widgets/animations/thinking_animation.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -65,9 +66,7 @@ class _ReportBuilderState extends State<ReportBuilder> {
         final markdown = data[widget.reportKey]?['md'] as String?;
 
         if (markdown == null || markdown.isEmpty) {
-          return const Center(
-            child: Text('No content available'),
-          );
+          return const LoadingSpinner();
         }
 
         // Clean the markdown content

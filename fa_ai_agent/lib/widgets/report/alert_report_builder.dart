@@ -1,4 +1,5 @@
 import 'package:fa_ai_agent/utils/image_utils.dart';
+import 'package:fa_ai_agent/widgets/animations/loading_spinner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:fa_ai_agent/widgets/animations/thinking_animation.dart';
@@ -73,8 +74,7 @@ class AlertReportBuilder extends StatelessWidget {
                     ),
                   );
                 }
-                return contentSnapshot.data ??
-                    const Center(child: Text('No content available'));
+                return contentSnapshot.data ?? const LoadingSpinner();
               },
             );
           },
