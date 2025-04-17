@@ -254,8 +254,9 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
         name: 'view_reports', parameters: {'ticker': widget.tickerCode});
     _scrollController.addListener(_onScroll);
 
-    // Update company document ticker field
+    // Update company document ticker field and increment view count
     FirestoreService().checkCompanyExists(widget.tickerCode);
+    FirestoreService().incrementReportViewCount(widget.tickerCode);
 
     // Initialize sections
     sections =

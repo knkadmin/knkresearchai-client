@@ -6,6 +6,7 @@ import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:fa_ai_agent/gradient_text.dart';
 import 'package:fa_ai_agent/utils/image_utils.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChartBuilder extends StatefulWidget {
   final Stream<Map<String, dynamic>> stream;
@@ -204,6 +205,12 @@ class _ChartBuilderState extends State<ChartBuilder> {
               constraints: const BoxConstraints(minHeight: 50),
               child: MarkdownBody(
                 data: markdown,
+                onTapLink: (text, href, title) {
+                  if (href != null) {
+                    launchUrl(Uri.parse(href),
+                        mode: LaunchMode.externalApplication);
+                  }
+                },
                 styleSheet: MarkdownStyleSheet(
                   h1: const TextStyle(
                     fontSize: 24,

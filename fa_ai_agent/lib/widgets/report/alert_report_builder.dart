@@ -10,6 +10,7 @@ import 'package:fa_ai_agent/services/agent_service.dart';
 import 'dart:convert';
 import 'package:fa_ai_agent/widgets/report/chart_image.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AlertReportBuilder extends StatelessWidget {
   final Stream<Map<String, dynamic>> stream;
@@ -171,6 +172,12 @@ class AlertReportBuilder extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             child: MarkdownBody(
               data: markdown ?? '',
+              onTapLink: (text, href, title) {
+                if (href != null) {
+                  launchUrl(Uri.parse(href),
+                      mode: LaunchMode.externalApplication);
+                }
+              },
               builders: {
                 'ul': UnorderedListBuilder(),
                 'ol': OrderedListBuilder(),

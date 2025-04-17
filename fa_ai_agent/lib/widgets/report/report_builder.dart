@@ -4,6 +4,7 @@ import 'package:fa_ai_agent/widgets/animations/thinking_animation.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:fa_ai_agent/gradient_text.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ReportBuilder extends StatefulWidget {
   final Stream<Map<String, dynamic>> stream;
@@ -91,6 +92,12 @@ class _ReportBuilderState extends State<ReportBuilder> {
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: MarkdownBody(
                 data: cleanedMarkdown,
+                onTapLink: (text, href, title) {
+                  if (href != null) {
+                    launchUrl(Uri.parse(href),
+                        mode: LaunchMode.externalApplication);
+                  }
+                },
                 styleSheet: MarkdownStyleSheet(
                   h1: const TextStyle(
                     fontSize: 28,

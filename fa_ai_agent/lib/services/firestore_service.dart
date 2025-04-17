@@ -288,4 +288,19 @@ class FirestoreService {
       rethrow;
     }
   }
+
+  // Increment the view count for a financial report
+  Future<void> incrementReportViewCount(String ticker) async {
+    try {
+      final docRef =
+          _firestore.collection('financialReports').doc(ticker.toLowerCase());
+      await docRef.update({
+        'viewCount': FieldValue.increment(1),
+      });
+    } catch (e) {
+      // Log the error but don't rethrow, as failing to increment view count
+      // shouldn't block the user from viewing the report.
+      print('Error incrementing report view count for ticker $ticker: $e');
+    }
+  }
 }

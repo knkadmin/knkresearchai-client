@@ -25,6 +25,7 @@ class FinancialReport {
   final SectorComparison? sectorComparison;
   final EpsVsStockPriceChart? epsVsStockPriceChart;
   final FinancialMetrics? financialMetrics;
+  final int? viewCount;
 
   FinancialReport({
     this.shortname,
@@ -51,6 +52,7 @@ class FinancialReport {
     this.sectorComparison,
     this.epsVsStockPriceChart,
     this.financialMetrics,
+    this.viewCount,
   });
 
   factory FinancialReport.fromJson(Map<String, dynamic> json) {
@@ -135,6 +137,7 @@ class FinancialReport {
           ? FinancialMetrics.fromJson(
               json['financialMetrics'] as Map<String, dynamic>)
           : null,
+      viewCount: json['viewCount'] as int?,
     );
   }
 
@@ -165,6 +168,7 @@ class FinancialReport {
       'sectorComparison': sectorComparison?.toJson(),
       'epsVsStockPriceChart': epsVsStockPriceChart?.toJson(),
       'financialMetrics': financialMetrics?.toJson(),
+      'viewCount': viewCount,
     };
   }
 }
