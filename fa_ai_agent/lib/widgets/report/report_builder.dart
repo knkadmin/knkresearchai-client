@@ -36,14 +36,17 @@ class _ReportBuilderState extends State<ReportBuilder> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context); // Get theme
+
     return StreamBuilder<Map<String, dynamic>>(
       stream: widget.stream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
+          return Center(
             child: ThinkingAnimation(
               size: 24,
-              color: Color(0xFF1E3A8A),
+              // Use theme primary color for animation
+              color: theme.colorScheme.primary,
             ),
           );
         }
@@ -52,14 +55,16 @@ class _ReportBuilderState extends State<ReportBuilder> {
           return Center(
             child: Text(
               'Error loading report: ${snapshot.error}',
-              style: const TextStyle(color: Colors.red),
+              // Use theme error color
+              style: TextStyle(color: theme.colorScheme.error),
             ),
           );
         }
 
         if (!snapshot.hasData) {
-          return const Center(
-            child: Text('No data available'),
+          return Center(
+            // Use theme body text color
+            child: Text('No data available', style: theme.textTheme.bodyMedium),
           );
         }
 
@@ -67,11 +72,38 @@ class _ReportBuilderState extends State<ReportBuilder> {
         final markdown = data[widget.reportKey]?['md'] as String?;
 
         if (markdown == null || markdown.isEmpty) {
+          // Use themed LoadingSpinner if available, or keep this one
+          // TODO: Check if LoadingSpinner needs theme update
           return const LoadingSpinner();
         }
 
         // Clean the markdown content
         final cleanedMarkdown = _cleanMarkdown(markdown, widget.title);
+
+        // Define colors based on theme for Markdown
+        final isDarkMode = theme.brightness == Brightness.dark;
+        final Color mdTextColor =
+            isDarkMode ? Colors.white : theme.textTheme.bodyLarge!.color!;
+        final Color mdHeadingColor =
+            isDarkMode ? Colors.white : theme.textTheme.headlineMedium!.color!;
+        final Color mdSecondaryTextColor = isDarkMode
+            ? Colors.white.withOpacity(0.8)
+            : theme.textTheme.bodyMedium!.color!;
+        final Color mdCodeColor = isDarkMode
+            ? Colors.white.withOpacity(0.9)
+            : theme.textTheme.bodyMedium!.color!;
+
+        final codeBackgroundColor = isDarkMode
+            ? theme.colorScheme.surfaceVariant.withOpacity(0.5)
+            : const Color(0xFFF1F5F9);
+        final blockquoteBackgroundColor = isDarkMode
+            ? theme.colorScheme.surfaceVariant.withOpacity(0.5)
+            : const Color(0xFFF8FAFC);
+        final blockquoteBorderColor = theme.dividerColor;
+        final tableBorderColor = theme.dividerColor;
+        final tableCellBackgroundColor = isDarkMode
+            ? theme.colorScheme.surface.withOpacity(0.5)
+            : Colors.grey[100];
 
         final content = Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,7 +116,8 @@ class _ReportBuilderState extends State<ReportBuilder> {
               Container(
                 width: double.infinity,
                 height: 1,
-                color: Colors.grey.shade200,
+                // Use theme divider color
+                color: theme.dividerColor,
               ),
               const SizedBox(height: 8),
             ],
@@ -98,23 +131,24 @@ class _ReportBuilderState extends State<ReportBuilder> {
                         mode: LaunchMode.externalApplication);
                   }
                 },
+                // Apply themed Markdown styles (similar to ChartBuilder)
                 styleSheet: MarkdownStyleSheet(
                   h1: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1E293B),
-                    letterSpacing: -0.5,
-                    height: 1.2,
-                  ),
-                  h2: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
                     color: Color(0xFF1E293B),
-                    letterSpacing: -0.3,
+                    letterSpacing: -0.5,
                     height: 1.3,
                   ),
-                  h3: const TextStyle(
+                  h2: const TextStyle(
                     fontSize: 20,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                    letterSpacing: -0.3,
+                    height: 1.4,
+                  ),
+                  h3: const TextStyle(
+                    fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF1E293B),
                     letterSpacing: -0.2,
@@ -123,7 +157,7 @@ class _ReportBuilderState extends State<ReportBuilder> {
                   p: const TextStyle(
                     fontSize: 16,
                     color: Color(0xFF334155),
-                    height: 1.8,
+                    height: 1.7,
                     letterSpacing: 0.2,
                   ),
                   strong: const TextStyle(
@@ -148,7 +182,6 @@ class _ReportBuilderState extends State<ReportBuilder> {
                         width: 4,
                       ),
                     ),
-                    borderRadius: BorderRadius.circular(8),
                   ),
                   code: const TextStyle(
                     backgroundColor: Color(0xFFF1F5F9),
@@ -169,11 +202,9 @@ class _ReportBuilderState extends State<ReportBuilder> {
                   tableHead: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF1E293B),
-                    fontSize: 15,
                   ),
                   tableBody: const TextStyle(
                     color: Color(0xFF334155),
-                    fontSize: 14,
                   ),
                   tableBorder: TableBorder.all(
                     color: const Color(0xFFE2E8F0),

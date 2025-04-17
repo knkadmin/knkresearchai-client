@@ -178,12 +178,7 @@ class ReportContentLayout extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ...leftSections.map((section) => Column(
-                          children: [
-                            section,
-                            const SizedBox(height: 48),
-                          ],
-                        )),
+                    ...leftSections.map((section) => section),
                   ],
                 ),
               ),
@@ -203,12 +198,7 @@ class ReportContentLayout extends StatelessWidget {
             ],
           ),
           // Full width sections (Accounting Red Flags onwards)
-          ...sectionsAfterRedFlags.map((section) => Column(
-                children: [
-                  section,
-                  const SizedBox(height: 48),
-                ],
-              )),
+          ...sectionsAfterRedFlags.map((section) => section),
           // Footer
           Container(
             width: double.infinity,

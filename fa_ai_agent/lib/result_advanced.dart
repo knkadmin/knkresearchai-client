@@ -360,34 +360,58 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       _navigationTop.value = initialTop - scrollOffset;
     }
 
-    // Update current section based on scroll position
-    for (final entry in _sectionKeys.entries) {
-      final key = entry.key;
-      final context = entry.value.currentContext;
+    // Update current section based on scroll position (Revised Logic)
+    String? lastVisibleSectionTitle;
+    // Iterate through the ordered sections list
+    for (final section in sections) {
+      final key = _sectionKeys[section.title];
+      final context = key?.currentContext;
       if (context != null) {
         final RenderBox renderBox = context.findRenderObject() as RenderBox;
         final position = renderBox.localToGlobal(Offset.zero);
-        final size = renderBox.size;
 
-        // Check if the section is in view
-        if (position.dy <= 200 && position.dy + size.height > 200) {
-          if (_currentSection.value != key) {
-            _currentSection.value = key;
+        // Check if the section's top is at or above the threshold (200px)
+        if (position.dy <= 200) {
+          // Keep track of the last section that meets the condition
+          lastVisibleSectionTitle = section.title;
+        } else {
+          // Optimization: If we find a section whose top is below the threshold,
+          // and we already found a candidate, we can stop early
+          // because sections are ordered visually.
+          if (lastVisibleSectionTitle != null) {
+            break;
           }
-          break;
         }
       }
     }
+
+    // Update the current section if a suitable one was found
+    if (lastVisibleSectionTitle != null &&
+        _currentSection.value != lastVisibleSectionTitle) {
+      _currentSection.value = lastVisibleSectionTitle;
+    }
+    // If no section's top is above the threshold (e.g., scrolled to top),
+    // potentially default to the first section if needed (optional enhancement)
+    // else if (lastVisibleSectionTitle == null && _currentSection.value != sections.first.title) {
+    //  _currentSection.value = sections.first.title;
+    // }
   }
 
   void _scrollToSection(String sectionTitle) {
     final key = _sectionKeys[sectionTitle];
+    // Check context before the delay
     if (key?.currentContext != null) {
-      Scrollable.ensureVisible(
-        key!.currentContext!,
-        duration: const Duration(milliseconds: 1000),
-        curve: Curves.easeOutExpo,
-      );
+      Future.delayed(const Duration(milliseconds: 50), () {
+        // Check mount status and key non-null *and* context non-null *after* delay
+        if (mounted && key != null && key.currentContext != null) {
+          Scrollable.ensureVisible(
+            key.currentContext!,
+            duration: const Duration(milliseconds: 1000),
+            curve: Curves.easeOutExpo,
+            alignment: 0.0,
+          );
+        }
+      });
     }
   }
 
