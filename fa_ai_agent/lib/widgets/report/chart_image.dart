@@ -27,7 +27,7 @@ class _ChartImageState extends State<ChartImage> {
         alignment: Alignment.center,
         transform: Matrix4.identity()
           ..translate(0.0, 0.0, 0.0)
-          ..scale(isHovered ? 1.02 : 1.0),
+          ..scale(isHovered ? 1.01 : 1.0),
         transformAlignment: Alignment.center,
         decoration: BoxDecoration(
           color: Colors.white,
