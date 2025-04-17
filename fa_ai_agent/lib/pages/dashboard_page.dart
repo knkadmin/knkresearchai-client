@@ -741,117 +741,160 @@ class _DashboardPageState extends State<DashboardPage>
                       ),
                       // Main Content
                       Expanded(
-                        child: _reportPage ??
-                            Center(
-                              child: SingleChildScrollView(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    if (user == null) ...[
-                                      HeroSection(
-                                        searchController: searchController,
-                                        searchFocusNode: _searchFocusNode,
-                                        onSearchChanged: _onSearchChanged,
-                                        onNavigateToReport: _navigateToReport,
-                                        searchResults: searchResults,
-                                        onHideSearchResults: _hideSearchResults,
-                                        searchCardKey: _searchCardKey,
-                                        disclaimerText: _disclaimerText,
-                                      ),
-                                      Mega7Section(
-                                        mega7Companies: _mega7Companies,
-                                        onNavigateToReport: _navigateToReport,
-                                      ),
-                                      const WhyChooseUsSection(),
-                                      FeedbackSection(
-                                        feedbackController: feedbackController,
-                                        emailController: emailController,
-                                        onSendFeedback: () async {
-                                          if (feedbackController.text.isEmpty) {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: const Text(
-                                                    'Please describe your issue in the description field.'),
-                                                backgroundColor: Colors.red,
-                                                behavior:
-                                                    SnackBarBehavior.floating,
-                                                margin:
-                                                    const EdgeInsets.all(16),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                            );
-                                            return;
-                                          }
+                        child: Stack(
+                          children: [
+                            _reportPage ??
+                                Center(
+                                  child: SingleChildScrollView(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        if (user == null) ...[
+                                          HeroSection(
+                                            searchController: searchController,
+                                            searchFocusNode: _searchFocusNode,
+                                            onSearchChanged: _onSearchChanged,
+                                            onNavigateToReport:
+                                                _navigateToReport,
+                                            searchResults: searchResults,
+                                            onHideSearchResults:
+                                                _hideSearchResults,
+                                            searchCardKey: _searchCardKey,
+                                            disclaimerText: _disclaimerText,
+                                          ),
+                                          Mega7Section(
+                                            mega7Companies: _mega7Companies,
+                                            onNavigateToReport:
+                                                _navigateToReport,
+                                          ),
+                                          const WhyChooseUsSection(),
+                                          FeedbackSection(
+                                            feedbackController:
+                                                feedbackController,
+                                            emailController: emailController,
+                                            onSendFeedback: () async {
+                                              if (feedbackController
+                                                  .text.isEmpty) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: const Text(
+                                                        'Please describe your issue in the description field.'),
+                                                    backgroundColor: Colors.red,
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                    margin:
+                                                        const EdgeInsets.all(
+                                                            16),
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
+                                                    ),
+                                                  ),
+                                                );
+                                                return;
+                                              }
 
-                                          try {
-                                            service.sendFeedback(
-                                                emailController.text,
-                                                feedbackController.text);
-                                            emailController.text = "";
-                                            feedbackController.text = "";
+                                              try {
+                                                service.sendFeedback(
+                                                    emailController.text,
+                                                    feedbackController.text);
+                                                emailController.text = "";
+                                                feedbackController.text = "";
 
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: const Text(
-                                                    'Thank you for your feedback!'),
-                                                backgroundColor: Colors.green,
-                                                behavior:
-                                                    SnackBarBehavior.floating,
-                                                margin:
-                                                    const EdgeInsets.all(16),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                            );
-                                          } catch (e) {
-                                            Navigator.pop(context);
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content: const Text(
-                                                    'Failed to send feedback. Please try again later.'),
-                                                backgroundColor: Colors.red,
-                                                behavior:
-                                                    SnackBarBehavior.floating,
-                                                margin:
-                                                    const EdgeInsets.all(16),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
-                                                ),
-                                              ),
-                                            );
-                                          }
-                                        },
-                                      ),
-                                      FooterSection(
-                                        termsAndConditionsText:
-                                            _termsAndConditionsText,
-                                        privacyPolicyText: _privacyPolicyText,
-                                      ),
-                                    ] else ...[
-                                      AuthenticatedSearchSection(
-                                        searchController: searchController,
-                                        searchFocusNode: _searchFocusNode,
-                                        onSearchChanged: _onSearchChanged,
-                                        onNavigateToReport: _navigateToReport,
-                                        searchResults: searchResults,
-                                        onHideSearchResults: _hideSearchResults,
-                                        searchCardKey: _searchCardKey,
-                                        disclaimerText: _disclaimerText,
-                                      ),
-                                    ],
-                                  ],
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: const Text(
+                                                        'Thank you for your feedback!'),
+                                                    backgroundColor:
+                                                        Colors.green,
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                    margin:
+                                                        const EdgeInsets.all(
+                                                            16),
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
+                                                    ),
+                                                  ),
+                                                );
+                                              } catch (e) {
+                                                Navigator.pop(context);
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                  SnackBar(
+                                                    content: const Text(
+                                                        'Failed to send feedback. Please try again later.'),
+                                                    backgroundColor: Colors.red,
+                                                    behavior: SnackBarBehavior
+                                                        .floating,
+                                                    margin:
+                                                        const EdgeInsets.all(
+                                                            16),
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              8),
+                                                    ),
+                                                  ),
+                                                );
+                                              }
+                                            },
+                                          ),
+                                          FooterSection(
+                                            termsAndConditionsText:
+                                                _termsAndConditionsText,
+                                            privacyPolicyText:
+                                                _privacyPolicyText,
+                                          ),
+                                        ] else ...[
+                                          AuthenticatedSearchSection(
+                                            searchController: searchController,
+                                            searchFocusNode: _searchFocusNode,
+                                            onSearchChanged: _onSearchChanged,
+                                            onNavigateToReport:
+                                                _navigateToReport,
+                                            searchResults: searchResults,
+                                            onHideSearchResults:
+                                                _hideSearchResults,
+                                            searchCardKey: _searchCardKey,
+                                            disclaimerText: _disclaimerText,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            // Conditional Dimming Overlay with Animation
+                            IgnorePointer(
+                              ignoring: !_isSearchFocused ||
+                                  _reportPage ==
+                                      null, // Ignore pointer when not focused or no report
+                              child: AnimatedOpacity(
+                                opacity: _isSearchFocused && _reportPage != null
+                                    ? 1.0
+                                    : 0.0,
+                                duration: const Duration(
+                                    milliseconds:
+                                        300), // Adjust duration as needed
+                                curve: Curves
+                                    .easeInOut, // Optional: Add an animation curve
+                                child: Container(
+                                  color: Colors.black.withOpacity(
+                                      0.5), // Semi-transparent black
                                 ),
                               ),
                             ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

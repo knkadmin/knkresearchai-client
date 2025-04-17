@@ -336,12 +336,20 @@ class NavigationListContent extends StatelessWidget {
                   return ValueListenableBuilder<String>(
                     valueListenable: currentSection,
                     builder: (context, currentSection, child) {
+                      // Filter out the 'Financial Metrics' section
+                      final filteredSections = sections
+                          .where(
+                              (section) => section.title != 'Financial Metrics')
+                          .toList();
+
                       return ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: sections.length,
+                        itemCount:
+                            filteredSections.length, // Use filtered list length
                         itemBuilder: (context, index) {
-                          final section = sections[index];
+                          final section =
+                              filteredSections[index]; // Use filtered list
                           final isActive = section.title == currentSection;
                           final cacheKey = sectionToCacheKey[section.title];
                           final isLoading = cacheKey != null &&
