@@ -265,6 +265,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   void initState() {
     super.initState();
 
+    _initializeCacheTime();
+
     // Set document title for web
     if (kIsWeb) {
       html.document.title =
@@ -314,6 +316,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       _subscriptionSubscription = _subscriptionService
           .streamUserSubscription()
           .listen((subscriptionType) {
+        // Check if mounted before updating state
         if (mounted) {
           _subscriptionTypeNotifier.value = subscriptionType;
         }
@@ -330,15 +333,27 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
       cacheTimeSubject: widget.cacheTimeSubject,
       forceRefresh: forceRefresh,
     );
+  }
 
-    // Subscribe to the financial report stream and update cacheTimeSubject
-    FirestoreService()
-        .streamFinancialReport(widget.tickerCode)
-        .listen((report) {
-      if (report != null && report.lastUpdated != null) {
-        widget.cacheTimeSubject.add(report.lastUpdated!.microsecondsSinceEpoch);
-      }
-    });
+  /// Initializes the cache time from Hive or sets a new one.
+  void _initializeCacheTime() async {
+    final box = await Hive.openBox('report_timestamps');
+    final lastUpdatedKey =
+        '${widget.tickerCode}-${widget.language.value}-lastUpdated';
+    final int? cachedTimestamp = box.get(lastUpdatedKey);
+
+    if (cachedTimestamp != null) {
+      widget.cacheTimeSubject.add(cachedTimestamp);
+      // print("Initialized cache time from Hive: $cachedTimestamp");
+    } else {
+      final currentTimestamp = DateTime.now().microsecondsSinceEpoch;
+      widget.cacheTimeSubject.add(currentTimestamp);
+      await box.put(lastUpdatedKey, currentTimestamp);
+      // print("Initialized and saved new cache time: $currentTimestamp");
+    }
+    // We might not need to close the box if it's used elsewhere frequently,
+    // but if it's only for this, uncomment the line below.
+    // await box.close();
   }
 
   @override
@@ -437,6 +452,16 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   }
 
   void _handleRefresh() async {
+    // Update and save the timestamp first
+    final currentTimestamp = DateTime.now().microsecondsSinceEpoch;
+    widget.cacheTimeSubject.add(currentTimestamp);
+    final timestampBox = await Hive.openBox('report_timestamps');
+    final lastUpdatedKey =
+        '${widget.tickerCode}-${widget.language.value}-lastUpdated';
+    await timestampBox.put(lastUpdatedKey, currentTimestamp);
+    // print("Refreshed and saved new cache time: $currentTimestamp");
+    // await timestampBox.close(); // Optional: close if not needed immediately after
+
     setState(() {
       _isRefreshing.value = true;
       _sectionLoadingStates.clear();
@@ -481,15 +506,6 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
     // Wait for all sections to finish loading
     await Future.delayed(const Duration(milliseconds: 100));
-
-    // Clear Hive cache for this report
-    final box = Hive.box('settings');
-    final cacheKeys = box.keys.where((key) => key
-        .toString()
-        .startsWith('${widget.tickerCode}-${widget.language.value}'));
-    for (var key in cacheKeys) {
-      await box.delete(key);
-    }
 
     _isRefreshing.value = false;
     forceRefresh = false; // Reset force refresh flag after refresh is complete
