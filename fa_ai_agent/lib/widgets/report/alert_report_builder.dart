@@ -171,7 +171,7 @@ class AlertReportBuilder extends StatelessWidget {
             Container(
               width: double.infinity,
               height: 1,
-              color: Colors.grey.shade200,
+              color: Colors.grey.shade300,
             ),
           ],
           Padding(

@@ -191,7 +191,7 @@ class _ChartBuilderState extends State<ChartBuilder> {
           Container(
             width: double.infinity,
             height: 1,
-            color: Colors.grey.shade200,
+            color: Colors.grey.shade300,
           ),
           const SizedBox(height: 8),
         ],

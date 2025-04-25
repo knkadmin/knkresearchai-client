@@ -72,7 +72,7 @@ class AgentService {
 
     // Check cache first
     final cachedResults = await _searchCacheService.getCachedResults(query);
-    if (cachedResults != null) {
+    if (cachedResults != null && cachedResults.isNotEmpty) {
       _log.info("Using cached results for query: $query");
       return {'quotes': cachedResults};
     }

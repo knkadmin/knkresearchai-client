@@ -67,9 +67,16 @@ class SectionConstants {
         ),
         SectionConfig(
           title: 'EPS vs Stock Price',
-          cacheKey: 'eps-vs-stock-price-chart',
+          cacheKey: 'eps-vs-stock-price',
           icon: Icons.compare_arrows,
-          builder: reportWidgets.getEPSvsStockPriceChart,
+          builder: (ticker, language) => Column(
+            children: [
+              reportWidgets.getEPSvsStockPriceChart(ticker, language),
+              const SizedBox(height: 16),
+              reportWidgets.getEPSvsStockPriceAnalysis(ticker, language,
+                  showTitle: false),
+            ],
+          ),
         ),
         SectionConfig(
           title: 'Financial Performance',
@@ -549,9 +556,8 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
                       isNarrow: isNarrow,
                       buildSection: _buildSection,
                       headerView: (title) => ReportHeader(
-                        companyName: widget.companyName,
+                        tickerCode: widget.tickerCode,
                         cacheTimeSubject: widget.cacheTimeSubject,
-                        sectorSubject: widget.sectorSubject,
                         language: widget.language,
                       ),
                       sectionCache: _sectionCache,

@@ -117,6 +117,19 @@ class ReportWidgets {
         title: 'EPS vs Stock Price');
   }
 
+  /// Gets the EPS vs Stock Price analysis report
+  Widget getEPSvsStockPriceAnalysis(String ticker, String language,
+      {bool showTitle = true}) {
+    return getReport(
+        _getCachedStream(
+            'epsVsStockPriceAnalysis',
+            () => _service.getEPSvsStockPriceAnalysis(
+                ticker, language, _forceRefresh)),
+        "EPS vs Stock Price Analysis",
+        "epsVsStockPriceAnalysis",
+        showTitle: showTitle);
+  }
+
   /// Gets the financial metrics report
   Widget getFinancialMetrics(String ticker, String language) {
     return getReport(

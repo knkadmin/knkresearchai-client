@@ -111,7 +111,7 @@ class _ReportBuilderState extends State<ReportBuilder> {
                 width: double.infinity,
                 height: 1,
                 // Use theme divider color
-                color: theme.dividerColor,
+                color: Colors.grey.shade300,
               ),
               const SizedBox(height: 8),
             ],
