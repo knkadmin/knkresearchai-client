@@ -230,6 +230,17 @@ class ReportWidgets {
         title: 'Technical Analysis');
   }
 
+  Widget getTechnicalAnalysis(String ticker, String language) {
+    return getReport(
+        _getCachedStream(
+            'technicalAnalysis',
+            () =>
+                _service.getTechnicalAnalysis(ticker, language, _forceRefresh)),
+        "Technical Analysis",
+        "technicalAnalysis",
+        showTitle: false);
+  }
+
   /// Gets the combined charts
   Widget getCombinedCharts(String ticker, String language) {
     return Column(

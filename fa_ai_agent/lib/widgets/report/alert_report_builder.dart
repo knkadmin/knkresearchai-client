@@ -11,6 +11,7 @@ import 'dart:convert';
 import 'package:fa_ai_agent/widgets/report/chart_image.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:typed_data';
 
 class AlertReportBuilder extends StatelessWidget {
   final Stream<Map<String, dynamic>> stream;
@@ -40,12 +41,7 @@ class AlertReportBuilder extends StatelessWidget {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting ||
                 isLoading) {
-              return const Center(
-                child: ThinkingAnimation(
-                  size: 24,
-                  color: Color(0xFF1E3A8A),
-                ),
-              );
+              return const Center(child: LoadingSpinner());
             }
 
             if (snapshot.hasError) {
@@ -68,12 +64,7 @@ class AlertReportBuilder extends StatelessWidget {
               builder: (context, contentSnapshot) {
                 if (contentSnapshot.connectionState ==
                     ConnectionState.waiting) {
-                  return const Center(
-                    child: ThinkingAnimation(
-                      size: 24,
-                      color: Color(0xFF1E3A8A),
-                    ),
-                  );
+                  return const Center(child: LoadingSpinner());
                 }
                 return contentSnapshot.data ?? const LoadingSpinner();
               },
@@ -91,10 +82,25 @@ class AlertReportBuilder extends StatelessWidget {
         data['accountingRedflags']?['incomeStatement'] as String?;
     final balanceSheet = data['accountingRedflags']?['balanceSheet'] as String?;
 
-    final incomeStatementImageUrl =
-        await ImageUtils.getSignedUrl(incomeStatement ?? '');
-    final balanceSheetImageUrl =
-        await ImageUtils.getSignedUrl(balanceSheet ?? '');
+    Uint8List? incomeStatementBytes;
+    if (incomeStatement != null && incomeStatement.isNotEmpty) {
+      try {
+        incomeStatementBytes = base64Decode(incomeStatement);
+      } catch (e) {
+        print('Error decoding income statement base64: $e');
+        // Handle error appropriately, maybe log or show a placeholder
+      }
+    }
+
+    Uint8List? balanceSheetBytes;
+    if (balanceSheet != null && balanceSheet.isNotEmpty) {
+      try {
+        balanceSheetBytes = base64Decode(balanceSheet);
+      } catch (e) {
+        print('Error decoding balance sheet base64: $e');
+        // Handle error appropriately
+      }
+    }
 
     final widget = Container(
       decoration: BoxDecoration(
@@ -116,13 +122,13 @@ class AlertReportBuilder extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(data),
-          if (incomeStatementImageUrl != '' || balanceSheetImageUrl != '') ...[
+          if (incomeStatementBytes != null || balanceSheetBytes != null) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (incomeStatement != null) ...[
+                  if (incomeStatementBytes != null) ...[
                     const Text(
                       'Income Statement',
                       style: TextStyle(
@@ -133,15 +139,15 @@ class AlertReportBuilder extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     ChartImage(
-                      image: Image.network(
-                        incomeStatementImageUrl,
+                      image: Image.memory(
+                        incomeStatementBytes,
                         cacheWidth: LayoutConstants.maxWidth.toInt(),
                         filterQuality: FilterQuality.high,
                       ),
                     ),
                     const SizedBox(height: 8),
                   ],
-                  if (balanceSheet != null) ...[
+                  if (balanceSheetBytes != null) ...[
                     const Text(
                       'Balance Sheet',
                       style: TextStyle(
@@ -152,8 +158,8 @@ class AlertReportBuilder extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     ChartImage(
-                      image: Image.network(
-                        balanceSheetImageUrl,
+                      image: Image.memory(
+                        balanceSheetBytes,
                         cacheWidth: LayoutConstants.maxWidth.toInt(),
                         filterQuality: FilterQuality.high,
                       ),

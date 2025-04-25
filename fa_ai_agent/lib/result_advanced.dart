@@ -24,6 +24,8 @@ import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/widgets/report/report_sticky_header.dart';
 import 'services/firestore_service.dart';
 import 'package:fa_ai_agent/widgets/report/chart_builder.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:html' as html;
 
 /// Configuration for a section
 class SectionConfig {
@@ -148,10 +150,16 @@ class SectionConstants {
           builder: reportWidgets.getShareholderChart,
         ),
         SectionConfig(
-          title: 'Technical Analysis',
+          title: 'Technical Analysis ',
           cacheKey: 'candle-stick-chart',
           icon: Icons.candlestick_chart,
           builder: reportWidgets.getCandleStickChart,
+        ),
+        SectionConfig(
+          title: 'Technical Analysis',
+          cacheKey: 'technical-analysis',
+          icon: Icons.article_outlined,
+          builder: reportWidgets.getTechnicalAnalysis,
         ),
       ];
 
@@ -249,13 +257,19 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   @override
   void initState() {
     super.initState();
+
+    // Set document title for web
+    if (kIsWeb) {
+      html.document.title =
+          "${widget.tickerCode} - ${widget.companyName} | KNK Research AI";
+    }
+
     FirebaseAnalytics analytics = FirebaseAnalytics.instance;
     analytics.logEvent(
         name: 'view_reports', parameters: {'ticker': widget.tickerCode});
     _scrollController.addListener(_onScroll);
 
     // Update company document ticker field and increment view count
-    FirestoreService().checkCompanyExists(widget.tickerCode);
     FirestoreService().incrementReportViewCount(widget.tickerCode);
 
     // Initialize sections
@@ -486,7 +500,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
           future: _isMag7CompanyFuture,
           builder: (context, mag7Snapshot) {
             if (mag7Snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: ThinkingAnimation());
+              return const Center(child: CircularProgressIndicator());
             }
 
             final isMag7Company = mag7Snapshot.data ?? false;
@@ -606,7 +620,7 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
 
   Widget _buildNavigationOverlay() {
     return ReportNavigationOverlay(
-      sections: sections,
+      sections: sections.where((s) => s.title != 'Technical Analysis').toList(),
       tickerCode: widget.tickerCode,
       companyName: widget.companyName,
       currentSection: _currentSection,

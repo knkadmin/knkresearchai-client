@@ -42,13 +42,7 @@ class _ReportBuilderState extends State<ReportBuilder> {
       stream: widget.stream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: ThinkingAnimation(
-              size: 24,
-              // Use theme primary color for animation
-              color: theme.colorScheme.primary,
-            ),
-          );
+          return const Center(child: LoadingSpinner());
         }
 
         if (snapshot.hasError) {

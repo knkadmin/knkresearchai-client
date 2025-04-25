@@ -1,3 +1,4 @@
+import 'package:fa_ai_agent/widgets/animations/loading_spinner.dart';
 import 'package:flutter/material.dart';
 import 'package:fa_ai_agent/models/section.dart';
 import 'package:fa_ai_agent/models/subscription_type.dart';
@@ -55,7 +56,7 @@ class ReportContentLayout extends StatelessWidget {
             ),
             builder: (context, sectionsSnapshot) {
               if (sectionsSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: ThinkingAnimation());
+                return const Center(child: LoadingSpinner());
               }
 
               final filteredSections = sectionsSnapshot.data ?? [];

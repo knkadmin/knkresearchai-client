@@ -24,11 +24,13 @@ import 'package:fa_ai_agent/config/environments.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize environment based on FLUTTER_ENV or debug mode
-  const isStaging = bool.fromEnvironment('FLUTTER_ENV_STAGING', defaultValue: false);
-  const isProduction = bool.fromEnvironment('FLUTTER_ENV_PRODUCTION', defaultValue: false);
-  
+  const isStaging =
+      bool.fromEnvironment('FLUTTER_ENV_STAGING', defaultValue: false);
+  const isProduction =
+      bool.fromEnvironment('FLUTTER_ENV_PRODUCTION', defaultValue: false);
+
   if (isStaging) {
     EnvironmentConfig.setEnvironment(Environment.staging);
   } else if (isProduction) {
@@ -59,36 +61,37 @@ void main() async {
 
   // Open the settings box
   await Hive.openBox('settings');
+  // Open the report section cache box
+  await Hive.openBox<String>('report_section_cache');
 
   try {
     // Initialize Firebase with environment-specific options
     FirebaseOptions firebaseOptions;
-    
+
     if (isStaging || kDebugMode) {
       firebaseOptions = const FirebaseOptions(
-        apiKey: "AIzaSyAMuu7xA038G02LXURG-eyyfDS-kSz4Fag",
-        authDomain: "knkresearchai-staging.firebaseapp.com",
-        projectId: "knkresearchai-staging",
-        storageBucket: "knkresearchai-staging.firebasestorage.app",
-        messagingSenderId: "57077865056",
-        appId: "1:57077865056:web:a83baa56f428add233c105",
-        measurementId: "G-Z7967LYT1Z"
-      );
+          apiKey: "AIzaSyAMuu7xA038G02LXURG-eyyfDS-kSz4Fag",
+          authDomain: "knkresearchai-staging.firebaseapp.com",
+          projectId: "knkresearchai-staging",
+          storageBucket: "knkresearchai-staging.firebasestorage.app",
+          messagingSenderId: "57077865056",
+          appId: "1:57077865056:web:a83baa56f428add233c105",
+          measurementId: "G-Z7967LYT1Z");
     } else {
       // Production configuration
       firebaseOptions = const FirebaseOptions(
-        apiKey: "AIzaSyCfP_7S5823KOdftkK2z_UyZ6aRvr8kZZU",
-        authDomain: "knkresearchai.com",
-        projectId: "knkresearchai",
-        storageBucket: "knkresearchai.com",
-        messagingSenderId: "1067859590559",
-        appId: "1:1067859590559:web:0c9ae04b3b08b215338598",
-        measurementId: "G-T9CGSRZCR2"
-      );
+          apiKey: "AIzaSyCfP_7S5823KOdftkK2z_UyZ6aRvr8kZZU",
+          authDomain: "knkresearchai.com",
+          projectId: "knkresearchai",
+          storageBucket: "knkresearchai.com",
+          messagingSenderId: "1067859590559",
+          appId: "1:1067859590559:web:0c9ae04b3b08b215338598",
+          measurementId: "G-T9CGSRZCR2");
     }
 
     await Firebase.initializeApp(options: firebaseOptions);
-    print('Firebase initialized successfully with ${firebaseOptions.projectId} configuration');
+    print(
+        'Firebase initialized successfully with ${firebaseOptions.projectId} configuration');
 
     // Configure Firestore settings
     if (kIsWeb) {
