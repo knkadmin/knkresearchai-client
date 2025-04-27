@@ -26,19 +26,19 @@ class AgentService {
 
   // Define text report sections and their API paths
   static const Map<String, String> _textReportSections = {
-    'businessOverview': 'report-advanced/business-overview',
-    'financialPerformance': 'report-advanced/financial-performance',
-    'strategicOutlooks': 'report-advanced/strategic-outlooks',
-    'accountingRedflags':
-        'report-advanced/accounting-redflags', // Corrected key
-    'supplyChain': 'report-advanced/supply-chain',
-    'competitorLandscape': 'report-advanced/competitor-landscape',
-    'recentNews':
-        'report-advanced/recent-news', // Assuming recentNews is also text-based
-    'financialMetrics':
-        'tables-advanced/financial-metrics', // Added financial metrics
-    'technicalAnalysis': 'report-advanced/technical-analysis',
-    'epsVsStockPriceAnalysis': 'report-advanced/eps-vs-stock-price-analysis',
+    // 'businessOverview': 'report-advanced/business-overview',
+    // 'financialPerformance': 'report-advanced/financial-performance',
+    // 'strategicOutlooks': 'report-advanced/strategic-outlooks',
+    // 'accountingRedflags':
+    //     'report-advanced/accounting-redflags', // Corrected key
+    // 'supplyChain': 'report-advanced/supply-chain',
+    // 'competitorLandscape': 'report-advanced/competitor-landscape',
+    // 'recentNews':
+    //     'report-advanced/recent-news', // Assuming recentNews is also text-based
+    // 'financialMetrics':
+    //     'tables-advanced/financial-metrics', // Added financial metrics
+    // 'technicalAnalysis': 'report-advanced/technical-analysis',
+    // 'epsVsStockPriceAnalysis': 'report-advanced/eps-vs-stock-price-analysis',
   };
 
   AgentService() {
@@ -132,65 +132,100 @@ class AgentService {
         if (report == null) return <String, dynamic>{};
 
         // Convert ONLY CHART FinancialReport sections to Map<String, dynamic>
-        final Map<String, dynamic> chartData = <String, dynamic>{};
+        final Map<String, dynamic> reportData = <String, dynamic>{};
 
         // --- CHART SECTIONS ---
         if (report.cashFlowChart != null) {
-          chartData['cashFlowChart'] = report.cashFlowChart!.toJson();
+          reportData['cashFlowChart'] = report.cashFlowChart!.toJson();
         }
         if (report.pePbRatioBand != null) {
-          chartData['pePbRatioBand'] = report.pePbRatioBand!.toJson();
+          reportData['pePbRatioBand'] = report.pePbRatioBand!.toJson();
         }
         if (report.sectorStocks != null) {
-          chartData['sectorStocks'] = report.sectorStocks!.toJson();
+          reportData['sectorStocks'] = report.sectorStocks!.toJson();
         }
         if (report.combinedCharts != null) {
-          chartData['combinedCharts'] = report.combinedCharts!.toJson();
+          reportData['combinedCharts'] = report.combinedCharts!.toJson();
         }
         if (report.stockPriceTarget != null) {
-          // Assuming this might contain chartable data or is fetched this way
-          chartData['stockPriceTarget'] = report.stockPriceTarget!.toJson();
+          reportData['stockPriceTarget'] = report.stockPriceTarget!.toJson();
         }
         if (report.insiderTrading != null) {
-          // Assuming this might contain chartable data or is fetched this way
-          chartData['insiderTrading'] = report.insiderTrading!.toJson();
+          reportData['insiderTrading'] = report.insiderTrading!.toJson();
         }
         if (report.candleStickChart != null) {
-          chartData['candleStickChart'] = report.candleStickChart!.toJson();
+          reportData['candleStickChart'] = report.candleStickChart!.toJson();
         }
         if (report.shareholderChart != null) {
-          chartData['shareholderChart'] = report.shareholderChart!.toJson();
+          reportData['shareholderChart'] = report.shareholderChart!.toJson();
         }
         if (report.industrialRelationship != null) {
-          // Assuming this might contain chartable data or is fetched this way
-          chartData['industrialRelationship'] =
+          reportData['industrialRelationship'] =
               report.industrialRelationship!.toJson();
         }
         if (report.sectorComparison != null) {
-          // Assuming this might contain chartable data or is fetched this way
-          chartData['sectorComparison'] = report.sectorComparison!.toJson();
+          reportData['sectorComparison'] = report.sectorComparison!.toJson();
         }
         if (report.epsVsStockPriceChart != null) {
-          chartData['epsVsStockPriceChart'] =
+          reportData['epsVsStockPriceChart'] =
               report.epsVsStockPriceChart!.toJson();
         }
-        // FinancialMetrics is now fetched via API, removed from here
-        // --- END CHART SECTIONS ---
+
+        // --- TEXT REPORT SECTIONS ---
+        if (report.businessOverview != null) {
+          reportData['businessOverview'] = report.businessOverview!.toJson();
+        }
+
+        if (report.epsVsStockPriceAnalysis != null) {
+          reportData['epsVsStockPriceAnalysis'] =
+              report.epsVsStockPriceAnalysis!.toJson();
+        }
+
+        if (report.financialPerformance != null) {
+          reportData['financialPerformance'] =
+              report.financialPerformance!.toJson();
+        }
+        if (report.strategicOutlooks != null) {
+          reportData['strategicOutlooks'] = report.strategicOutlooks!.toJson();
+        }
+        if (report.accountingRedFlags != null) {
+          reportData['accountingRedFlags'] =
+              report.accountingRedFlags!.toJson();
+        }
+        if (report.supplyChain != null) {
+          reportData['supplyChain'] = report.supplyChain!.toJson();
+        }
+        if (report.competitorLandscape != null) {
+          reportData['competitorLandscape'] =
+              report.competitorLandscape!.toJson();
+        }
+        if (report.recentNews != null) {
+          reportData['recentNews'] = report.recentNews!.toJson();
+        }
+        if (report.financialMetrics != null) {
+          reportData['financialMetrics'] = report.financialMetrics!.toJson();
+        }
+
+        if (report.technicalAnalysis != null) {
+          reportData['technicalAnalysis'] = report.technicalAnalysis!.toJson();
+        }
+
+        // --- END TEXT REPORT SECTIONS ---
 
         // Add cache timestamp from Firestore document
-        chartData['cachedAt'] = report.lastUpdated?.microsecondsSinceEpoch;
+        reportData['cachedAt'] = report.lastUpdated?.microsecondsSinceEpoch;
 
         // Update latest data cache ONLY with chart data for this stream
         // Ensure existing text report data for this key is preserved
         _latestData[streamKey] = {
           ...?(_latestData[
               streamKey]), // Preserve existing data (potentially text reports)
-          ...chartData // Overwrite with new chart data
+          ...reportData // Overwrite with new chart data
         };
         _log.fine(
             'Updated _latestData for $streamKey with chart data. Keys: ${_latestData[streamKey]?.keys}');
 
-        return chartData; // Return only chart data from this stream mapper
+        return reportData; // Return only chart data from this stream mapper
       }).asBroadcastStream(); // Use shareReplay ??
       // Using shareValueSeeded or similar might be better if initial value is needed
       // Consider error handling within the stream
@@ -443,7 +478,7 @@ class AgentService {
 
   Stream<Map<String, dynamic>> getAccountingRedFlags(
       String ticker, String language, bool forceRefresh) {
-    return getSectionStream(ticker, language, 'accountingRedflags',
+    return getSectionStream(ticker, language, 'accountingRedFlags',
         forceRefresh: forceRefresh);
   }
 

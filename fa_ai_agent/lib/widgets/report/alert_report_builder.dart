@@ -12,6 +12,7 @@ import 'package:fa_ai_agent/widgets/report/chart_image.dart';
 import 'package:fa_ai_agent/constants/layout_constants.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:typed_data';
+import 'package:fa_ai_agent/models/financial_report.dart';
 
 class AlertReportBuilder extends StatelessWidget {
   final Stream<Map<String, dynamic>> stream;
@@ -76,29 +77,31 @@ class AlertReportBuilder extends StatelessWidget {
   }
 
   Future<Widget> _buildReportContent(Map<String, dynamic> data) async {
-    final markdown = data['accountingRedflags']?['md'] as String?;
-    final rating = data['accountingRedflags']?['mScoreRating'] as String?;
-    final incomeStatement =
-        data['accountingRedflags']?['incomeStatement'] as String?;
-    final balanceSheet = data['accountingRedflags']?['balanceSheet'] as String?;
+    final accountingRedFlags = data['accountingRedFlags'] != null
+        ? AccountingRedFlags.fromJson(data['accountingRedFlags'])
+        : null;
 
-    Uint8List? incomeStatementBytes;
+    final markdown = accountingRedFlags?.md;
+    final rating = accountingRedFlags?.mScoreRating;
+    final incomeStatement = accountingRedFlags?.incomeStatement;
+    final balanceSheet = accountingRedFlags?.balanceSheet;
+
+    String? incomeStatementUrl;
+    String? balanceSheetUrl;
+
     if (incomeStatement != null && incomeStatement.isNotEmpty) {
       try {
-        incomeStatementBytes = base64Decode(incomeStatement);
+        incomeStatementUrl = await ImageUtils.getSignedUrl(incomeStatement);
       } catch (e) {
-        print('Error decoding income statement base64: $e');
-        // Handle error appropriately, maybe log or show a placeholder
+        print('Error getting signed URL for income statement: $e');
       }
     }
 
-    Uint8List? balanceSheetBytes;
     if (balanceSheet != null && balanceSheet.isNotEmpty) {
       try {
-        balanceSheetBytes = base64Decode(balanceSheet);
+        balanceSheetUrl = await ImageUtils.getSignedUrl(balanceSheet);
       } catch (e) {
-        print('Error decoding balance sheet base64: $e');
-        // Handle error appropriately
+        print('Error getting signed URL for balance sheet: $e');
       }
     }
 
@@ -122,13 +125,13 @@ class AlertReportBuilder extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildHeader(data),
-          if (incomeStatementBytes != null || balanceSheetBytes != null) ...[
+          if (incomeStatementUrl != null || balanceSheetUrl != null) ...[
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (incomeStatementBytes != null) ...[
+                  if (incomeStatementUrl != null) ...[
                     const Text(
                       'Income Statement',
                       style: TextStyle(
@@ -139,15 +142,24 @@ class AlertReportBuilder extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     ChartImage(
-                      image: Image.memory(
-                        incomeStatementBytes,
+                      image: Image.network(
+                        incomeStatementUrl,
                         cacheWidth: LayoutConstants.maxWidth.toInt(),
                         filterQuality: FilterQuality.high,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(child: LoadingSpinner());
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Text('Failed to load image'),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 8),
                   ],
-                  if (balanceSheetBytes != null) ...[
+                  if (balanceSheetUrl != null) ...[
                     const Text(
                       'Balance Sheet',
                       style: TextStyle(
@@ -158,10 +170,19 @@ class AlertReportBuilder extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     ChartImage(
-                      image: Image.memory(
-                        balanceSheetBytes,
+                      image: Image.network(
+                        balanceSheetUrl,
                         cacheWidth: LayoutConstants.maxWidth.toInt(),
                         filterQuality: FilterQuality.high,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(child: LoadingSpinner());
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Center(
+                            child: Text('Failed to load image'),
+                          );
+                        },
                       ),
                     ),
                   ],
@@ -283,7 +304,10 @@ class AlertReportBuilder extends StatelessWidget {
   }
 
   Widget _buildHeader(Map<String, dynamic> data) {
-    final rating = data['accountingRedflags']?['mScoreRating'] as String?;
+    final accountingRedFlags = data['accountingRedFlags'] != null
+        ? AccountingRedFlags.fromJson(data['accountingRedFlags'])
+        : null;
+    final rating = accountingRedFlags?.mScoreRating;
     final statusColor = _getStatusColor(rating);
     final headerColor = _getHeaderColor(rating);
     final borderColor = _getBorderColor(rating);

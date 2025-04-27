@@ -7,6 +7,7 @@ class FinancialReport {
   final String? ticker;
   final DateTime? lastUpdated;
   final BusinessOverview? businessOverview;
+  final EpsVsStockPriceAnalysis? epsVsStockPriceAnalysis;
   final FinancialPerformance? financialPerformance;
   final CompetitorLandscape? competitorLandscape;
   final SupplyChain? supplyChain;
@@ -25,6 +26,7 @@ class FinancialReport {
   final SectorComparison? sectorComparison;
   final EpsVsStockPriceChart? epsVsStockPriceChart;
   final FinancialMetrics? financialMetrics;
+  final TechnicalAnalysis? technicalAnalysis;
   final int? viewCount;
 
   FinancialReport({
@@ -34,6 +36,7 @@ class FinancialReport {
     this.ticker,
     this.lastUpdated,
     this.businessOverview,
+    this.epsVsStockPriceAnalysis,
     this.financialPerformance,
     this.competitorLandscape,
     this.supplyChain,
@@ -52,6 +55,7 @@ class FinancialReport {
     this.sectorComparison,
     this.epsVsStockPriceChart,
     this.financialMetrics,
+    this.technicalAnalysis,
     this.viewCount,
   });
 
@@ -71,6 +75,10 @@ class FinancialReport {
       financialPerformance: json['financialPerformance'] != null
           ? FinancialPerformance.fromJson(
               json['financialPerformance'] as Map<String, dynamic>)
+          : null,
+      epsVsStockPriceAnalysis: json['epsVsStockPriceAnalysis'] != null
+          ? EpsVsStockPriceAnalysis.fromJson(
+              json['epsVsStockPriceAnalysis'] as Map<String, dynamic>)
           : null,
       competitorLandscape: json['competitorLandscape'] != null
           ? CompetitorLandscape.fromJson(
@@ -137,6 +145,10 @@ class FinancialReport {
           ? FinancialMetrics.fromJson(
               json['financialMetrics'] as Map<String, dynamic>)
           : null,
+      technicalAnalysis: json['technicalAnalysis'] != null
+          ? TechnicalAnalysis.fromJson(
+              json['technicalAnalysis'] as Map<String, dynamic>)
+          : null,
       viewCount: json['viewCount'] as int?,
     );
   }
@@ -192,6 +204,18 @@ class FinancialPerformance {
 
   factory FinancialPerformance.fromJson(Map<String, dynamic> json) {
     return FinancialPerformance(md: json['md'] as String?);
+  }
+
+  Map<String, dynamic> toJson() => {'md': md};
+}
+
+class EpsVsStockPriceAnalysis {
+  final String? md;
+
+  EpsVsStockPriceAnalysis({this.md});
+
+  factory EpsVsStockPriceAnalysis.fromJson(Map<String, dynamic> json) {
+    return EpsVsStockPriceAnalysis(md: json['md'] as String?);
   }
 
   Map<String, dynamic> toJson() => {'md': md};
@@ -438,4 +462,16 @@ class FinancialMetrics {
         'md': md,
         'imageUrl': imageUrl,
       };
+}
+
+class TechnicalAnalysis {
+  final String? md;
+
+  TechnicalAnalysis({this.md});
+
+  factory TechnicalAnalysis.fromJson(Map<String, dynamic> json) {
+    return TechnicalAnalysis(md: json['md'] as String?);
+  }
+
+  Map<String, dynamic> toJson() => {'md': md};
 }
