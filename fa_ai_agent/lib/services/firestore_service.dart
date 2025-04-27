@@ -289,17 +289,18 @@ class FirestoreService {
   //   }
   // }
 
-  // Increment the view count for a financial report
-  Future<void> incrementReportViewCount(String ticker) async {
+  // Update the requested field to true for a ticker document
+  Future<void> updateRequestedField(String ticker) async {
     try {
-      final docRef = _firestore.collection('financialReports').doc(ticker);
-      await docRef.update({
-        'viewCount': FieldValue.increment(1),
+      final docRef =
+          _firestore.collection('financialReportRequests').doc(ticker);
+      await docRef.set({
+        'requested': true,
       });
     } catch (e) {
-      // Log the error but don't rethrow, as failing to increment view count
+      // Log the error but don't rethrow, as failing to update the requested field
       // shouldn't block the user from viewing the report.
-      print('Error incrementing report view count for ticker $ticker: $e');
+      print('Error updating requested field for ticker $ticker: $e');
     }
   }
 }
