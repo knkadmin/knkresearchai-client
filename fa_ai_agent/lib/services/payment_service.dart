@@ -5,13 +5,16 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:url_launcher/url_launcher.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:fa_ai_agent/services/auth_service.dart';
-import 'package:fa_ai_agent/constants/api_constants.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:rxdart/rxdart.dart';
 
 class PaymentService {
-  static final BehaviorSubject<bool> _isLoadingSubject = BehaviorSubject.seeded(false);
+  static final BehaviorSubject<bool> _isLoadingSubject =
+      BehaviorSubject.seeded(false);
   static Stream<bool> get isLoadingStream => _isLoadingSubject.stream;
+
+  static const String paymentBaseUrl =
+      'https://knkresearchai-server-payment-1067859590559.australia-southeast1.run.app';
 
   static Future<void> initiateCheckout(String stripeProductId) async {
     try {
@@ -29,7 +32,7 @@ class PaymentService {
       throw Exception('User not authenticated');
     }
 
-    final url = Uri.parse('${ApiConstants.baseUrl}/create-checkout-session');
+    final url = Uri.parse('$paymentBaseUrl/create-checkout-session');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -68,7 +71,7 @@ class PaymentService {
       throw Exception('User not authenticated');
     }
 
-    final url = Uri.parse('${ApiConstants.baseUrl}/cancel-subscription');
+    final url = Uri.parse('$paymentBaseUrl/cancel-subscription');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -88,7 +91,7 @@ class PaymentService {
       throw Exception('User not authenticated');
     }
 
-    final url = Uri.parse('${ApiConstants.baseUrl}/resume-subscription');
+    final url = Uri.parse('$paymentBaseUrl/resume-subscription');
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
@@ -116,7 +119,7 @@ class PaymentService {
         throw Exception('No Stripe customer ID found');
       }
 
-      final url = Uri.parse('${ApiConstants.baseUrl}/create-customer-portal-session');
+      final url = Uri.parse('$paymentBaseUrl/create-customer-portal-session');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
@@ -127,7 +130,8 @@ class PaymentService {
       );
 
       if (response.statusCode != 200) {
-        throw Exception('Failed to create customer portal session: ${response.body}');
+        throw Exception(
+            'Failed to create customer portal session: ${response.body}');
       }
 
       final session = json.decode(response.body);

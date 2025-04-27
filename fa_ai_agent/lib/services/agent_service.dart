@@ -9,6 +9,7 @@ import 'package:fa_ai_agent/services/search_cache_service.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:fa_ai_agent/constants/api_constants.dart';
 import 'package:fa_ai_agent/models/financial_report.dart';
+import 'package:fa_ai_agent/services/auth_service.dart';
 
 class AgentService {
   static final _log = Logger('AgentService');
@@ -54,6 +55,16 @@ class AgentService {
       BehaviorSubject();
 
   final Map<String, bool> loadingState = {};
+
+  // Get current user's ID
+  String? get currentUserId => AuthService().currentUser?.uid;
+
+  // Get current user's token
+  Future<String?> getCurrentUserToken() async {
+    final user = AuthService().currentUser;
+    if (user == null) return null;
+    return await user.getIdToken();
+  }
 
   Future<bool> sendFeedback(String email, String message) async {
     final response = await http.post(
@@ -225,10 +236,22 @@ class AgentService {
     }
 
     // 2. Fetch from API if cache miss or forceRefresh
-    final url = Uri.https(Uri.parse(baseUrl).host, path, {
+    final queryParams = {
       'code': ticker,
       'language': language,
-    });
+    };
+
+    // Add userId and token to query parameters if available
+    final userId = currentUserId;
+    final token = await getCurrentUserToken();
+    if (userId != null) {
+      queryParams['userId'] = userId;
+    }
+    if (token != null) {
+      queryParams['token'] = token;
+    }
+
+    final url = Uri.https(Uri.parse(baseUrl).host, path, queryParams);
 
     _log.info('Fetching text report for $section from API: $url');
 
@@ -420,7 +443,6 @@ class AgentService {
 
   Stream<Map<String, dynamic>> getAccountingRedFlags(
       String ticker, String language, bool forceRefresh) {
-    // Ensure the key matches the one used in _textReportSections map
     return getSectionStream(ticker, language, 'accountingRedflags',
         forceRefresh: forceRefresh);
   }
@@ -445,7 +467,6 @@ class AgentService {
 
   Stream<Map<String, dynamic>> getRecentNews(
       String ticker, String language, bool forceRefresh) {
-    // Assuming recentNews is now a text report fetched via API
     return getSectionStream(ticker, language, 'recentNews',
         forceRefresh: forceRefresh);
   }
