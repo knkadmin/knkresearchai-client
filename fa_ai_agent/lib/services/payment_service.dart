@@ -7,6 +7,8 @@ import 'package:universal_html/html.dart' as html;
 import 'package:fa_ai_agent/services/auth_service.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:rxdart/rxdart.dart';
+import 'package:fa_ai_agent/models/user.dart';
+import 'package:fa_ai_agent/models/subscription_type.dart';
 
 class PaymentService {
   static final BehaviorSubject<bool> _isLoadingSubject =
@@ -32,6 +34,12 @@ class PaymentService {
       throw Exception('User not authenticated');
     }
 
+    // Get current user data to check if they've used free trial
+    final userData = await FirestoreService().getUserData(user.uid);
+    final trialDays = userData?.hasUsedFreeTrial == true
+        ? 0
+        : SubscriptionConstants.freeTrialDays;
+
     final url = Uri.parse('$paymentBaseUrl/create-checkout-session');
     final response = await http.post(
       url,
@@ -40,9 +48,10 @@ class PaymentService {
         'productId': stripeProductId,
         'userId': user.uid,
         'email': user.email,
+        'mode': 'subscription',
         'successUrl': Uri.base.origin,
         'cancelUrl': Uri.base.origin,
-        'trialDays': SubscriptionConstants.freeTrialDays,
+        'trialDays': trialDays,
       }),
     );
 

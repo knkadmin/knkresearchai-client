@@ -51,6 +51,26 @@ class Subscription {
       if (stripeCustomerId != null) 'stripeCustomerId': stripeCustomerId,
     };
   }
+
+  Subscription copyWith({
+    SubscriptionType? type,
+    DateTime? updatedAt,
+    String? paymentMethod,
+    DateTime? currentPeriodEnd,
+    DateTime? cancelAt,
+    bool? cancelAtPeriodEnd,
+    String? stripeCustomerId,
+  }) {
+    return Subscription(
+      type: type ?? this.type,
+      updatedAt: updatedAt ?? this.updatedAt,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      currentPeriodEnd: currentPeriodEnd ?? this.currentPeriodEnd,
+      cancelAt: cancelAt ?? this.cancelAt,
+      cancelAtPeriodEnd: cancelAtPeriodEnd ?? this.cancelAtPeriodEnd,
+      stripeCustomerId: stripeCustomerId ?? this.stripeCustomerId,
+    );
+  }
 }
 
 class User {
@@ -61,6 +81,7 @@ class User {
   final DateTime createdAt;
   final DateTime lastLoginAt;
   final String? stripeCustomerId;
+  final bool hasUsedFreeTrial;
 
   const User({
     required this.uid,
@@ -70,6 +91,7 @@ class User {
     required this.createdAt,
     required this.lastLoginAt,
     this.stripeCustomerId,
+    this.hasUsedFreeTrial = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -87,6 +109,7 @@ class User {
           : DateTime.parse(
               json['lastLoginAt'] ?? DateTime.now().toIso8601String()),
       stripeCustomerId: json['stripeCustomerId'],
+      hasUsedFreeTrial: json['hasUsedFreeTrial'] ?? false,
     );
   }
 
@@ -99,6 +122,7 @@ class User {
       'createdAt': createdAt.toIso8601String(),
       'lastLoginAt': lastLoginAt.toIso8601String(),
       if (stripeCustomerId != null) 'stripeCustomerId': stripeCustomerId,
+      'hasUsedFreeTrial': hasUsedFreeTrial,
     };
   }
 
@@ -110,6 +134,7 @@ class User {
     DateTime? createdAt,
     DateTime? lastLoginAt,
     String? stripeCustomerId,
+    bool? hasUsedFreeTrial,
   }) {
     return User(
       uid: uid ?? this.uid,
@@ -119,6 +144,7 @@ class User {
       createdAt: createdAt ?? this.createdAt,
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       stripeCustomerId: stripeCustomerId ?? this.stripeCustomerId,
+      hasUsedFreeTrial: hasUsedFreeTrial ?? this.hasUsedFreeTrial,
     );
   }
 }

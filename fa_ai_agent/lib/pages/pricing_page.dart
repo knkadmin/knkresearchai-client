@@ -401,6 +401,9 @@ class _PricingPageState extends State<PricingPage> {
                                       final currentSubscription =
                                           snapshot.data?.subscription.type ??
                                               SubscriptionType.free;
+                                      final hasUsedFreeTrial =
+                                          snapshot.data?.hasUsedFreeTrial ??
+                                              false;
                                       return _buildPricingCard(
                                         title: 'Starter',
                                         price: _getStarterPriceFromFirestore(),
@@ -415,6 +418,7 @@ class _PricingPageState extends State<PricingPage> {
                                             SubscriptionType.starter,
                                         onSelect: () => _updateSubscription(
                                             SubscriptionType.starter),
+                                        hasUsedFreeTrial: hasUsedFreeTrial,
                                       );
                                     }),
                                 // Pro Plan Card
@@ -478,6 +482,7 @@ class _PricingPageState extends State<PricingPage> {
     required bool isSelected,
     VoidCallback? onSelect,
     bool isConstruction = false,
+    bool hasUsedFreeTrial = false,
   }) {
     return Stack(
       children: [
@@ -803,7 +808,9 @@ class _PricingPageState extends State<PricingPage> {
                                   ? 'Not Available'
                                   : title == 'Free'
                                       ? 'Select'
-                                      : 'Start with 7 days Free Trial',
+                                      : hasUsedFreeTrial
+                                          ? 'Choose Plan'
+                                          : 'Start with 7 days Free Trial',
                           style: TextStyle(
                             fontSize: isPopular ? 18 : 16,
                             fontWeight: FontWeight.bold,
@@ -881,7 +888,9 @@ class _PricingPageState extends State<PricingPage> {
                                     ? 'Not Available'
                                     : title == 'Free'
                                         ? 'Select'
-                                        : 'Start with 7 days Free Trial',
+                                        : hasUsedFreeTrial
+                                            ? 'Choose Plan'
+                                            : 'Start with 7 days Free Trial',
                             style: TextStyle(
                               fontSize: isPopular ? 18 : 16,
                               fontWeight: FontWeight.bold,

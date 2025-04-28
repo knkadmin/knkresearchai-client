@@ -19,13 +19,13 @@ import 'models/subscription_type.dart';
 import 'services/public_user_last_viewed_report_tracker.dart';
 import 'dart:async';
 import 'services/subscription_service.dart';
-import 'package:hive/hive.dart';
 import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/widgets/report/report_sticky_header.dart';
 import 'services/firestore_service.dart';
 import 'package:fa_ai_agent/widgets/report/chart_builder.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:html' as html;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// Configuration for a section
 class SectionConfig {
@@ -335,25 +335,30 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
     );
   }
 
-  /// Initializes the cache time from Hive or sets a new one.
+  /// Initializes the cache time from Firestore.
   void _initializeCacheTime() async {
-    final box = await Hive.openBox('report_timestamps');
-    final lastUpdatedKey =
-        '${widget.tickerCode}-${widget.language.value}-lastUpdated';
-    final int? cachedTimestamp = box.get(lastUpdatedKey);
+    try {
+      final doc = await FirestoreService()
+          .getDocument('financialReports', widget.tickerCode);
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        final lastUpdated = data['lastUpdated'] as Timestamp?;
+        if (lastUpdated != null) {
+          widget.cacheTimeSubject.add(lastUpdated.millisecondsSinceEpoch *
+              1000); // Convert to microseconds
+          return;
+        }
+      }
 
-    if (cachedTimestamp != null) {
-      widget.cacheTimeSubject.add(cachedTimestamp);
-      // print("Initialized cache time from Hive: $cachedTimestamp");
-    } else {
+      // If no lastUpdated field exists, use current time
       final currentTimestamp = DateTime.now().microsecondsSinceEpoch;
       widget.cacheTimeSubject.add(currentTimestamp);
-      await box.put(lastUpdatedKey, currentTimestamp);
-      // print("Initialized and saved new cache time: $currentTimestamp");
+    } catch (e) {
+      print('Error initializing cache time: $e');
+      // Fallback to current time if there's an error
+      final currentTimestamp = DateTime.now().microsecondsSinceEpoch;
+      widget.cacheTimeSubject.add(currentTimestamp);
     }
-    // We might not need to close the box if it's used elsewhere frequently,
-    // but if it's only for this, uncomment the line below.
-    // await box.close();
   }
 
   @override
@@ -452,15 +457,24 @@ class _ResultAdvancedPageState extends State<ResultAdvancedPage> {
   }
 
   void _handleRefresh() async {
-    // Update and save the timestamp first
-    final currentTimestamp = DateTime.now().microsecondsSinceEpoch;
-    widget.cacheTimeSubject.add(currentTimestamp);
-    final timestampBox = await Hive.openBox('report_timestamps');
-    final lastUpdatedKey =
-        '${widget.tickerCode}-${widget.language.value}-lastUpdated';
-    await timestampBox.put(lastUpdatedKey, currentTimestamp);
-    // print("Refreshed and saved new cache time: $currentTimestamp");
-    // await timestampBox.close(); // Optional: close if not needed immediately after
+    // Get the latest timestamp from Firestore
+    try {
+      final doc = await FirestoreService()
+          .getDocument('financialReports', widget.tickerCode);
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        final lastUpdated = data['lastUpdated'] as Timestamp?;
+        if (lastUpdated != null) {
+          widget.cacheTimeSubject.add(lastUpdated.millisecondsSinceEpoch *
+              1000); // Convert to microseconds
+        }
+      }
+    } catch (e) {
+      print('Error getting cache time: $e');
+      // Fallback to current time if there's an error
+      final currentTimestamp = DateTime.now().microsecondsSinceEpoch;
+      widget.cacheTimeSubject.add(currentTimestamp);
+    }
 
     setState(() {
       _isRefreshing.value = true;
