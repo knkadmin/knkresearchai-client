@@ -81,6 +81,7 @@ class _CenterSearchCardState extends State<CenterSearchCard>
               fontWeight: FontWeight.bold,
               color: Color(0xFF1E293B),
             ),
+            textAlign: TextAlign.center,
           ),
           const SizedBox(height: 8),
           Text(
