@@ -28,22 +28,24 @@ class CenterSearchCard extends StatefulWidget {
   State<CenterSearchCard> createState() => _CenterSearchCardState();
 }
 
-class _CenterSearchCardState extends State<CenterSearchCard> {
-  List<Map<String, String>> _mega7Companies = [];
+class _CenterSearchCardState extends State<CenterSearchCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _animationController;
+  late List<Animation<double>> _buttonAnimations;
 
   @override
   void initState() {
     super.initState();
-    _loadMega7Companies();
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
   }
 
-  Future<void> _loadMega7Companies() async {
-    final companies = await CompanyData.getMega7CompaniesForButtons();
-    if (mounted) {
-      setState(() {
-        _mega7Companies = companies;
-      });
-    }
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -143,19 +145,61 @@ class _CenterSearchCardState extends State<CenterSearchCard> {
               ),
             ),
             const SizedBox(height: 24),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              alignment: WrapAlignment.center,
-              children: _mega7Companies.map((company) {
-                final symbol = company.keys.toList().first;
-                final name = company.values.toList().first;
-                return CompanyButton(
-                  name: name,
-                  symbol: symbol,
-                  onTap: () => widget.onNavigateToReport(symbol, name),
+            StreamBuilder<List<Map<String, String>>>(
+              stream: CompanyData.streamMega7CompaniesForButtons(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const SizedBox.shrink();
+                }
+
+                final companies = snapshot.data!;
+                _buttonAnimations = List.generate(
+                  companies.length,
+                  (index) => CurvedAnimation(
+                    parent: _animationController,
+                    curve: Interval(
+                      0.1 * index,
+                      0.1 * index + 0.3,
+                      curve: Curves.easeOut,
+                    ),
+                  ),
                 );
-              }).toList(),
+                _animationController.forward();
+
+                return Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  alignment: WrapAlignment.center,
+                  children: companies.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final company = entry.value;
+                    final symbol = company.keys.toList().first;
+                    final name = company.values.toList().first;
+                    return AnimatedBuilder(
+                      animation: _buttonAnimations[index],
+                      builder: (context, child) {
+                        return Transform.translate(
+                          offset: Offset(
+                              0, 20 * (1 - _buttonAnimations[index].value)),
+                          child: Opacity(
+                            opacity: _buttonAnimations[index].value,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: CompanyButton(
+                        name: name,
+                        symbol: symbol,
+                        onTap: () => widget.onNavigateToReport(symbol, name),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ],
         ],
