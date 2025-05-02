@@ -21,8 +21,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
   final TextEditingController _messageController = TextEditingController();
   final List<ChatMessage> _messages = [];
   final HedgeFundWizardService _service = HedgeFundWizardService();
-  bool _isSending = false;
-  bool _isTyping = false;
+  bool _isProcessing = false;
   String _currentUuid = const Uuid().v4();
   StreamSubscription? _responseSubscription;
   int _lastMessageCount = 0;
@@ -46,11 +45,11 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
           final data = doc.doc.data() as Map<String, dynamic>;
           if (data.containsKey('status') && data['status'] == 'queued') {
             setState(() {
-              _isTyping = true;
+              _isProcessing = true;
             });
           } else if (data.containsKey('result')) {
             setState(() {
-              _isTyping = false;
+              _isProcessing = false;
               _messages.add(ChatMessage(
                 text: data['result'],
                 isUser: false,
@@ -65,10 +64,10 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
   }
 
   Future<void> _handleSubmitted(String text) async {
-    if (text.isEmpty || _isSending) return;
+    if (text.isEmpty || _isProcessing) return;
 
     setState(() {
-      _isSending = true;
+      _isProcessing = true;
       _messages.clear();
       _messages.add(ChatMessage(
         text: text,
@@ -82,12 +81,9 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
     try {
       await _service.sendQuestion(text, _currentUuid);
       _setupResponseListener();
-      setState(() {
-        _isSending = false;
-      });
     } catch (e) {
       setState(() {
-        _isSending = false;
+        _isProcessing = false;
       });
       // You might want to show an error message to the user here
       print('Error saving message: $e');
@@ -142,59 +138,68 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
             // Chat messages and input area
             Expanded(
               child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 800),
-                  child: Column(
-                    children: [
-                      // Chat messages
-                      Expanded(
-                        child: ShaderMask(
-                          shaderCallback: (Rect bounds) {
-                            return LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                const Color(0xFF0F172A).withOpacity(0),
-                                const Color(0xFF0F172A).withOpacity(0),
-                                const Color(0xFF0F172A).withOpacity(0),
-                                const Color(0xFF0F172A),
-                              ],
-                              stops: const [0.0, 0.05, 0.95, 1.0],
-                            ).createShader(bounds);
-                          },
-                          blendMode: BlendMode.dstOut,
-                          child: SingleChildScrollView(
-                            child: ListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16.0),
-                              itemCount: _messages.length + (_isTyping ? 1 : 0),
-                              itemBuilder: (context, index) {
-                                if (index == _messages.length && _isTyping) {
-                                  return const TypingIndicator();
-                                }
-                                final message = _messages[index];
-                                final isNew = index >= _lastMessageCount - 1;
-                                return AnimatedMessage(
-                                  isNew: isNew,
-                                  child: message,
-                                );
-                              },
+                child: Column(
+                  children: [
+                    // Chat messages
+                    Expanded(
+                      child: ShaderMask(
+                        shaderCallback: (Rect bounds) {
+                          return LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              const Color(0xFF0F172A).withOpacity(0),
+                              const Color(0xFF0F172A).withOpacity(0),
+                              const Color(0xFF0F172A).withOpacity(0),
+                              const Color(0xFF0F172A),
+                            ],
+                            stops: const [0.0, 0.05, 0.95, 1.0],
+                          ).createShader(bounds);
+                        },
+                        blendMode: BlendMode.dstOut,
+                        child: SingleChildScrollView(
+                          child: Center(
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 800),
+                              child: ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0),
+                                itemCount:
+                                    _messages.length + (_isProcessing ? 1 : 0),
+                                itemBuilder: (context, index) {
+                                  if (index == _messages.length &&
+                                      _isProcessing) {
+                                    return const TypingIndicator();
+                                  }
+                                  final message = _messages[index];
+                                  final isNew = index >= _lastMessageCount - 1;
+                                  return AnimatedMessage(
+                                    isNew: isNew,
+                                    child: message,
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         ),
                       ),
-                      // Input area
-                      ChatInputField(
-                        controller: _messageController,
-                        isSending: _isSending,
-                        onSubmitted: _handleSubmitted,
-                        onSendPressed: () =>
-                            _handleSubmitted(_messageController.text),
+                    ),
+                    // Input area
+                    Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 800),
+                        child: ChatInputField(
+                          controller: _messageController,
+                          isProcessing: _isProcessing,
+                          onSubmitted: _handleSubmitted,
+                          onSendPressed: () =>
+                              _handleSubmitted(_messageController.text),
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -516,6 +521,15 @@ class _TypingIndicatorState extends State<TypingIndicator>
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
 
+  final List<String> _messages = [
+    "Deep Thinking...",
+    "Analysing Industry...",
+    "Providing Trade Ideas..."
+  ];
+  int _currentMessageIndex = 0;
+  final Random _random = Random();
+  bool _showInitialMessage = false;
+
   @override
   void initState() {
     super.initState();
@@ -537,6 +551,36 @@ class _TypingIndicatorState extends State<TypingIndicator>
         curve: Curves.easeInOut,
       ),
     );
+
+    // Start the message update schedule after a 1-second delay
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        // Check if still mounted after delay
+        // Set flag to show the first message
+        setState(() {
+          _showInitialMessage = true;
+        });
+        // Schedule the update for the *next* message
+        _scheduleNextMessageUpdate();
+      }
+    });
+  }
+
+  void _scheduleNextMessageUpdate() {
+    if (!mounted || _currentMessageIndex >= _messages.length - 1) {
+      return;
+    }
+    final jitterMilliseconds = 10000 + _random.nextInt(4001);
+    final delay = Duration(milliseconds: jitterMilliseconds);
+
+    Future.delayed(delay, () {
+      if (mounted) {
+        setState(() {
+          _currentMessageIndex++;
+        });
+        _scheduleNextMessageUpdate();
+      }
+    });
   }
 
   @override
@@ -567,56 +611,60 @@ class _TypingIndicatorState extends State<TypingIndicator>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedBuilder(
-                      animation: _controller,
-                      builder: (context, child) {
-                        return Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            // Outer ripple
-                            Transform.scale(
-                              scale: _scaleAnimation.value * 1.2,
-                              child: Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white.withOpacity(
-                                      _opacityAnimation.value * 0.3),
+                // Only show the row after initial delay
+                if (_showInitialMessage)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, child) {
+                          return Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              // Outer ripple
+                              Transform.scale(
+                                scale: _scaleAnimation.value * 1.2,
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white.withOpacity(
+                                        _opacityAnimation.value * 0.3),
+                                  ),
                                 ),
                               ),
-                            ),
-                            // Inner circle
-                            Transform.scale(
-                              scale: _scaleAnimation.value,
-                              child: Container(
-                                width: 12,
-                                height: 12,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Colors.white
-                                      .withOpacity(_opacityAnimation.value),
+                              // Inner circle
+                              Transform.scale(
+                                scale: _scaleAnimation.value,
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white
+                                        .withOpacity(_opacityAnimation.value),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 12),
-                    const ShimmerText(
-                      text: "Deep Thinking...",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
+                            ],
+                          );
+                        },
                       ),
-                    ),
-                  ],
-                ),
+                      const SizedBox(width: 12),
+                      // Only show text after initial delay
+                      if (_showInitialMessage)
+                        ShimmerText(
+                          text: _messages[_currentMessageIndex],
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                    ],
+                  ),
               ],
             ),
           ),
