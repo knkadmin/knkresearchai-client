@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/browse_history.dart';
 import '../services/watchlist_service.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fa_ai_agent/widgets/hedge_fund_wizard/system_light_bulb_with_rays.dart';
 
 class SideMenu extends StatelessWidget {
   final bool isMenuCollapsed;
@@ -246,8 +247,7 @@ class SideMenu extends StatelessWidget {
                                     ),
                                   ),
                                   const Spacer(),
-                                  const Icon(
-                                    Icons.auto_awesome,
+                                  const SystemLightBulbWithRays(
                                     size: 20,
                                     color: Color(0xFF2563EB),
                                   ),

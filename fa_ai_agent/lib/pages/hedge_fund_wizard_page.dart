@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_markdown/flutter_markdown.dart';
-import 'dart:math';
 import 'dart:async';
 import '../services/hedge_fund_wizard_service.dart';
 import 'package:uuid/uuid.dart';
-import 'dart:convert';
-import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/widgets/chat_input_field.dart';
+import '../widgets/hedge_fund_wizard/gradient_border.dart';
+import '../widgets/hedge_fund_wizard/chat_message.dart';
+import '../widgets/hedge_fund_wizard/typing_indicator.dart';
+import '../widgets/hedge_fund_wizard/animated_message.dart';
+import '../widgets/hedge_fund_wizard/system_light_bulb_with_rays.dart';
 
 class HedgeFundWizardPage extends StatefulWidget {
   const HedgeFundWizardPage({super.key});
@@ -25,6 +26,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
   String _currentUuid = const Uuid().v4();
   StreamSubscription? _responseSubscription;
   int _lastMessageCount = 0;
+  bool _showInitialCard = false;
 
   @override
   void initState() {
@@ -33,6 +35,13 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
       setState(() {});
     });
     _setupResponseListener();
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        setState(() {
+          _showInitialCard = true;
+        });
+      }
+    });
   }
 
   void _setupResponseListener() {
@@ -85,7 +94,6 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
       setState(() {
         _isProcessing = false;
       });
-      // You might want to show an error message to the user here
       print('Error saving message: $e');
     }
   }
@@ -104,7 +112,6 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Back button and home button
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -135,72 +142,10 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                 ],
               ),
             ),
-            // Chat messages and input area
             Expanded(
               child: Center(
-                child: Column(
-                  children: [
-                    // Chat messages
-                    Expanded(
-                      child: ShaderMask(
-                        shaderCallback: (Rect bounds) {
-                          return LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              const Color(0xFF0F172A).withOpacity(0),
-                              const Color(0xFF0F172A).withOpacity(0),
-                              const Color(0xFF0F172A).withOpacity(0),
-                              const Color(0xFF0F172A),
-                            ],
-                            stops: const [0.0, 0.05, 0.95, 1.0],
-                          ).createShader(bounds);
-                        },
-                        blendMode: BlendMode.dstOut,
-                        child: SingleChildScrollView(
-                          child: Center(
-                            child: ConstrainedBox(
-                              constraints: const BoxConstraints(maxWidth: 800),
-                              child: ListView.builder(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0),
-                                itemCount:
-                                    _messages.length + (_isProcessing ? 1 : 0),
-                                itemBuilder: (context, index) {
-                                  if (index == _messages.length &&
-                                      _isProcessing) {
-                                    return const TypingIndicator();
-                                  }
-                                  final message = _messages[index];
-                                  final isNew = index >= _lastMessageCount - 1;
-                                  return AnimatedMessage(
-                                    isNew: isNew,
-                                    child: message,
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Input area
-                    Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 800),
-                        child: ChatInputField(
-                          controller: _messageController,
-                          isProcessing: _isProcessing,
-                          onSubmitted: _handleSubmitted,
-                          onSendPressed: () =>
-                              _handleSubmitted(_messageController.text),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                child:
+                    _messages.isEmpty ? _buildInitialView() : _buildChatView(),
               ),
             ),
           ],
@@ -208,30 +153,19 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
       ),
     );
   }
-}
 
-class ChatMessage extends StatelessWidget {
-  final String text;
-  final bool isUser;
-  final bool isMarkdown;
-
-  const ChatMessage({
-    super.key,
-    required this.text,
-    required this.isUser,
-    this.isMarkdown = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildInitialView() {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 800),
       transitionBuilder: (Widget child, Animation<double> animation) {
         return FadeTransition(
-          opacity: animation,
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOut,
+          ),
           child: SlideTransition(
             position: Tween<Offset>(
-              begin: const Offset(0, 0.1),
+              begin: const Offset(0, 0.2),
               end: Offset.zero,
             ).animate(CurvedAnimation(
               parent: animation,
@@ -241,469 +175,202 @@ class ChatMessage extends StatelessWidget {
           ),
         );
       },
-      child: Container(
-        key: ValueKey(text),
-        margin: const EdgeInsets.symmetric(vertical: 8.0),
-        child: Row(
-          mainAxisAlignment:
-              isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-          children: [
-            Container(
-              constraints: BoxConstraints(
-                maxWidth: isUser
-                    ? min(800 * 0.7, MediaQuery.of(context).size.width * 0.7)
-                    : min(800 - 32, MediaQuery.of(context).size.width - 32),
-              ),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16.0,
-                vertical: 12.0,
-              ),
-              decoration: BoxDecoration(
-                color: isUser ? const Color(0xFF27324A) : Colors.transparent,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: isMarkdown
-                  ? MarkdownBody(
-                      data: text,
-                      shrinkWrap: true,
-                      styleSheet: MarkdownStyleSheet(
-                        p: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          height: 1.5,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                        ),
-                        h1: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          height: 1.3,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                        ),
-                        h2: const TextStyle(
+      child: _showInitialCard
+          ? ConstrainedBox(
+              key: const ValueKey('initial_card'),
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: GradientBorder(
+                borderRadius: BorderRadius.circular(16.0),
+                gradient: const LinearGradient(
+                  colors: [
+                    Colors.red,
+                    Colors.orange,
+                    Colors.yellow,
+                    Colors.green,
+                    Colors.blue,
+                    Colors.indigo,
+                    Colors.purple,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(32.0),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF1E293B).withOpacity(0.95),
+                        const Color(0xFF0F172A).withOpacity(0.95),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(16.0),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SystemLightBulbWithRays(
+                        size: 56,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Ask Hedge Fund Wizard Anything',
+                        style: TextStyle(
                           color: Colors.white,
                           fontSize: 26,
                           fontWeight: FontWeight.bold,
-                          height: 1.3,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                          letterSpacing: 0.5,
                         ),
-                        h3: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          height: 1.3,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                        ),
-                        h4: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          height: 1.3,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                        ),
-                        h5: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                          height: 1.3,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                        ),
-                        h6: const TextStyle(
-                          color: Colors.white,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Examples:',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          height: 1.3,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                        ),
-                        em: const TextStyle(
-                          color: Colors.white,
-                          fontStyle: FontStyle.italic,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                        ),
-                        strong: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                        ),
-                        code: TextStyle(
-                          color: Colors.white,
-                          backgroundColor:
-                              const Color(0xFF1E293B).withOpacity(0.8),
-                          fontFamily:
-                              'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                          fontSize: 15,
-                        ),
-                        codeblockDecoration: BoxDecoration(
-                          color: const Color(0xFF1E293B).withOpacity(0.8),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
-                            width: 1,
-                          ),
-                        ),
-                        blockquote: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontStyle: FontStyle.italic,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                        ),
-                        blockquoteDecoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border(
-                            left: BorderSide(
-                              color: Colors.white.withOpacity(0.3),
-                              width: 4,
-                            ),
-                          ),
-                        ),
-                        listBullet: const TextStyle(
-                          color: Colors.white,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                        ),
-                        tableCellsDecoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.1),
-                            width: 1,
-                          ),
-                        ),
-                        tableBorder: TableBorder(
-                          horizontalInside: BorderSide(
-                            color: Colors.white.withOpacity(0.1),
-                            width: 1,
-                          ),
-                          verticalInside: BorderSide(
-                            color: Colors.white.withOpacity(0.1),
-                            width: 1,
-                          ),
-                          top: BorderSide(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                          bottom: BorderSide(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                          left: BorderSide(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                          right: BorderSide(
-                            color: Colors.white.withOpacity(0.2),
-                            width: 1,
-                          ),
-                        ),
-                        tableHead: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                        ),
-                        tableBody: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w100,
-                          fontSize: 12,
-                          fontFamily:
-                              '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                    )
-                  : Text(
-                      text,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-            ),
-          ],
+                      const SizedBox(height: 12),
+                      _buildExampleButton(
+                        'Given the context of US Tariffs chaos, what assets should I buy or sell?',
+                      ),
+                      const SizedBox(height: 10),
+                      _buildExampleButton(
+                        'Considering Nvidia\'s recent performance, what are your outlooks on the stock?',
+                      ),
+                      const SizedBox(height: 10),
+                      _buildExampleButton(
+                        'With China\'s focus on domestic tech, how might that impact semiconductor investments?',
+                      ),
+                      const SizedBox(height: 28),
+                      ChatInputField(
+                        controller: _messageController,
+                        isProcessing: _isProcessing,
+                        onSubmitted: _handleSubmitted,
+                        onSendPressed: () =>
+                            _handleSubmitted(_messageController.text),
+                      ),
+                      const SizedBox(height: 16),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                        child: Text(
+                          'To get the best results from Hedge Fund Wizard, make sure your question satisfy the following structure: Context/Hypothesis + Question',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 14,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            )
+          : const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildExampleButton(String text) {
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        foregroundColor: Colors.white.withOpacity(0.9),
+        backgroundColor: Colors.white.withOpacity(0.1),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8.0),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        elevation: 0,
+        minimumSize: const Size(double.infinity, 36),
+        side: BorderSide(
+          color: Colors.white.withOpacity(0.1),
+          width: 1,
+        ),
+      ),
+      onPressed: () {
+        _messageController.text = text;
+        _messageController.selection = TextSelection.fromPosition(
+            TextPosition(offset: _messageController.text.length));
+      },
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontWeight: FontWeight.normal,
+          fontSize: 15,
+          letterSpacing: 0.3,
         ),
       ),
     );
   }
-}
 
-class ShimmerText extends StatefulWidget {
-  final String text;
-  final TextStyle? style;
-
-  const ShimmerText({
-    super.key,
-    required this.text,
-    this.style,
-  });
-
-  @override
-  State<ShimmerText> createState() => _ShimmerTextState();
-}
-
-class _ShimmerTextState extends State<ShimmerText>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    )..repeat();
-
-    _animation = Tween<double>(begin: -0.2, end: 1.2).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return ShaderMask(
-          shaderCallback: (bounds) {
-            return LinearGradient(
-              colors: [
-                Colors.white.withOpacity(0.3),
-                Colors.white,
-                Colors.white.withOpacity(0.3),
-              ],
-              stops: const [0.0, 0.5, 1.0],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              transform: GradientRotation(
-                _animation.value * 2 * pi,
-              ),
-            ).createShader(bounds);
-          },
-          child: Text(
-            widget.text,
-            style: widget.style ??
-                const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class TypingIndicator extends StatefulWidget {
-  const TypingIndicator({super.key});
-
-  @override
-  State<TypingIndicator> createState() => _TypingIndicatorState();
-}
-
-class _TypingIndicatorState extends State<TypingIndicator>
-    with TickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _scaleAnimation;
-  late Animation<double> _opacityAnimation;
-
-  final List<String> _messages = [
-    "Deep Thinking...",
-    "Analysing Industry...",
-    "Providing Trade Ideas..."
-  ];
-  int _currentMessageIndex = 0;
-  final Random _random = Random();
-  bool _showInitialMessage = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat(reverse: true);
-
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.2).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    _opacityAnimation = Tween<double>(begin: 0.4, end: 0.8).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeInOut,
-      ),
-    );
-
-    // Start the message update schedule after a 1-second delay
-    Future.delayed(const Duration(seconds: 1), () {
-      if (mounted) {
-        // Check if still mounted after delay
-        // Set flag to show the first message
-        setState(() {
-          _showInitialMessage = true;
-        });
-        // Schedule the update for the *next* message
-        _scheduleNextMessageUpdate();
-      }
-    });
-  }
-
-  void _scheduleNextMessageUpdate() {
-    if (!mounted || _currentMessageIndex >= _messages.length - 1) {
-      return;
-    }
-    final jitterMilliseconds = 10000 + _random.nextInt(4001);
-    final delay = Duration(milliseconds: jitterMilliseconds);
-
-    Future.delayed(delay, () {
-      if (mounted) {
-        setState(() {
-          _currentMessageIndex++;
-        });
-        _scheduleNextMessageUpdate();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Container(
-            constraints: BoxConstraints(
-              maxWidth: min(700 - 32, MediaQuery.of(context).size.width - 32),
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 12.0,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Only show the row after initial delay
-                if (_showInitialMessage)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AnimatedBuilder(
-                        animation: _controller,
-                        builder: (context, child) {
-                          return Stack(
-                            alignment: Alignment.center,
-                            children: [
-                              // Outer ripple
-                              Transform.scale(
-                                scale: _scaleAnimation.value * 1.2,
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.white.withOpacity(
-                                        _opacityAnimation.value * 0.3),
-                                  ),
-                                ),
-                              ),
-                              // Inner circle
-                              Transform.scale(
-                                scale: _scaleAnimation.value,
-                                child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: Colors.white
-                                        .withOpacity(_opacityAnimation.value),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 12),
-                      // Only show text after initial delay
-                      if (_showInitialMessage)
-                        ShimmerText(
-                          text: _messages[_currentMessageIndex],
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                    ],
+  Widget _buildChatView() {
+    return Column(
+      children: [
+        Expanded(
+          child: ShaderMask(
+            shaderCallback: (Rect bounds) {
+              return LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  const Color(0xFF0F172A).withOpacity(0),
+                  const Color(0xFF0F172A).withOpacity(0),
+                  const Color(0xFF0F172A).withOpacity(0),
+                  const Color(0xFF0F172A),
+                ],
+                stops: const [0.0, 0.05, 0.95, 1.0],
+              ).createShader(bounds);
+            },
+            blendMode: BlendMode.dstOut,
+            child: SingleChildScrollView(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 800),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    itemCount: _messages.length + (_isProcessing ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == _messages.length && _isProcessing) {
+                        return const TypingIndicator();
+                      }
+                      final message = _messages[index];
+                      final isNew = index >= _lastMessageCount - 1;
+                      return AnimatedMessage(
+                        isNew: isNew,
+                        child: message,
+                      );
+                    },
                   ),
-              ],
+                ),
+              ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class AnimatedMessage extends StatelessWidget {
-  final Widget child;
-  final bool isNew;
-
-  const AnimatedMessage({
-    super.key,
-    required this.child,
-    this.isNew = true,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      transitionBuilder: (Widget child, Animation<double> animation) {
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.1),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
+        ),
+        Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: ChatInputField(
+              controller: _messageController,
+              isProcessing: _isProcessing,
+              onSubmitted: _handleSubmitted,
+              onSendPressed: () => _handleSubmitted(_messageController.text),
+            ),
           ),
-        );
-      },
-      child: child,
+        ),
+      ],
     );
   }
 }
