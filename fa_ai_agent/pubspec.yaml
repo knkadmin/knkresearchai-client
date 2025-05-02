@@ -39,7 +39,7 @@ dependencies:
   quickalert: ^1.1.0
   animation_list: ^3.1.0
   shimmer: ^3.0.0
-  intl: ^0.18.0
+  intl: ^0.19.0
   hive_flutter: ^1.1.0
   rxdart: ^0.28.0
   firebase_core: ^3.12.1
@@ -67,6 +67,7 @@ dependencies:
   flutter_stripe_web: ^6.4.0
   universal_html: ^2.2.4
   lottie: ^2.7.0
+  uuid: ^4.3.3
   
 dev_dependencies:
   flutter_test:

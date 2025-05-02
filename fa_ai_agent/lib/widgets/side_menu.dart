@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/browse_history.dart';
 import '../services/watchlist_service.dart';
+import 'package:go_router/go_router.dart';
 
 class SideMenu extends StatelessWidget {
   final bool isMenuCollapsed;
@@ -174,6 +175,79 @@ class SideMenu extends StatelessWidget {
                                   const Spacer(),
                                   const Icon(
                                     Icons.add,
+                                    size: 20,
+                                    color: Color(0xFF2563EB),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Hedge Fund Wizard Button
+                  Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      onEnter: (_) => onHoverChange(true),
+                      onExit: (_) => onHoverChange(false),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        margin: const EdgeInsets.symmetric(
+                            horizontal: 0, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isHovered
+                              ? const Color(0xFFF8FAFC)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isHovered
+                                ? const Color(0xFF2563EB).withOpacity(0.1)
+                                : Colors.black.withOpacity(0.05),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: isHovered
+                                  ? const Color(0xFF2563EB).withOpacity(0.1)
+                                  : Colors.black.withOpacity(0.05),
+                              blurRadius: isHovered ? 8 : 4,
+                              offset: const Offset(0, 2),
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: () {
+                              if (isFloatingMenu) {
+                                onMenuCollapse(true);
+                              }
+                              // Navigate to hedge fund wizard page
+                              context.go('/hedge-fund-wizard');
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              child: Row(
+                                children: [
+                                  const Text(
+                                    'Hedge Fund Wizard',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1E293B),
+                                      letterSpacing: -0.2,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  const Icon(
+                                    Icons.auto_awesome,
                                     size: 20,
                                     color: Color(0xFF2563EB),
                                   ),
