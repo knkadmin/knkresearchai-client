@@ -10,6 +10,7 @@ import '../widgets/hedge_fund_wizard/chat_message.dart';
 import '../widgets/hedge_fund_wizard/typing_indicator.dart';
 import '../widgets/hedge_fund_wizard/animated_message.dart';
 import '../widgets/hedge_fund_wizard/system_light_bulb_with_rays.dart';
+import '../services/auth_service.dart';
 
 class HedgeFundWizardPage extends StatefulWidget {
   const HedgeFundWizardPage({super.key});
@@ -31,6 +32,16 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
   @override
   void initState() {
     super.initState();
+    // Redirect to home if not logged in
+    final user = AuthService().currentUser;
+    if (user == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          context.go('/');
+        }
+      });
+      return;
+    }
     _messageController.addListener(() {
       setState(() {});
     });
