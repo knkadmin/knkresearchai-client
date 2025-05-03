@@ -27,4 +27,29 @@ class HedgeFundWizardService {
       'userId': userId,
     });
   }
+
+  Stream<List<Map<String, dynamic>>> getQuestionHistory() {
+    final userId = _auth.currentUser?.uid;
+    if (userId == null) return Stream.value([]);
+
+    return _firestore
+        .collection('hedgeFundWizard')
+        .where('userId', isEqualTo: userId)
+        .where('questionPlainText', isNotEqualTo: null)
+        .where('result', isNotEqualTo: null)
+        .orderBy('createdDate', descending: true)
+        .limit(50)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+
+        return {
+          'question': data['questionPlainText'],
+          'result': data['result'],
+          'createdDate': data['createdDate'],
+        };
+      }).toList();
+    });
+  }
 }

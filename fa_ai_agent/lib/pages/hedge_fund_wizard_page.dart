@@ -11,6 +11,7 @@ import '../widgets/hedge_fund_wizard/typing_indicator.dart';
 import '../widgets/hedge_fund_wizard/animated_message.dart';
 import '../widgets/hedge_fund_wizard/system_light_bulb_with_rays.dart';
 import '../services/auth_service.dart';
+import '../widgets/hedge_fund_wizard/history_dialog.dart';
 
 class HedgeFundWizardPage extends StatefulWidget {
   const HedgeFundWizardPage({super.key});
@@ -28,6 +29,10 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
   StreamSubscription? _responseSubscription;
   int _lastMessageCount = 0;
   bool _showInitialCard = false;
+  bool _isMenuCollapsed = true;
+  bool _isHovered = false;
+  List<Map<String, dynamic>> _questionHistory = [];
+  StreamSubscription? _historySubscription;
 
   @override
   void initState() {
@@ -46,6 +51,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
       setState(() {});
     });
     _setupResponseListener();
+    _setupHistoryListener();
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) {
         setState(() {
@@ -83,6 +89,19 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
     });
   }
 
+  void _setupHistoryListener() {
+    _historySubscription?.cancel();
+    _historySubscription = _service.getQuestionHistory().listen((history) {
+      if (mounted) {
+        setState(() {
+          _questionHistory = history;
+        });
+      }
+    }, onError: (error) {
+      print('Error getting history: $error');
+    });
+  }
+
   Future<void> _handleSubmitted(String text) async {
     if (text.isEmpty || _isProcessing) return;
 
@@ -113,6 +132,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
   void dispose() {
     _messageController.dispose();
     _responseSubscription?.cancel();
+    _historySubscription?.cancel();
     super.dispose();
   }
 
@@ -121,48 +141,237 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
+            // Main Content
+            AnimatedContainer(
+              duration: const Duration(seconds: 1),
+              curve: Curves.easeOutExpo,
+              margin: EdgeInsets.only(right: _isMenuCollapsed ? 0 : 300),
+              child: Column(
                 children: [
-                  TextButton.icon(
-                    style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                        (Set<MaterialState> states) {
-                          if (states.contains(MaterialState.hovered)) {
-                            return Colors.white.withOpacity(0.1);
-                          }
-                          return Colors.transparent;
-                        },
-                      ),
-                      padding:
-                          MaterialStateProperty.all(const EdgeInsets.all(8)),
-                    ),
-                    icon: Row(
-                      children: const [
-                        Icon(Icons.chevron_left, color: Colors.white),
-                        SizedBox(width: 4),
-                        Icon(Icons.home, color: Colors.white),
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        TextButton.icon(
+                          style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
+                              (Set<MaterialState> states) {
+                                if (states.contains(MaterialState.hovered)) {
+                                  return Colors.white.withOpacity(0.1);
+                                }
+                                return Colors.transparent;
+                              },
+                            ),
+                            padding: MaterialStateProperty.all(
+                                const EdgeInsets.all(8)),
+                          ),
+                          icon: Row(
+                            children: const [
+                              Icon(Icons.chevron_left, color: Colors.white),
+                              SizedBox(width: 4),
+                              Icon(Icons.home, color: Colors.white),
+                            ],
+                          ),
+                          label: const SizedBox.shrink(),
+                          onPressed: () => context.go('/'),
+                        ),
+                        const Spacer(),
+                        if (_isMenuCollapsed)
+                          TextButton.icon(
+                            style: ButtonStyle(
+                              backgroundColor:
+                                  MaterialStateProperty.resolveWith<Color>(
+                                (Set<MaterialState> states) {
+                                  if (states.contains(MaterialState.hovered)) {
+                                    return Colors.white.withOpacity(0.1);
+                                  }
+                                  return Colors.transparent;
+                                },
+                              ),
+                              padding: MaterialStateProperty.all(
+                                  const EdgeInsets.all(8)),
+                            ),
+                            icon:
+                                const Icon(Icons.history, color: Colors.white),
+                            label: const Text(
+                              'History',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isMenuCollapsed = false;
+                              });
+                            },
+                          ),
                       ],
                     ),
-                    label: const SizedBox.shrink(),
-                    onPressed: () => context.go('/'),
+                  ),
+                  Expanded(
+                    child: Center(
+                      child: _messages.isEmpty
+                          ? _buildInitialView()
+                          : _buildChatView(),
+                    ),
                   ),
                 ],
               ),
             ),
-            Expanded(
-              child: Center(
-                child:
-                    _messages.isEmpty ? _buildInitialView() : _buildChatView(),
+            // Side Menu
+            AnimatedPositioned(
+              duration: const Duration(seconds: 1),
+              curve: Curves.easeOutExpo,
+              right: _isMenuCollapsed ? -300 : 0,
+              width: 300,
+              height: MediaQuery.of(context).size.height,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B),
+                  border: Border(
+                    left: BorderSide(
+                      color: Colors.white.withOpacity(0.1),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    // Menu Header
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.white.withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          const Text(
+                            'History',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const Spacer(),
+                          IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () {
+                              setState(() {
+                                _isMenuCollapsed = true;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    // History List
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(8),
+                        itemCount: _questionHistory.length,
+                        itemBuilder: (context, index) {
+                          final item = _questionHistory[index];
+                          final timestamp = item['createdDate'];
+                          DateTime date;
+                          if (timestamp is Timestamp) {
+                            date = timestamp.toDate();
+                          } else {
+                            try {
+                              date = DateTime.parse(timestamp.toString());
+                            } catch (e) {
+                              print('Error parsing date: $e');
+                              date = DateTime.now();
+                            }
+                          }
+                          return MouseRegion(
+                            onEnter: (_) => setState(() => _isHovered = true),
+                            onExit: (_) => setState(() => _isHovered = false),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                onTap: () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => HistoryDialog(
+                                      question: item['question'],
+                                      answer: item['result'] ?? '',
+                                      createdDate:
+                                          (item['createdDate'] as Timestamp)
+                                              .toDate(),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(12),
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.05),
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.1),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item['question'],
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 14,
+                                        ),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        _getTimeAgo(date),
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.6),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _getTimeAgo(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
   }
 
   Widget _buildInitialView() {
@@ -274,7 +483,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
                         child: Text(
-                          'To get the best results from Hedge Fund Wizard, make sure your question satisfy the following structure: Context/Hypothesis + Question',
+                          'For optimal results, please structure your queries with relevant context or hypothesis followed by your specific question.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.6),
