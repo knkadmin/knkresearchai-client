@@ -143,104 +143,133 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 300;
+    final isVerySmallScreen = screenWidth < 500;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Main Content
-            AnimatedContainer(
-              duration: const Duration(seconds: 1),
-              curve: Curves.easeOutExpo,
-              margin: EdgeInsets.only(right: _isMenuCollapsed ? 0 : 300),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        TextButton.icon(
-                          style: ButtonStyle(
-                            backgroundColor:
-                                MaterialStateProperty.resolveWith<Color>(
-                              (Set<MaterialState> states) {
-                                if (states.contains(MaterialState.hovered)) {
-                                  return Colors.white.withOpacity(0.1);
-                                }
-                                return Colors.transparent;
-                              },
-                            ),
-                            padding: MaterialStateProperty.all(
-                                const EdgeInsets.all(8)),
-                          ),
-                          icon: Row(
-                            children: const [
-                              Icon(Icons.chevron_left, color: Colors.white),
-                              SizedBox(width: 4),
-                              Icon(Icons.home, color: Colors.white),
-                            ],
-                          ),
-                          label: const SizedBox.shrink(),
-                          onPressed: () => context.go('/'),
+      body: Stack(
+        children: [
+          // Main Content
+          Container(
+            width: double.infinity,
+            height: double.infinity,
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    TextButton.icon(
+                      style: ButtonStyle(
+                        backgroundColor:
+                            MaterialStateProperty.resolveWith<Color>(
+                          (Set<MaterialState> states) {
+                            if (states.contains(MaterialState.hovered)) {
+                              return Colors.white.withOpacity(0.1);
+                            }
+                            return Colors.transparent;
+                          },
                         ),
-                        const Spacer(),
-                        if (_isMenuCollapsed)
-                          TextButton.icon(
-                            style: ButtonStyle(
-                              backgroundColor:
-                                  MaterialStateProperty.resolveWith<Color>(
-                                (Set<MaterialState> states) {
-                                  if (states.contains(MaterialState.hovered)) {
-                                    return Colors.white.withOpacity(0.1);
-                                  }
-                                  return Colors.transparent;
-                                },
-                              ),
-                              padding: MaterialStateProperty.all(
-                                  const EdgeInsets.all(8)),
-                            ),
-                            icon:
-                                const Icon(Icons.history, color: Colors.white),
-                            label: const Text(
-                              'History',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                _isMenuCollapsed = false;
-                              });
+                        padding:
+                            MaterialStateProperty.all(const EdgeInsets.all(8)),
+                      ),
+                      icon: Row(
+                        children: const [
+                          Icon(Icons.chevron_left, color: Colors.white),
+                          SizedBox(width: 4),
+                          Icon(Icons.home, color: Colors.white),
+                        ],
+                      ),
+                      label: const SizedBox.shrink(),
+                      onPressed: () => context.go('/'),
+                    ),
+                    const Spacer(),
+                    if (_isMenuCollapsed)
+                      TextButton.icon(
+                        style: ButtonStyle(
+                          backgroundColor:
+                              MaterialStateProperty.resolveWith<Color>(
+                            (Set<MaterialState> states) {
+                              if (states.contains(MaterialState.hovered)) {
+                                return Colors.white.withOpacity(0.1);
+                              }
+                              return Colors.transparent;
                             },
                           ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: _messages.isEmpty
-                          ? _buildInitialView()
-                          : _buildChatView(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Side Menu
-            AnimatedPositioned(
-              duration: const Duration(seconds: 1),
-              curve: Curves.easeOutExpo,
-              right: _isMenuCollapsed ? -300 : 0,
-              width: 300,
-              height: MediaQuery.of(context).size.height,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B),
-                  border: Border(
-                    left: BorderSide(
-                      color: Colors.white.withOpacity(0.1),
-                      width: 1,
-                    ),
+                          padding: MaterialStateProperty.all(
+                              const EdgeInsets.all(8)),
+                        ),
+                        icon: const Icon(Icons.history, color: Colors.white),
+                        label: const Text(
+                          'History',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _isMenuCollapsed = false;
+                          });
+                        },
+                      ),
+                  ],
+                ),
+                Expanded(
+                  child: Center(
+                    child: _messages.isEmpty
+                        ? _buildInitialView()
+                        : _buildChatView(),
                   ),
                 ),
+              ],
+            ),
+          ),
+          // Semi-transparent mask
+          if (!_isMenuCollapsed)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _isMenuCollapsed = true;
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(seconds: 1),
+                  curve: Curves.easeOutExpo,
+                  color: Colors.black.withOpacity(0.5),
+                ),
+              ),
+            ),
+          // Side Menu
+          AnimatedPositioned(
+            duration: const Duration(seconds: 1),
+            curve: Curves.easeOutExpo,
+            right: isSmallScreen
+                ? (_isMenuCollapsed ? -screenWidth : 0)
+                : (_isMenuCollapsed ? -300 : 0),
+            width: isSmallScreen ? screenWidth : 300,
+            height: MediaQuery.of(context).size.height,
+            child: AnimatedContainer(
+              duration: const Duration(seconds: 1),
+              curve: Curves.easeOutExpo,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E293B),
+                borderRadius: isSmallScreen
+                    ? BorderRadius.circular(12)
+                    : BorderRadius.zero,
+                boxShadow: isSmallScreen
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.3),
+                          blurRadius: 20,
+                          spreadRadius: 5,
+                        )
+                      ]
+                    : null,
+              ),
+              child: ClipRRect(
+                borderRadius: isSmallScreen
+                    ? BorderRadius.circular(12)
+                    : BorderRadius.zero,
                 child: Column(
                   children: [
                     // Menu Header
@@ -359,8 +388,8 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

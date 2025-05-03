@@ -160,6 +160,8 @@ class _HistoryDialogState extends State<HistoryDialog> {
   void _showShareSuccessDialog(String sharedContentId) {
     final shareUrl = 'https://knkresearchai.com/share/$sharedContentId';
     bool isCopied = false;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 700;
 
     showDialog(
       context: context,
@@ -169,8 +171,11 @@ class _HistoryDialogState extends State<HistoryDialog> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
+          insetPadding: isSmallScreen
+              ? EdgeInsets.zero
+              : const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Container(
-            width: 500,
+            width: isSmallScreen ? double.infinity : 800,
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -393,13 +398,19 @@ class _HistoryDialogState extends State<HistoryDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 700;
+
     return Dialog(
       backgroundColor: const Color(0xFF1A1F2C),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
       ),
+      insetPadding: isSmallScreen
+          ? EdgeInsets.zero
+          : const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.8,
+        width: isSmallScreen ? double.infinity : 1000,
         height: MediaQuery.of(context).size.height * 0.85,
         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
         child: Column(
