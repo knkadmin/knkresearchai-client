@@ -10,6 +10,7 @@ import 'package:fa_ai_agent/pages/sign_up_page.dart';
 import 'package:fa_ai_agent/pages/dashboard_page.dart';
 import 'package:fa_ai_agent/pages/pricing_page.dart';
 import 'package:fa_ai_agent/pages/hedge_fund_wizard_page.dart';
+import 'package:fa_ai_agent/pages/share_content_page.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart' show HiveWebStorage;
 import 'package:firebase_core/firebase_core.dart';
@@ -241,6 +242,14 @@ class MyApp extends StatelessWidget {
             path: '/hedge-fund-wizard',
             pageBuilder: (context, state) => NoTransitionPage<void>(
               child: const HedgeFundWizardPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/share/:documentId',
+            pageBuilder: (context, state) => NoTransitionPage<void>(
+              child: ShareContentPage(
+                documentId: state.pathParameters['documentId']!,
+              ),
             ),
           ),
         ],

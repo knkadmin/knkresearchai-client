@@ -5,8 +5,8 @@ import '../services/firestore_service.dart';
 import 'dart:math' show pi;
 import 'package:flutter/gestures.dart';
 import '../widgets/legal_dialog.dart';
-import 'package:fa_ai_agent/pages/dashboard_page.dart';
 import 'package:fa_ai_agent/constants/legal_texts.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -21,6 +21,22 @@ class _SignUpPageState extends State<SignUpPage> {
   final _confirmPasswordController = TextEditingController();
   final _authService = AuthService();
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Check auth status after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthStatusAndRedirect();
+    });
+  }
+
+  void _checkAuthStatusAndRedirect() {
+    final user = _authService.currentUser;
+    if (user != null && mounted) {
+      context.go('/'); // Redirect to home if already logged in
+    }
+  }
 
   @override
   void dispose() {

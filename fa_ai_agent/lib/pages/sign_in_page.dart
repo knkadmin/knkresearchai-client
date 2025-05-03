@@ -4,6 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:sign_in_button/sign_in_button.dart';
 import 'package:fa_ai_agent/services/auth_service.dart';
 import 'dart:math' show pi;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/gestures.dart';
+import '../widgets/legal_dialog.dart';
+import 'package:fa_ai_agent/constants/legal_texts.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -21,21 +25,16 @@ class _SignInPageState extends State<SignInPage> {
   @override
   void initState() {
     super.initState();
+    // Check auth status after the first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkAuthStatusAndRedirect();
+    });
+  }
 
-    // Check current user on initialization
-    final currentUser = _authService.currentUser;
-    if (currentUser != null) {
-      print(
-          "Already signed in as: ${currentUser.displayName ?? currentUser.email}");
-
-      // Navigate to dashboard if already signed in
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          context.go('/');
-        }
-      });
-    } else {
-      print("No user is currently signed in");
+  void _checkAuthStatusAndRedirect() {
+    final user = _authService.currentUser;
+    if (user != null && mounted) {
+      context.go('/'); // Redirect to home if already logged in
     }
   }
 
