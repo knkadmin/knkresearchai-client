@@ -67,7 +67,7 @@ class _ChatInputFieldState extends State<ChatInputField>
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 700),
@@ -148,7 +148,7 @@ class _ChatInputFieldState extends State<ChatInputField>
                           style: const TextStyle(
                               color: Colors.white, fontSize: 16),
                           cursorColor: Colors.white,
-                          maxLength: 100,
+                          maxLength: 250,
                           enableInteractiveSelection: true,
                           selectionControls: MaterialTextSelectionControls(),
                           decoration: InputDecoration(
@@ -156,7 +156,11 @@ class _ChatInputFieldState extends State<ChatInputField>
                             hintStyle:
                                 TextStyle(color: Colors.white54, fontSize: 16),
                             border: InputBorder.none,
-                            counterText: '',
+                            counterText: '${widget.controller.text.length}/250',
+                            counterStyle: TextStyle(
+                              color: Colors.white54,
+                              fontSize: 12,
+                            ),
                           ),
                           onSubmitted: (text) {
                             if (!widget.isProcessing) {

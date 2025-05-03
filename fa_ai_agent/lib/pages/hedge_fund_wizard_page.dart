@@ -24,10 +24,13 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
   final TextEditingController _messageController = TextEditingController();
   final List<ChatMessage> _messages = [];
   final HedgeFundWizardService _service = HedgeFundWizardService();
+  final AuthService _authService = AuthService();
   bool _isProcessing = false;
   String _currentUuid = const Uuid().v4();
 
   StreamSubscription? _responseSubscription;
+  StreamSubscription? _creditsSubscription;
+  double? _userCredits;
   int _lastMessageCount = 0;
   bool _showInitialCard = false;
   bool _isMenuCollapsed = true;
@@ -53,6 +56,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
     });
     _setupResponseListener();
     _setupHistoryListener();
+    _setupCreditsListener();
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) {
         setState(() {
@@ -108,6 +112,35 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
     });
   }
 
+  void _setupCreditsListener() {
+    _creditsSubscription?.cancel();
+    _creditsSubscription = _authService.userDocumentStream.listen((snapshot) {
+      if (mounted && snapshot.exists) {
+        final data = snapshot.data() as Map<String, dynamic>?;
+        if (data != null && data.containsKey('credits')) {
+          setState(() {
+            _userCredits = data['credits'] as double;
+          });
+        } else {
+          setState(() {
+            _userCredits = null;
+          });
+        }
+      } else if (mounted) {
+        setState(() {
+          _userCredits = null;
+        });
+      }
+    }, onError: (error) {
+      print('Error getting user credits: $error');
+      if (mounted) {
+        setState(() {
+          _userCredits = null;
+        });
+      }
+    });
+  }
+
   Future<void> _handleSubmitted(String text) async {
     if (text.isEmpty || _isProcessing) return;
 
@@ -139,6 +172,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
     _messageController.dispose();
     _responseSubscription?.cancel();
     _historySubscription?.cancel();
+    _creditsSubscription?.cancel();
     super.dispose();
   }
 
@@ -159,61 +193,117 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    TextButton.icon(
-                      style: ButtonStyle(
-                        backgroundColor:
-                            MaterialStateProperty.resolveWith<Color>(
-                          (Set<MaterialState> states) {
-                            if (states.contains(MaterialState.hovered)) {
-                              return Colors.white.withOpacity(0.1);
-                            }
-                            return Colors.transparent;
-                          },
-                        ),
-                        padding:
-                            MaterialStateProperty.all(const EdgeInsets.all(8)),
-                      ),
-                      icon: Row(
-                        children: const [
-                          Icon(Icons.chevron_left, color: Colors.white),
-                          SizedBox(width: 4),
-                          Icon(Icons.home, color: Colors.white),
-                        ],
-                      ),
-                      label: const SizedBox.shrink(),
-                      onPressed: () => context.go('/'),
-                    ),
-                    const Spacer(),
-                    if (_isMenuCollapsed)
-                      TextButton.icon(
-                        style: ButtonStyle(
-                          backgroundColor:
-                              MaterialStateProperty.resolveWith<Color>(
-                            (Set<MaterialState> states) {
-                              if (states.contains(MaterialState.hovered)) {
-                                return Colors.white.withOpacity(0.1);
-                              }
-                              return Colors.transparent;
-                            },
-                          ),
-                          padding: MaterialStateProperty.all(
-                              const EdgeInsets.all(8)),
-                        ),
-                        icon: const Icon(Icons.history, color: Colors.white),
-                        label: const Text(
-                          'History',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _isMenuCollapsed = false;
-                          });
+                Row(children: [
+                  TextButton.icon(
+                    style: ButtonStyle(
+                      backgroundColor: MaterialStateProperty.resolveWith<Color>(
+                        (Set<MaterialState> states) {
+                          if (states.contains(MaterialState.hovered)) {
+                            return Colors.white.withOpacity(0.1);
+                          }
+                          return Colors.transparent;
                         },
                       ),
-                  ],
-                ),
+                      padding:
+                          MaterialStateProperty.all(const EdgeInsets.all(8)),
+                    ),
+                    icon: Row(
+                      children: const [
+                        Icon(Icons.chevron_left, color: Colors.white),
+                        SizedBox(width: 4),
+                        Icon(Icons.home, color: Colors.white),
+                      ],
+                    ),
+                    label: const SizedBox.shrink(),
+                    onPressed: () => context.go('/'),
+                  ),
+                  const Spacer(),
+                  if (_isMenuCollapsed)
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Credits Button
+                        if (_userCredits != null)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: ElevatedButton(
+                              onPressed: null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black.withOpacity(0.15),
+                                disabledBackgroundColor:
+                                    Colors.black.withOpacity(0.1),
+                                foregroundColor: Colors.white70,
+                                disabledForegroundColor: Colors.white60,
+                                elevation: 0,
+                                side: BorderSide(
+                                    color: Colors.white.withOpacity(0.2),
+                                    width: 1),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                              ),
+                              child: Text(
+                                'Available credits: ${_userCredits?.toStringAsFixed(0)}',
+                              ),
+                            ),
+                          )
+                        else
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8.0),
+                            child: ElevatedButton(
+                              onPressed: null,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.black.withOpacity(0.15),
+                                disabledBackgroundColor:
+                                    Colors.black.withOpacity(0.1),
+                                foregroundColor: Colors.white70,
+                                disabledForegroundColor: Colors.white60,
+                                elevation: 0,
+                                side: BorderSide(
+                                    color: Colors.white.withOpacity(0.2),
+                                    width: 1),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 8),
+                              ),
+                              child: const Text(
+                                'Credits: N/A',
+                              ),
+                            ),
+                          ),
+                        // Vertical splitter
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 8),
+                          width: 1,
+                          height: 28,
+                          color: Colors.white.withOpacity(0.15),
+                        ),
+                        TextButton.icon(
+                          style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
+                              (Set<MaterialState> states) {
+                                if (states.contains(MaterialState.hovered)) {
+                                  return Colors.white.withOpacity(0.1);
+                                }
+                                return Colors.transparent;
+                              },
+                            ),
+                            padding: MaterialStateProperty.all(
+                                const EdgeInsets.all(8)),
+                          ),
+                          icon: const Icon(Icons.history, color: Colors.white),
+                          label: const Text(
+                            'History',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isMenuCollapsed = false;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                ]),
                 Expanded(
                   child: Center(
                     child: _messages.isEmpty

@@ -1,8 +1,10 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Get current user
   User? get currentUser => _auth.currentUser;
@@ -150,5 +152,16 @@ class AuthService {
       print('Error updating user profile: $e');
       rethrow;
     }
+  }
+
+  // Stream user data from Firestore
+  Stream<DocumentSnapshot> get userDocumentStream {
+    final user = currentUser;
+    if (user == null) {
+      // Return an empty stream or throw an error if no user is logged in
+      return Stream.empty();
+      // Or: throw Exception("User not logged in");
+    }
+    return _firestore.collection('users').doc(user.uid).snapshots();
   }
 }
