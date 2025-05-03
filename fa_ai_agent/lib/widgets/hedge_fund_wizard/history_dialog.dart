@@ -1,17 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HistoryDialog extends StatefulWidget {
   final String question;
   final String answer;
   final DateTime createdDate;
+  final String documentId;
 
   const HistoryDialog({
     super.key,
     required this.question,
     required this.answer,
     required this.createdDate,
+    required this.documentId,
   });
 
   @override
@@ -21,6 +27,8 @@ class HistoryDialog extends StatefulWidget {
 class _HistoryDialogState extends State<HistoryDialog> {
   late final String _formattedDate;
   late final MarkdownStyleSheet _markdownStyleSheet;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -105,6 +113,284 @@ class _HistoryDialogState extends State<HistoryDialog> {
     );
   }
 
+  Future<void> _shareContent() async {
+    try {
+      final userId = _auth.currentUser?.uid ?? 'anonymous';
+
+      // Check if the document already exists
+      final docSnapshot = await _firestore
+          .collection('sharedContent')
+          .doc(widget.documentId)
+          .get();
+
+      if (docSnapshot.exists) {
+        // If document exists, show the success dialog directly
+        if (mounted) {
+          _showShareSuccessDialog(widget.documentId);
+        }
+        return;
+      }
+
+      // Create a new document in the sharedContent collection with the same ID
+      await _firestore.collection('sharedContent').doc(widget.documentId).set({
+        'type': 'hedgeFundWizard',
+        'question': widget.question,
+        'answer': widget.answer,
+        'createdDate': Timestamp.fromDate(widget.createdDate),
+        'userId': userId,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      // Show success dialog with the share link
+      if (mounted) {
+        _showShareSuccessDialog(widget.documentId);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error sharing content: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  void _showShareSuccessDialog(String sharedContentId) {
+    final shareUrl = 'https://knkresearchai.com/share/$sharedContentId';
+    bool isCopied = false;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => Dialog(
+          backgroundColor: const Color(0xFF1A1F2C),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            width: 500,
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      Icons.link,
+                      color: Colors.white.withOpacity(0.7),
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Your link is ready',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.03),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.08),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          shareUrl,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      if (isCopied)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'URL copied',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.check_circle,
+                              color: Colors.green.withOpacity(0.7),
+                              size: 16,
+                            ),
+                          ],
+                        )
+                      else
+                        IconButton(
+                          onPressed: () {
+                            Clipboard.setData(ClipboardData(text: shareUrl));
+                            setState(() => isCopied = true);
+                            Future.delayed(const Duration(seconds: 2), () {
+                              if (mounted) {
+                                setState(() => isCopied = false);
+                              }
+                            });
+                          },
+                          icon: Icon(
+                            Icons.copy,
+                            color: Colors.white.withOpacity(0.7),
+                            size: 20,
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context)
+                            .pop(); // Only close the link ready popup
+                      },
+                      child: const Text(
+                        'Close',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: () async {
+                        final uri = Uri.parse(shareUrl);
+                        if (await canLaunchUrl(uri)) {
+                          await launchUrl(
+                            uri,
+                            mode: LaunchMode.externalApplication,
+                          );
+                        }
+                      },
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        minimumSize: const Size(120, 48),
+                      ),
+                      child: const Text(
+                        'View Page',
+                        style: TextStyle(
+                          color: Color(0xFF1A1F2C),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showShareConfirmationDialog() async {
+    // Check if the document already exists
+    final docSnapshot = await _firestore
+        .collection('sharedContent')
+        .doc(widget.documentId)
+        .get();
+
+    if (docSnapshot.exists) {
+      // If document exists, show the success dialog directly
+      if (mounted) {
+        _showShareSuccessDialog(widget.documentId);
+      }
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1F2C),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: const Text(
+          'Generate Public Link',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        content: const Text(
+          'This will generate a public link to share this conversation. Anyone with the link will be able to view it.',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            height: 1.5,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _shareContent();
+            },
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(24),
+              ),
+              minimumSize: const Size(120, 48),
+            ),
+            child: const Text(
+              'Generate',
+              style: TextStyle(
+                color: Color(0xFF1A1F2C),
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -128,7 +414,7 @@ class _HistoryDialogState extends State<HistoryDialog> {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Conversation History',
+                  'Hedge Fund Wizard - History',
                   style: TextStyle(
                     color: Colors.white.withOpacity(0.7),
                     fontSize: 14,
@@ -136,6 +422,38 @@ class _HistoryDialogState extends State<HistoryDialog> {
                   ),
                 ),
                 const Spacer(),
+                TextButton(
+                  onPressed: _showShareConfirmationDialog,
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    minimumSize: const Size(120, 48),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Share',
+                        style: TextStyle(
+                          color: const Color(0xFF1A1F2C),
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.link,
+                        color: const Color(0xFF1A1F2C),
+                        size: 20,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 16),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: Icon(Icons.close, color: Colors.white.withOpacity(0.7)),

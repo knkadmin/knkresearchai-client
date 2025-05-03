@@ -45,6 +45,7 @@ class HedgeFundWizardService {
         final data = doc.data();
 
         return {
+          'id': doc.id,
           'question': data['questionPlainText'],
           'result': data['result'],
           'createdDate': data['createdDate'],

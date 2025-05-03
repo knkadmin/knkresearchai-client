@@ -94,7 +94,12 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
     _historySubscription = _service.getQuestionHistory().listen((history) {
       if (mounted) {
         setState(() {
-          _questionHistory = history;
+          _questionHistory = history.map((item) {
+            return {
+              ...item,
+              'id': item['id'] ?? '',
+            };
+          }).toList();
         });
       }
     }, onError: (error) {
@@ -305,6 +310,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                                       createdDate:
                                           (item['createdDate'] as Timestamp)
                                               .toDate(),
+                                      documentId: item['id'],
                                     ),
                                   );
                                 },
