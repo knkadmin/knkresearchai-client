@@ -175,7 +175,7 @@ class _HistoryDialogState extends State<HistoryDialog> {
               ? EdgeInsets.zero
               : const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
           child: Container(
-            width: isSmallScreen ? double.infinity : 800,
+            width: isSmallScreen ? double.infinity : 600,
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -356,52 +356,56 @@ class _HistoryDialogState extends State<HistoryDialog> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'This will generate a public link to share this conversation. Anyone with the link will be able to view it.',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
-                  width: 1,
+        content: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'This will generate a public link to share this conversation. Anyone with the link will be able to view it.',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  height: 1.5,
                 ),
               ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.privacy_tip_outlined,
-                    color: Colors.white.withOpacity(0.7),
-                    size: 18,
+              const SizedBox(height: 12),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.1),
+                    width: 1,
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Your personal information will not be disclosed in this shared page.',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        height: 1.4,
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.privacy_tip_outlined,
+                      color: Colors.white.withOpacity(0.7),
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Your personal information will not be disclosed in this shared page.',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.7),
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -478,37 +482,38 @@ class _HistoryDialogState extends State<HistoryDialog> {
                   ),
                 ),
                 const Spacer(),
-                TextButton(
-                  onPressed: _showShareConfirmationDialog,
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                if (widget.answer.isNotEmpty)
+                  TextButton(
+                    onPressed: _showShareConfirmationDialog,
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      minimumSize: const Size(120, 48),
                     ),
-                    minimumSize: const Size(120, 48),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Share',
-                        style: TextStyle(
-                          color: const Color(0xFF1A1F2C),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Share',
+                          style: TextStyle(
+                            color: const Color(0xFF1A1F2C),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.link,
-                        color: const Color(0xFF1A1F2C),
-                        size: 20,
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        Icon(
+                          Icons.link,
+                          color: const Color(0xFF1A1F2C),
+                          size: 20,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                 const SizedBox(width: 16),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),

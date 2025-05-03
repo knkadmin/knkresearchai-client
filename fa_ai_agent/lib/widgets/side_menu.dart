@@ -3,8 +3,10 @@ import '../models/browse_history.dart';
 import '../services/watchlist_service.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fa_ai_agent/widgets/hedge_fund_wizard/system_light_bulb_with_rays.dart';
+import 'package:flutter/animation.dart';
+import 'package:flutter/painting.dart';
 
-class SideMenu extends StatelessWidget {
+class SideMenu extends StatefulWidget {
   final bool isMenuCollapsed;
   final bool isHovered;
   final Function(bool) onMenuCollapse;
@@ -30,6 +32,35 @@ class SideMenu extends StatelessWidget {
     required this.onHideSearchResults,
   });
 
+  @override
+  State<SideMenu> createState() => _SideMenuState();
+}
+
+class _SideMenuState extends State<SideMenu>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _glowController;
+  late Animation<double> _glowAnimation;
+  bool _isHedgeFundWizardHovered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat();
+
+    _glowAnimation = Tween<double>(begin: 0.0, end: 360.0).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.linear),
+    );
+  }
+
+  @override
+  void dispose() {
+    _glowController.dispose();
+    super.dispose();
+  }
+
   String _getTimeAgo(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
@@ -48,14 +79,14 @@ class SideMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isFloatingMenu =
-        MediaQuery.of(context).size.width < 850 && !isMenuCollapsed;
+        MediaQuery.of(context).size.width < 850 && !widget.isMenuCollapsed;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOutCubic,
       width: 280,
       transform: Matrix4.translationValues(
-        isMenuCollapsed ? -280 : 0,
+        widget.isMenuCollapsed ? -280 : 0,
         0,
         0,
       ),
@@ -70,7 +101,6 @@ class SideMenu extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Side Menu Header
           Container(
             height: 65,
             padding: EdgeInsets.zero,
@@ -94,7 +124,7 @@ class SideMenu extends StatelessWidget {
                       Icons.menu_open,
                       color: Color(0xFF1E293B),
                     ),
-                    onPressed: () => onMenuCollapse(true),
+                    onPressed: () => widget.onMenuCollapse(true),
                   ),
                 ),
                 if (isFloatingMenu)
@@ -106,11 +136,10 @@ class SideMenu extends StatelessWidget {
                       color: Color(0xFF1E293B),
                     ),
                   ),
-                const SizedBox(width: 48), // Add spacing for balance
+                const SizedBox(width: 48),
               ],
             ),
           ),
-          // Scrollable Content
           Expanded(
             child: SingleChildScrollView(
               child: Column(
@@ -121,29 +150,29 @@ class SideMenu extends StatelessWidget {
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                     child: MouseRegion(
                       cursor: SystemMouseCursors.click,
-                      onEnter: (_) => onHoverChange(true),
-                      onExit: (_) => onHoverChange(false),
+                      onEnter: (_) => widget.onHoverChange(true),
+                      onExit: (_) => widget.onHoverChange(false),
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         margin: const EdgeInsets.symmetric(
                             horizontal: 0, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isHovered
+                          color: widget.isHovered
                               ? const Color(0xFFF8FAFC)
                               : Colors.white,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: isHovered
+                            color: widget.isHovered
                                 ? const Color(0xFF2563EB).withOpacity(0.1)
                                 : Colors.black.withOpacity(0.05),
                             width: 1,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: isHovered
+                              color: widget.isHovered
                                   ? const Color(0xFF2563EB).withOpacity(0.1)
                                   : Colors.black.withOpacity(0.05),
-                              blurRadius: isHovered ? 8 : 4,
+                              blurRadius: widget.isHovered ? 8 : 4,
                               offset: const Offset(0, 2),
                               spreadRadius: 0,
                             ),
@@ -154,9 +183,9 @@ class SideMenu extends StatelessWidget {
                           child: InkWell(
                             borderRadius: BorderRadius.circular(8),
                             onTap: () {
-                              onNewSearch();
+                              widget.onNewSearch();
                               if (isFloatingMenu) {
-                                onMenuCollapse(true);
+                                widget.onMenuCollapse(true);
                               }
                             },
                             child: Container(
@@ -187,49 +216,63 @@ class SideMenu extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Hedge Fund Wizard Button
                   Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
                     child: MouseRegion(
                       cursor: SystemMouseCursors.click,
-                      onEnter: (_) => onHoverChange(true),
-                      onExit: (_) => onHoverChange(false),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.symmetric(
-                            horizontal: 0, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: isHovered
-                              ? const Color(0xFFF8FAFC)
-                              : Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isHovered
-                                ? const Color(0xFF2563EB).withOpacity(0.1)
-                                : Colors.black.withOpacity(0.05),
-                            width: 1,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: isHovered
-                                  ? const Color(0xFF2563EB).withOpacity(0.1)
-                                  : Colors.black.withOpacity(0.05),
-                              blurRadius: isHovered ? 8 : 4,
-                              offset: const Offset(0, 2),
-                              spreadRadius: 0,
+                      onEnter: (_) =>
+                          setState(() => _isHedgeFundWizardHovered = true),
+                      onExit: (_) =>
+                          setState(() => _isHedgeFundWizardHovered = false),
+                      child: AnimatedBuilder(
+                        animation: _glowAnimation,
+                        builder: (context, child) {
+                          final HSLColor hslColor = HSLColor.fromAHSL(
+                            1.0,
+                            _glowAnimation.value,
+                            1.0,
+                            0.7,
+                          );
+                          final Color glowColor = hslColor.toColor();
+
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(
+                                horizontal: 0, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _isHedgeFundWizardHovered
+                                  ? const Color(0xFFF8FAFC)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: _isHedgeFundWizardHovered
+                                    ? glowColor.withOpacity(0.3)
+                                    : Colors.black.withOpacity(0.05),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: glowColor.withOpacity(0.6),
+                                  blurRadius:
+                                      _isHedgeFundWizardHovered ? 15 : 10,
+                                  spreadRadius:
+                                      _isHedgeFundWizardHovered ? 4 : 2,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                            child: child,
+                          );
+                        },
                         child: Material(
                           color: Colors.transparent,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(8),
                             onTap: () {
                               if (isFloatingMenu) {
-                                onMenuCollapse(true);
+                                widget.onMenuCollapse(true);
                               }
-                              // Navigate to hedge fund wizard page
                               context.go('/hedge-fund-wizard');
                             },
                             child: Container(
@@ -259,7 +302,6 @@ class SideMenu extends StatelessWidget {
                       ),
                     ),
                   ),
-                  // Add Watchlist Section
                   StreamBuilder<List<Map<String, dynamic>>>(
                     stream: WatchlistService().getWatchlist(),
                     builder: (context, snapshot) {
@@ -291,24 +333,25 @@ class SideMenu extends StatelessWidget {
                               final item = snapshot.data![index];
                               return StatefulBuilder(
                                 builder: (context, setState) {
+                                  bool isWatchlistHovered = false;
                                   return MouseRegion(
                                     cursor: SystemMouseCursors.click,
-                                    onEnter: (_) =>
-                                        setState(() => onHoverChange(true)),
-                                    onExit: (_) =>
-                                        setState(() => onHoverChange(false)),
+                                    onEnter: (_) => setState(
+                                        () => isWatchlistHovered = true),
+                                    onExit: (_) => setState(
+                                        () => isWatchlistHovered = false),
                                     child: AnimatedContainer(
                                       duration:
                                           const Duration(milliseconds: 200),
                                       margin: const EdgeInsets.symmetric(
                                           horizontal: 8, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: isHovered
+                                        color: isWatchlistHovered
                                             ? const Color(0xFFF8FAFC)
                                             : Colors.white,
                                         borderRadius: BorderRadius.circular(8),
                                         border: Border.all(
-                                          color: isHovered
+                                          color: isWatchlistHovered
                                               ? const Color(0xFF2563EB)
                                                   .withOpacity(0.1)
                                               : Colors.black.withOpacity(0.05),
@@ -316,12 +359,13 @@ class SideMenu extends StatelessWidget {
                                         ),
                                         boxShadow: [
                                           BoxShadow(
-                                            color: isHovered
+                                            color: isWatchlistHovered
                                                 ? const Color(0xFF2563EB)
                                                     .withOpacity(0.1)
                                                 : Colors.black
                                                     .withOpacity(0.05),
-                                            blurRadius: isHovered ? 8 : 4,
+                                            blurRadius:
+                                                isWatchlistHovered ? 8 : 4,
                                             offset: const Offset(0, 2),
                                             spreadRadius: 0,
                                           ),
@@ -333,11 +377,11 @@ class SideMenu extends StatelessWidget {
                                           borderRadius:
                                               BorderRadius.circular(8),
                                           onTap: () {
-                                            onNavigateToReport(
+                                            widget.onNavigateToReport(
                                                 item['companyTicker'],
                                                 item['companyName']);
                                             if (isFloatingMenu) {
-                                              onMenuCollapse(true);
+                                              widget.onMenuCollapse(true);
                                             }
                                           },
                                           child: Container(
@@ -479,39 +523,42 @@ class SideMenu extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: browseHistory.length,
+                    itemCount: widget.browseHistory.length,
                     itemBuilder: (context, index) {
-                      final history = browseHistory[index];
+                      final history = widget.browseHistory[index];
                       final timeAgo = _getTimeAgo(history.viewedDate);
 
                       return StatefulBuilder(
                         builder: (context, setState) {
+                          bool isHistoryHovered = false;
                           return MouseRegion(
                             cursor: SystemMouseCursors.click,
-                            onEnter: (_) => setState(() => onHoverChange(true)),
-                            onExit: (_) => setState(() => onHoverChange(false)),
+                            onEnter: (_) =>
+                                setState(() => isHistoryHovered = true),
+                            onExit: (_) =>
+                                setState(() => isHistoryHovered = false),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
                               margin: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: isHovered
+                                color: isHistoryHovered
                                     ? const Color(0xFFF8FAFC)
                                     : Colors.white,
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: isHovered
+                                  color: isHistoryHovered
                                       ? const Color(0xFF2563EB).withOpacity(0.1)
                                       : Colors.black.withOpacity(0.05),
                                   width: 1,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: isHovered
+                                    color: isHistoryHovered
                                         ? const Color(0xFF2563EB)
                                             .withOpacity(0.1)
                                         : Colors.black.withOpacity(0.05),
-                                    blurRadius: isHovered ? 8 : 4,
+                                    blurRadius: isHistoryHovered ? 8 : 4,
                                     offset: const Offset(0, 2),
                                     spreadRadius: 0,
                                   ),
@@ -522,10 +569,11 @@ class SideMenu extends StatelessWidget {
                                 child: InkWell(
                                   borderRadius: BorderRadius.circular(8),
                                   onTap: () {
-                                    onNavigateToReport(history.companyTicker,
+                                    widget.onNavigateToReport(
+                                        history.companyTicker,
                                         history.companyName);
                                     if (isFloatingMenu) {
-                                      onMenuCollapse(true);
+                                      widget.onMenuCollapse(true);
                                     }
                                   },
                                   child: Container(

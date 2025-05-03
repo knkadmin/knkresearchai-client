@@ -48,6 +48,7 @@ class HedgeFundWizardService {
           'id': doc.id,
           'question': data['questionPlainText'],
           'result': data['result'],
+          'sessionId': data['sessionId'],
           'createdDate': data['createdDate'],
         };
       }).toList();

@@ -26,6 +26,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
   final HedgeFundWizardService _service = HedgeFundWizardService();
   bool _isProcessing = false;
   String _currentUuid = const Uuid().v4();
+
   StreamSubscription? _responseSubscription;
   int _lastMessageCount = 0;
   bool _showInitialCard = false;
@@ -595,7 +596,8 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                   child: ListView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    padding: const EdgeInsets.only(
+                        left: 8.0, right: 8.0, bottom: 32.0),
                     itemCount: _messages.length + (_isProcessing ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == _messages.length && _isProcessing) {
@@ -603,9 +605,45 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                       }
                       final message = _messages[index];
                       final isNew = index >= _lastMessageCount - 1;
+
+                      // Determine if the current message is the AI response with markdown
+                      // Removed index check - assuming _currentUuid applies to any visible AI message
+                      final bool isShareableAiMessage =
+                          !message.isUser && message.isMarkdown;
+
                       return AnimatedMessage(
                         isNew: isNew,
-                        child: message,
+                        child: ChatMessage(
+                          key: message.key,
+                          text: message.text,
+                          isUser: message.isUser,
+                          isMarkdown: message.isMarkdown,
+                          onSharePressed:
+                              isShareableAiMessage // Pass handler if it's a shareable AI message
+                                  ? () {
+                                      // Find the history item corresponding to the current UUID
+                                      final historyItem =
+                                          _questionHistory.firstWhere(
+                                        (item) =>
+                                            item['sessionId'] == _currentUuid,
+                                      );
+
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => HistoryDialog(
+                                          question:
+                                              historyItem['question'] ?? '',
+                                          answer: historyItem['result'] ?? '',
+                                          createdDate:
+                                              (historyItem['createdDate']
+                                                      as Timestamp)
+                                                  .toDate(),
+                                          documentId: historyItem['id'] ?? '',
+                                        ),
+                                      );
+                                    }
+                                  : null, // No share button for user messages or non-markdown AI messages
+                        ),
                       );
                     },
                   ),

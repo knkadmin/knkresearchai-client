@@ -125,6 +125,22 @@ class _ShareContentPageState extends State<ShareContentPage> {
                               ),
                             ),
                             const SizedBox(height: 8),
+                            if (type == 'hedgeFundWizard') ...[
+                              Text(
+                                'Ask Hedge Fund Wizard Anything',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(
+                                      fontSize: screenWidth < 700 ? 18 : 20,
+                                      color: Colors.grey[400],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                textAlign: TextAlign.left,
+                              ),
+                              const SizedBox(height: 16),
+                            ] else
+                              const SizedBox(height: 8),
                           ],
                         );
 
