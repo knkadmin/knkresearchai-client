@@ -213,13 +213,19 @@ class _HistoryDialogState extends State<HistoryDialog> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          shareUrl,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 14,
+                        child: Theme(
+                          data: Theme.of(context).copyWith(
+                            textSelectionTheme: TextSelectionThemeData(
+                              selectionColor: Colors.white.withOpacity(0.4),
+                            ),
                           ),
-                          overflow: TextOverflow.ellipsis,
+                          child: SelectableText(
+                            shareUrl,
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 14,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -350,13 +356,52 @@ class _HistoryDialogState extends State<HistoryDialog> {
             fontWeight: FontWeight.w600,
           ),
         ),
-        content: const Text(
-          'This will generate a public link to share this conversation. Anyone with the link will be able to view it.',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            height: 1.5,
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'This will generate a public link to share this conversation. Anyone with the link will be able to view it.',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.1),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.privacy_tip_outlined,
+                    color: Colors.white.withOpacity(0.7),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Your personal information will not be disclosed in this shared page.',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(

@@ -65,7 +65,7 @@ class _ShareContentPageState extends State<ShareContentPage> {
               }
               final question = data['question'] as String?;
               final answer = data['answer'] as String?;
-              final createdAt = data['createdAt'] as Timestamp?;
+              final createdDate = data['createdDate'] as Timestamp?;
               if (question == null || answer == null) {
                 return const Center(child: Text('Invalid content format'));
               }
@@ -229,9 +229,9 @@ class _ShareContentPageState extends State<ShareContentPage> {
                                 ),
                           ),
                         ),
-                        if (createdAt != null) ...[
+                        if (createdDate != null) ...[
                           const SizedBox(width: 16),
-                          _buildDateDisplay(createdAt),
+                          _buildDateDisplay(createdDate),
                         ],
                       ],
                     ),
