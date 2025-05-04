@@ -331,168 +331,33 @@ class _SideMenuState extends State<SideMenu>
                             itemCount: snapshot.data!.length,
                             itemBuilder: (context, index) {
                               final item = snapshot.data![index];
-                              return StatefulBuilder(
-                                builder: (context, setState) {
-                                  bool isWatchlistHovered = false;
-                                  return MouseRegion(
-                                    cursor: SystemMouseCursors.click,
-                                    onEnter: (_) => setState(
-                                        () => isWatchlistHovered = true),
-                                    onExit: (_) => setState(
-                                        () => isWatchlistHovered = false),
-                                    child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 200),
-                                      margin: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: isWatchlistHovered
-                                            ? const Color(0xFFF8FAFC)
-                                            : Colors.white,
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(
-                                          color: isWatchlistHovered
-                                              ? const Color(0xFF2563EB)
-                                                  .withOpacity(0.1)
-                                              : Colors.black.withOpacity(0.05),
-                                          width: 1,
+                              return _WatchlistItem(
+                                item: item,
+                                onRemove: () async {
+                                  try {
+                                    await WatchlistService()
+                                        .removeFromWatchlist(
+                                            item['companyTicker']);
+                                  } catch (e) {
+                                    if (context.mounted) {
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                              'Error removing from watchlist: $e'),
+                                          backgroundColor: Colors.red,
                                         ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: isWatchlistHovered
-                                                ? const Color(0xFF2563EB)
-                                                    .withOpacity(0.1)
-                                                : Colors.black
-                                                    .withOpacity(0.05),
-                                            blurRadius:
-                                                isWatchlistHovered ? 8 : 4,
-                                            offset: const Offset(0, 2),
-                                            spreadRadius: 0,
-                                          ),
-                                        ],
-                                      ),
-                                      child: Material(
-                                        color: Colors.transparent,
-                                        child: InkWell(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          onTap: () {
-                                            widget.onNavigateToReport(
-                                                item['companyTicker'],
-                                                item['companyName']);
-                                            if (isFloatingMenu) {
-                                              widget.onMenuCollapse(true);
-                                            }
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 12, vertical: 8),
-                                            child: Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.center,
-                                              children: [
-                                                Container(
-                                                  padding: const EdgeInsets
-                                                      .symmetric(
-                                                    horizontal: 6,
-                                                    vertical: 2,
-                                                  ),
-                                                  decoration: BoxDecoration(
-                                                    color:
-                                                        const Color(0xFFF1F5F9),
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            4),
-                                                  ),
-                                                  child: Text(
-                                                    item['companyTicker'],
-                                                    style: const TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      color: Color(0xFF64748B),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(width: 8),
-                                                Expanded(
-                                                  child: Column(
-                                                    crossAxisAlignment:
-                                                        CrossAxisAlignment
-                                                            .start,
-                                                    mainAxisSize:
-                                                        MainAxisSize.min,
-                                                    children: [
-                                                      Text(
-                                                        item['companyName'],
-                                                        style: const TextStyle(
-                                                          fontSize: 13,
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                          color:
-                                                              Color(0xFF1E293B),
-                                                        ),
-                                                        maxLines: 1,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                      ),
-                                                      if (item['companyName']
-                                                              .length >
-                                                          30)
-                                                        Text(
-                                                          item['companyName'],
-                                                          style:
-                                                              const TextStyle(
-                                                            fontSize: 11,
-                                                            fontWeight:
-                                                                FontWeight.w400,
-                                                            color: Color(
-                                                                0xFF64748B),
-                                                          ),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow
-                                                              .ellipsis,
-                                                        ),
-                                                    ],
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  padding: EdgeInsets.zero,
-                                                  constraints:
-                                                      const BoxConstraints(),
-                                                  icon: const Icon(
-                                                    Icons.remove_circle_outline,
-                                                    size: 16,
-                                                    color: Color(0xFF64748B),
-                                                  ),
-                                                  onPressed: () async {
-                                                    try {
-                                                      await WatchlistService()
-                                                          .removeFromWatchlist(item[
-                                                              'companyTicker']);
-                                                    } catch (e) {
-                                                      if (context.mounted) {
-                                                        ScaffoldMessenger.of(
-                                                                context)
-                                                            .showSnackBar(
-                                                          SnackBar(
-                                                            content: Text(
-                                                                'Error removing from watchlist: $e'),
-                                                            backgroundColor:
-                                                                Colors.red,
-                                                          ),
-                                                        );
-                                                      }
-                                                    }
-                                                  },
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
+                                      );
+                                    }
+                                  }
+                                },
+                                onNavigate: () {
+                                  widget.onNavigateToReport(
+                                      item['companyTicker'],
+                                      item['companyName']);
+                                  if (isFloatingMenu) {
+                                    widget.onMenuCollapse(true);
+                                  }
                                 },
                               );
                             },
@@ -528,112 +393,15 @@ class _SideMenuState extends State<SideMenu>
                       final history = widget.browseHistory[index];
                       final timeAgo = _getTimeAgo(history.viewedDate);
 
-                      return StatefulBuilder(
-                        builder: (context, setState) {
-                          bool isHistoryHovered = false;
-                          return MouseRegion(
-                            cursor: SystemMouseCursors.click,
-                            onEnter: (_) =>
-                                setState(() => isHistoryHovered = true),
-                            onExit: (_) =>
-                                setState(() => isHistoryHovered = false),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              margin: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: isHistoryHovered
-                                    ? const Color(0xFFF8FAFC)
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: isHistoryHovered
-                                      ? const Color(0xFF2563EB).withOpacity(0.1)
-                                      : Colors.black.withOpacity(0.05),
-                                  width: 1,
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: isHistoryHovered
-                                        ? const Color(0xFF2563EB)
-                                            .withOpacity(0.1)
-                                        : Colors.black.withOpacity(0.05),
-                                    blurRadius: isHistoryHovered ? 8 : 4,
-                                    offset: const Offset(0, 2),
-                                    spreadRadius: 0,
-                                  ),
-                                ],
-                              ),
-                              child: Material(
-                                color: Colors.transparent,
-                                child: InkWell(
-                                  borderRadius: BorderRadius.circular(8),
-                                  onTap: () {
-                                    widget.onNavigateToReport(
-                                        history.companyTicker,
-                                        history.companyName);
-                                    if (isFloatingMenu) {
-                                      widget.onMenuCollapse(true);
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 16, vertical: 12),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                history.companyName,
-                                                style: const TextStyle(
-                                                  fontSize: 15,
-                                                  fontWeight: FontWeight.w600,
-                                                  color: Color(0xFF1E293B),
-                                                  letterSpacing: -0.2,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                  horizontal: 6,
-                                                  vertical: 2,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color:
-                                                      const Color(0xFFF1F5F9),
-                                                  borderRadius:
-                                                      BorderRadius.circular(4),
-                                                ),
-                                                child: Text(
-                                                  history.companyTicker,
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Color(0xFF64748B),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Text(
-                                          timeAgo,
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey[500],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          );
+                      return _HistoryItem(
+                        history: history,
+                        timeAgo: timeAgo,
+                        onTap: () {
+                          widget.onNavigateToReport(
+                              history.companyTicker, history.companyName);
+                          if (isFloatingMenu) {
+                            widget.onMenuCollapse(true);
+                          }
                         },
                       );
                     },
@@ -643,6 +411,238 @@ class _SideMenuState extends State<SideMenu>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _WatchlistItem extends StatefulWidget {
+  final Map<String, dynamic> item;
+  final VoidCallback onRemove;
+  final VoidCallback onNavigate;
+
+  const _WatchlistItem({
+    required this.item,
+    required this.onRemove,
+    required this.onNavigate,
+  });
+
+  @override
+  State<_WatchlistItem> createState() => _WatchlistItemState();
+}
+
+class _WatchlistItemState extends State<_WatchlistItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: _isHovered ? const Color(0xFFF8FAFC) : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: _isHovered
+                ? const Color(0xFF2563EB).withOpacity(0.1)
+                : Colors.black.withOpacity(0.05),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _isHovered
+                  ? const Color(0xFF2563EB).withOpacity(0.1)
+                  : Colors.black.withOpacity(0.05),
+              blurRadius: _isHovered ? 8 : 4,
+              offset: const Offset(0, 2),
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: widget.onNavigate,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      widget.item['companyTicker'],
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          widget.item['companyName'],
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF1E293B),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (widget.item['companyName'].length > 30)
+                          Text(
+                            widget.item['companyName'],
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w400,
+                              color: Color(0xFF64748B),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    icon: const Icon(
+                      Icons.remove_circle_outline,
+                      size: 16,
+                      color: Color(0xFF64748B),
+                    ),
+                    onPressed: widget.onRemove,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _HistoryItem extends StatefulWidget {
+  final BrowseHistory history;
+  final String timeAgo;
+  final VoidCallback onTap;
+
+  const _HistoryItem({
+    required this.history,
+    required this.timeAgo,
+    required this.onTap,
+  });
+
+  @override
+  State<_HistoryItem> createState() => _HistoryItemState();
+}
+
+class _HistoryItemState extends State<_HistoryItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: _isHovered ? const Color(0xFFF8FAFC) : Colors.white,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: _isHovered
+                ? const Color(0xFF2563EB).withOpacity(0.1)
+                : Colors.black.withOpacity(0.05),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: _isHovered
+                  ? const Color(0xFF2563EB).withOpacity(0.1)
+                  : Colors.black.withOpacity(0.05),
+              blurRadius: _isHovered ? 8 : 4,
+              offset: const Offset(0, 2),
+              spreadRadius: 0,
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: widget.onTap,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.history.companyName,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            widget.history.companyTicker,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF64748B),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    widget.timeAgo,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
