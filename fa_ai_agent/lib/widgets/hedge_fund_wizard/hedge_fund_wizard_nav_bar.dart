@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../hedge_fund_wizard/hedge_fund_wizard_nav_bar.dart';
+import '../hedge_fund_wizard/veritas_pricing_popup.dart';
 
 class HedgeFundWizardNavBar extends StatelessWidget {
   final bool isMenuCollapsed;
@@ -143,7 +144,10 @@ class HedgeFundWizardNavBar extends StatelessWidget {
             color: const Color(0xFF1E293B),
             onSelected: (value) {
               if (value == 'purchase') {
-                context.push('/pricing');
+                showDialog(
+                  context: context,
+                  builder: (context) => const VeritasPricingPopup(),
+                );
               } else if (value == 'upgrade') {
                 context.push('/pricing');
               }
@@ -163,7 +167,13 @@ class HedgeFundWizardNavBar extends StatelessWidget {
                   ),
                 ),
               ),
-              const PopupMenuDivider(),
+              PopupMenuItem<String>(
+                enabled: false,
+                child: Divider(
+                  color: Colors.white.withOpacity(0.1),
+                  height: 1,
+                ),
+              ),
               PopupMenuItem<String>(
                 value: 'purchase',
                 child: Container(
@@ -227,21 +237,32 @@ class HedgeFundWizardNavBar extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
               onTap: null,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.05),
-                    width: 1,
+              child: MouseRegion(
+                cursor: SystemMouseCursors.click,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.05),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      ),
+                    ],
                   ),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                child: Text(
-                  'Available Veritas: ${userCredits?.toStringAsFixed(0)}',
-                  style: const TextStyle(
-                    color: Colors.white70,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Text(
+                    'Available Veritas: ${userCredits?.toStringAsFixed(0)}',
+                    style: const TextStyle(
+                      color: Colors.white70,
+                    ),
                   ),
                 ),
               ),

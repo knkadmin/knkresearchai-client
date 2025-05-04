@@ -37,6 +37,41 @@ class PaymentService {
     }
   }
 
+  static Future<void> initiateVeritasPurchase(
+      String stripeProductId, int amount) async {
+    try {
+      _isLoadingSubject.add(true);
+      final user = AuthService().currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
+      final url = Uri.parse('$paymentBaseUrl/create-checkout-session');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'productId': stripeProductId,
+          'amount': amount,
+          'userId': user.uid,
+          'email': user.email,
+          'mode': 'payment',
+          'successUrl': '${Uri.base.origin}/hedge-fund-wizard',
+          'cancelUrl': '${Uri.base.origin}/hedge-fund-wizard',
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to create checkout session: ${response.body}');
+      }
+
+      final session = json.decode(response.body);
+      await _redirectToCheckout(session['url']);
+    } finally {
+      _isLoadingSubject.add(false);
+    }
+  }
+
   static Future<Map<String, dynamic>> _createCheckoutSession(
       String stripeProductId) async {
     final user = AuthService().currentUser;
