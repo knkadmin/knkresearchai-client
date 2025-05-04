@@ -12,6 +12,7 @@ import '../services/firestore_service.dart';
 import '../widgets/hedge_fund_wizard/hedge_fund_wizard_nav_bar.dart';
 import '../widgets/hedge_fund_wizard/hedge_fund_wizard_initial_view.dart';
 import '../widgets/hedge_fund_wizard/hedge_fund_wizard_chat_view.dart';
+import '../widgets/hedge_fund_wizard/futuristic_mesh_background.dart';
 
 class HedgeFundWizardPage extends StatefulWidget {
   const HedgeFundWizardPage({super.key});
@@ -236,6 +237,27 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
       backgroundColor: const Color(0xFF0F172A),
       body: Stack(
         children: [
+          // 3D Mesh Background
+          Positioned.fill(
+            child: FuturisticMeshBackground(
+              isProcessing: _isProcessing,
+            ),
+          ),
+          // Semi-transparent overlay
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF0F172A).withOpacity(0.6),
+                    const Color(0xFF0F172A).withOpacity(0.8),
+                  ],
+                ),
+              ),
+            ),
+          ),
           // Main Content
           Container(
             width: double.infinity,

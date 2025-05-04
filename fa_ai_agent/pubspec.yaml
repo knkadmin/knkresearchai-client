@@ -69,6 +69,7 @@ dependencies:
   lottie: ^2.7.0
   uuid: ^4.3.3
   google_fonts: ^6.2.1
+  flutter_dotenv: ^5.2.1
   
 dev_dependencies:
   flutter_test:

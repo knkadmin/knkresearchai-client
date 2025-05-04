@@ -9,14 +9,24 @@ import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:rxdart/rxdart.dart';
 import 'package:fa_ai_agent/models/user.dart';
 import 'package:fa_ai_agent/models/subscription_type.dart';
+import 'package:fa_ai_agent/config/environment.dart';
 
 class PaymentService {
   static final BehaviorSubject<bool> _isLoadingSubject =
       BehaviorSubject.seeded(false);
   static Stream<bool> get isLoadingStream => _isLoadingSubject.stream;
 
-  static const String paymentBaseUrl =
+  static const String _productionBaseUrl =
       'https://knkresearchai-server-payment-1067859590559.australia-southeast1.run.app';
+  static const String _stagingBaseUrl =
+      'https://knkresearchai-staging-server-payment-594921144024.australia-southeast1.run.app';
+
+  static String get paymentBaseUrl {
+    return EnvironmentConfig.current.environment == Environment.staging ||
+            EnvironmentConfig.current.environment == Environment.development
+        ? _stagingBaseUrl
+        : _productionBaseUrl;
+  }
 
   static Future<void> initiateCheckout(String stripeProductId) async {
     try {

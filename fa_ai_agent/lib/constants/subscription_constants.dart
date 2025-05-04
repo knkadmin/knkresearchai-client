@@ -13,7 +13,7 @@ class SubscriptionConstants {
       'Advanced financial data and industry insights',
       'Accounting Irregularities detection included',
       'Insider trading data included',
-      'FREE <b>2500 Veritas</b> every month',
+      'FREE <b>1500 Veritas</b> every month',
     ],
     SubscriptionType.pro: [
       'More advanced features coming soon for pro users - please stay tuned.',
