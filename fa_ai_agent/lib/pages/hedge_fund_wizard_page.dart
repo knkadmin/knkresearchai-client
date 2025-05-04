@@ -20,13 +20,17 @@ class HedgeFundWizardPage extends StatefulWidget {
   State<HedgeFundWizardPage> createState() => _HedgeFundWizardPageState();
 }
 
-class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
+class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
+    with SingleTickerProviderStateMixin {
   final TextEditingController _messageController = TextEditingController();
   final List<ChatMessage> _messages = [];
   final HedgeFundWizardService _service = HedgeFundWizardService();
   final AuthService _authService = AuthService();
   bool _isProcessing = false;
+  bool _showInsufficientBalance = false;
   String _currentUuid = const Uuid().v4();
+  late AnimationController _flashController;
+  late Animation<double> _flashAnimation;
 
   StreamSubscription? _responseSubscription;
   StreamSubscription? _creditsSubscription;
@@ -41,6 +45,16 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
   @override
   void initState() {
     super.initState();
+    _flashController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _flashAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _flashController,
+        curve: Curves.easeInOut,
+      ),
+    );
     // Redirect to home if not logged in
     final user = AuthService().currentUser;
     if (user == null) {
@@ -144,8 +158,24 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
   Future<void> _handleSubmitted(String text) async {
     if (text.isEmpty || _isProcessing) return;
 
+    // Check if user has sufficient credits
+    if (_userCredits != null && _userCredits! <= 0) {
+      setState(() {
+        _isProcessing = false;
+        _showInsufficientBalance = true;
+        _messages.add(ChatMessage(
+          text: text,
+          isUser: true,
+        ));
+      });
+      // Flash the credits button
+      _flashController.forward().then((_) => _flashController.reverse());
+      return;
+    }
+
     setState(() {
       _isProcessing = true;
+      _showInsufficientBalance = false;
       _messages.clear();
       _messages.add(ChatMessage(
         text: text,
@@ -169,6 +199,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
 
   @override
   void dispose() {
+    _flashController.dispose();
     _messageController.dispose();
     _responseSubscription?.cancel();
     _historySubscription?.cancel();
@@ -196,16 +227,15 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                 Row(children: [
                   TextButton.icon(
                     style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                        (Set<MaterialState> states) {
-                          if (states.contains(MaterialState.hovered)) {
-                            return Colors.white.withOpacity(0.1);
+                      backgroundColor: WidgetStateProperty.resolveWith<Color>(
+                        (Set<WidgetState> states) {
+                          if (states.contains(WidgetState.hovered)) {
+                            return Colors.white.withValues(alpha: 0.1);
                           }
                           return Colors.transparent;
                         },
                       ),
-                      padding:
-                          MaterialStateProperty.all(const EdgeInsets.all(8)),
+                      padding: WidgetStateProperty.all(const EdgeInsets.all(8)),
                     ),
                     icon: Row(
                       children: const [
@@ -217,6 +247,15 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                     label: const SizedBox.shrink(),
                     onPressed: () => context.go('/'),
                   ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Hedge Fund Wizard',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const Spacer(),
                   if (_isMenuCollapsed)
                     Row(
@@ -226,25 +265,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                         if (_userCredits != null)
                           Padding(
                             padding: const EdgeInsets.only(right: 8.0),
-                            child: ElevatedButton(
-                              onPressed: null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black.withOpacity(0.15),
-                                disabledBackgroundColor:
-                                    Colors.black.withOpacity(0.1),
-                                foregroundColor: Colors.white70,
-                                disabledForegroundColor: Colors.white60,
-                                elevation: 0,
-                                side: BorderSide(
-                                    color: Colors.white.withOpacity(0.2),
-                                    width: 1),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                              ),
-                              child: Text(
-                                'Available credits: ${_userCredits?.toStringAsFixed(0)}',
-                              ),
-                            ),
+                            child: _buildCreditsButton(),
                           )
                         else
                           Padding(
@@ -252,14 +273,15 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                             child: ElevatedButton(
                               onPressed: null,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black.withOpacity(0.15),
+                                backgroundColor:
+                                    Colors.black.withValues(alpha: 0.05),
                                 disabledBackgroundColor:
-                                    Colors.black.withOpacity(0.1),
+                                    Colors.black.withValues(alpha: 0.03),
                                 foregroundColor: Colors.white70,
                                 disabledForegroundColor: Colors.white60,
                                 elevation: 0,
                                 side: BorderSide(
-                                    color: Colors.white.withOpacity(0.2),
+                                    color: Colors.white.withValues(alpha: 0.05),
                                     width: 1),
                                 padding: const EdgeInsets.symmetric(
                                     horizontal: 12, vertical: 8),
@@ -274,20 +296,20 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                           margin: const EdgeInsets.symmetric(horizontal: 8),
                           width: 1,
                           height: 28,
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withValues(alpha: 0.05),
                         ),
                         TextButton.icon(
                           style: ButtonStyle(
                             backgroundColor:
-                                MaterialStateProperty.resolveWith<Color>(
-                              (Set<MaterialState> states) {
-                                if (states.contains(MaterialState.hovered)) {
-                                  return Colors.white.withOpacity(0.1);
+                                WidgetStateProperty.resolveWith<Color>(
+                              (Set<WidgetState> states) {
+                                if (states.contains(WidgetState.hovered)) {
+                                  return Colors.white.withValues(alpha: 0.1);
                                 }
                                 return Colors.transparent;
                               },
                             ),
-                            padding: MaterialStateProperty.all(
+                            padding: WidgetStateProperty.all(
                                 const EdgeInsets.all(8)),
                           ),
                           icon: const Icon(Icons.history, color: Colors.white),
@@ -326,7 +348,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                 child: AnimatedContainer(
                   duration: const Duration(seconds: 1),
                   curve: Curves.easeOutExpo,
-                  color: Colors.black.withOpacity(0.5),
+                  color: Colors.black.withValues(alpha: 0.05),
                 ),
               ),
             ),
@@ -350,7 +372,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                 boxShadow: isSmallScreen
                     ? [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 20,
                           spreadRadius: 5,
                         )
@@ -369,7 +391,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: Colors.white.withOpacity(0.1),
+                            color: Colors.white.withValues(alpha: 0.05),
                             width: 1,
                           ),
                         ),
@@ -398,82 +420,111 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                     ),
                     // History List
                     Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(8),
-                        itemCount: _questionHistory.length,
-                        itemBuilder: (context, index) {
-                          final item = _questionHistory[index];
-                          final timestamp = item['createdDate'];
-                          DateTime date;
-                          if (timestamp is Timestamp) {
-                            date = timestamp.toDate();
-                          } else {
-                            try {
-                              date = DateTime.parse(timestamp.toString());
-                            } catch (e) {
-                              print('Error parsing date: $e');
-                              date = DateTime.now();
-                            }
-                          }
-                          return MouseRegion(
-                            onEnter: (_) => setState(() => _isHovered = true),
-                            onExit: (_) => setState(() => _isHovered = false),
-                            child: Material(
-                              color: Colors.transparent,
-                              child: InkWell(
-                                onTap: () {
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => HistoryDialog(
-                                      question: item['question'],
-                                      answer: item['result'] ?? '',
-                                      createdDate:
-                                          (item['createdDate'] as Timestamp)
-                                              .toDate(),
-                                      documentId: item['id'],
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  margin: const EdgeInsets.only(bottom: 8),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.05),
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.1),
-                                      width: 1,
+                      child: _questionHistory.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.history,
+                                    size: 48,
+                                    color: Colors.white.withValues(alpha: 0.15),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'No history to show',
+                                    style: TextStyle(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.25),
+                                      fontSize: 16,
                                     ),
                                   ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        item['question'],
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 14,
-                                        ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        _getTimeAgo(date),
-                                        style: TextStyle(
-                                          color: Colors.white.withOpacity(0.6),
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
+                                ],
                               ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(8),
+                              itemCount: _questionHistory.length,
+                              itemBuilder: (context, index) {
+                                final item = _questionHistory[index];
+                                final timestamp = item['createdDate'];
+                                DateTime date;
+                                if (timestamp is Timestamp) {
+                                  date = timestamp.toDate();
+                                } else {
+                                  try {
+                                    date = DateTime.parse(timestamp.toString());
+                                  } catch (e) {
+                                    print('Error parsing date: $e');
+                                    date = DateTime.now();
+                                  }
+                                }
+                                return MouseRegion(
+                                  onEnter: (_) =>
+                                      setState(() => _isHovered = true),
+                                  onExit: (_) =>
+                                      setState(() => _isHovered = false),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      onTap: () {
+                                        showDialog(
+                                          context: context,
+                                          builder: (context) => HistoryDialog(
+                                            question: item['question'],
+                                            answer: item['result'] ?? '',
+                                            createdDate: (item['createdDate']
+                                                    as Timestamp)
+                                                .toDate(),
+                                            documentId: item['id'],
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        margin:
+                                            const EdgeInsets.only(bottom: 8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white
+                                              .withValues(alpha: 0.05),
+                                          borderRadius:
+                                              BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: Colors.white
+                                                .withValues(alpha: 0.05),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              item['question'],
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              _getTimeAgo(date),
+                                              style: TextStyle(
+                                                color: Colors.white
+                                                    .withValues(alpha: 0.3),
+                                                fontSize: 12,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
-                          );
-                        },
-                      ),
                     ),
                   ],
                 ),
@@ -527,15 +578,15 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
               constraints: const BoxConstraints(maxWidth: 600),
               child: GradientBorder(
                 borderRadius: BorderRadius.circular(16.0),
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   colors: [
-                    Colors.red,
-                    Colors.orange,
-                    Colors.yellow,
-                    Colors.green,
-                    Colors.blue,
-                    Colors.indigo,
-                    Colors.purple,
+                    Colors.red.withValues(alpha: 0.6),
+                    Colors.orange.withValues(alpha: 0.6),
+                    Colors.yellow.withValues(alpha: 0.6),
+                    Colors.green.withValues(alpha: 0.6),
+                    Colors.blue.withValues(alpha: 0.6),
+                    Colors.indigo.withValues(alpha: 0.6),
+                    Colors.purple.withValues(alpha: 0.6),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -547,13 +598,13 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        const Color(0xFF1E293B).withOpacity(0.95),
-                        const Color(0xFF0F172A).withOpacity(0.95),
+                        const Color(0xFF1E293B).withValues(alpha: 0.95),
+                        const Color(0xFF0F172A).withValues(alpha: 0.95),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16.0),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       width: 1,
                     ),
                   ),
@@ -579,7 +630,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                       Text(
                         'Examples:',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 16,
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.5,
@@ -612,7 +663,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                           'For optimal results, please structure your queries with relevant context or hypothesis followed by your specific question.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                             fontSize: 14,
                             letterSpacing: 0.3,
                           ),
@@ -630,8 +681,8 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
   Widget _buildExampleButton(String text) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.white.withOpacity(0.9),
-        backgroundColor: Colors.white.withOpacity(0.1),
+        foregroundColor: Colors.white.withValues(alpha: 0.9),
+        backgroundColor: Colors.white.withValues(alpha: 0.1),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8.0),
         ),
@@ -639,7 +690,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
         elevation: 0,
         minimumSize: const Size(double.infinity, 36),
         side: BorderSide(
-          color: Colors.white.withOpacity(0.1),
+          color: Colors.white.withValues(alpha: 0.1),
           width: 1,
         ),
       ),
@@ -670,9 +721,9 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  const Color(0xFF0F172A).withOpacity(0),
-                  const Color(0xFF0F172A).withOpacity(0),
-                  const Color(0xFF0F172A).withOpacity(0),
+                  const Color(0xFF0F172A).withValues(alpha: 0),
+                  const Color(0xFF0F172A).withValues(alpha: 0),
+                  const Color(0xFF0F172A).withValues(alpha: 0),
                   const Color(0xFF0F172A),
                 ],
                 stops: const [0.0, 0.05, 0.95, 1.0],
@@ -688,16 +739,37 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                     physics: const NeverScrollableScrollPhysics(),
                     padding: const EdgeInsets.only(
                         left: 8.0, right: 8.0, bottom: 32.0),
-                    itemCount: _messages.length + (_isProcessing ? 1 : 0),
+                    itemCount: _messages.length +
+                        (_isProcessing ? 1 : 0) +
+                        (_showInsufficientBalance ? 1 : 0),
                     itemBuilder: (context, index) {
                       if (index == _messages.length && _isProcessing) {
                         return const TypingIndicator();
                       }
+
+                      if (index == _messages.length + (_isProcessing ? 1 : 0) &&
+                          _showInsufficientBalance) {
+                        return Padding(
+                          padding: const EdgeInsets.only(
+                              left: 16.0, right: 16.0, bottom: 16.0),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: Text(
+                              'Insufficient balance. Please purchase more credits to continue.',
+                              style: TextStyle(
+                                color: Colors.red.withValues(alpha: 0.8),
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              textAlign: TextAlign.right,
+                            ),
+                          ),
+                        );
+                      }
+
                       final message = _messages[index];
                       final isNew = index >= _lastMessageCount - 1;
 
-                      // Determine if the current message is the AI response with markdown
-                      // Removed index check - assuming _currentUuid applies to any visible AI message
                       final bool isShareableAiMessage =
                           !message.isUser && message.isMarkdown;
 
@@ -708,31 +780,26 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
                           text: message.text,
                           isUser: message.isUser,
                           isMarkdown: message.isMarkdown,
-                          onSharePressed:
-                              isShareableAiMessage // Pass handler if it's a shareable AI message
-                                  ? () {
-                                      // Find the history item corresponding to the current UUID
-                                      final historyItem =
-                                          _questionHistory.firstWhere(
-                                        (item) =>
-                                            item['sessionId'] == _currentUuid,
-                                      );
+                          onSharePressed: isShareableAiMessage
+                              ? () {
+                                  final historyItem =
+                                      _questionHistory.firstWhere(
+                                    (item) => item['sessionId'] == _currentUuid,
+                                  );
 
-                                      showDialog(
-                                        context: context,
-                                        builder: (context) => HistoryDialog(
-                                          question:
-                                              historyItem['question'] ?? '',
-                                          answer: historyItem['result'] ?? '',
-                                          createdDate:
-                                              (historyItem['createdDate']
-                                                      as Timestamp)
-                                                  .toDate(),
-                                          documentId: historyItem['id'] ?? '',
-                                        ),
-                                      );
-                                    }
-                                  : null, // No share button for user messages or non-markdown AI messages
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => HistoryDialog(
+                                      question: historyItem['question'] ?? '',
+                                      answer: historyItem['result'] ?? '',
+                                      createdDate: (historyItem['createdDate']
+                                              as Timestamp)
+                                          .toDate(),
+                                      documentId: historyItem['id'] ?? '',
+                                    ),
+                                  );
+                                }
+                              : null,
                         ),
                       );
                     },
@@ -754,6 +821,44 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCreditsButton() {
+    return AnimatedBuilder(
+      animation: _flashAnimation,
+      builder: (context, child) {
+        return Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color:
+                    Colors.red.withValues(alpha: _flashAnimation.value * 0.5),
+                blurRadius: 10,
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: ElevatedButton(
+            onPressed: null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.black.withValues(alpha: 0.05),
+              disabledBackgroundColor: Colors.black.withValues(alpha: 0.03),
+              foregroundColor: Colors.white70,
+              disabledForegroundColor: Colors.white60,
+              elevation: 0,
+              side: BorderSide(
+                color: Colors.white.withValues(alpha: 0.05),
+                width: 1,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            ),
+            child: Text(
+              'Available credits: ${_userCredits?.toStringAsFixed(0)}',
+            ),
+          ),
+        );
+      },
     );
   }
 }
