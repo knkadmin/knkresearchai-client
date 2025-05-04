@@ -762,8 +762,10 @@ class _PricingPageState extends State<PricingPage> {
                                 const SizedBox(width: 6),
                               ],
                               Expanded(
-                                child: Text(
-                                  feature,
+                                child: Text.rich(
+                                  TextSpan(
+                                    children: _parseTextWithBold(feature),
+                                  ),
                                   style: TextStyle(
                                     fontSize: 15,
                                     color: onSelect == null
@@ -842,8 +844,10 @@ class _PricingPageState extends State<PricingPage> {
                                   const SizedBox(width: 6),
                                 ],
                                 Expanded(
-                                  child: Text(
-                                    feature,
+                                  child: Text.rich(
+                                    TextSpan(
+                                      children: _parseTextWithBold(feature),
+                                    ),
                                     style: TextStyle(
                                       fontSize: 15,
                                       color: onSelect == null
@@ -906,5 +910,25 @@ class _PricingPageState extends State<PricingPage> {
         ),
       ],
     );
+  }
+
+  List<TextSpan> _parseTextWithBold(String text) {
+    final List<TextSpan> spans = [];
+    final parts = text.split(RegExp(r'<b>|</b>'));
+
+    for (int i = 0; i < parts.length; i++) {
+      if (i % 2 == 0) {
+        // Regular text
+        spans.add(TextSpan(text: parts[i]));
+      } else {
+        // Bold text
+        spans.add(TextSpan(
+          text: parts[i],
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ));
+      }
+    }
+
+    return spans;
   }
 }

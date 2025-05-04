@@ -4,14 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:async';
 import '../services/hedge_fund_wizard_service.dart';
 import 'package:uuid/uuid.dart';
-import 'package:fa_ai_agent/widgets/chat_input_field.dart';
-import '../widgets/hedge_fund_wizard/gradient_border.dart';
 import '../widgets/hedge_fund_wizard/chat_message.dart';
-import '../widgets/hedge_fund_wizard/typing_indicator.dart';
-import '../widgets/hedge_fund_wizard/animated_message.dart';
-import '../widgets/hedge_fund_wizard/system_light_bulb_with_rays.dart';
 import '../services/auth_service.dart';
 import '../widgets/hedge_fund_wizard/history_dialog.dart';
+import '../models/subscription_type.dart';
+import '../services/firestore_service.dart';
+import '../widgets/hedge_fund_wizard/hedge_fund_wizard_nav_bar.dart';
+import '../widgets/hedge_fund_wizard/hedge_fund_wizard_initial_view.dart';
+import '../widgets/hedge_fund_wizard/hedge_fund_wizard_chat_view.dart';
 
 class HedgeFundWizardPage extends StatefulWidget {
   const HedgeFundWizardPage({super.key});
@@ -39,8 +39,11 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
   bool _showInitialCard = false;
   bool _isMenuCollapsed = true;
   bool _isHovered = false;
+  bool _isCreditsMenuOpen = false;
   List<Map<String, dynamic>> _questionHistory = [];
   StreamSubscription? _historySubscription;
+  bool _isStarterPlan = false;
+  StreamSubscription? _subscriptionSubscription;
 
   @override
   void initState() {
@@ -71,6 +74,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
     _setupResponseListener();
     _setupHistoryListener();
     _setupCreditsListener();
+    _setupSubscriptionListener();
     Future.delayed(const Duration(milliseconds: 100), () {
       if (mounted) {
         setState(() {
@@ -155,6 +159,21 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
     });
   }
 
+  void _setupSubscriptionListener() {
+    final user = AuthService().currentUser;
+    if (user == null) return;
+
+    _subscriptionSubscription =
+        FirestoreService().streamUserData(user.uid).listen((userData) {
+      if (mounted) {
+        setState(() {
+          _isStarterPlan =
+              userData?.subscription.type == SubscriptionType.starter;
+        });
+      }
+    });
+  }
+
   Future<void> _handleSubmitted(String text) async {
     if (text.isEmpty || _isProcessing) return;
 
@@ -204,6 +223,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
     _responseSubscription?.cancel();
     _historySubscription?.cancel();
     _creditsSubscription?.cancel();
+    _subscriptionSubscription?.cancel();
     super.dispose();
   }
 
@@ -211,7 +231,6 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 300;
-    final isVerySmallScreen = screenWidth < 500;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0F172A),
@@ -224,113 +243,35 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
             padding: const EdgeInsets.all(16.0),
             child: Column(
               children: [
-                Row(children: [
-                  TextButton.icon(
-                    style: ButtonStyle(
-                      backgroundColor: WidgetStateProperty.resolveWith<Color>(
-                        (Set<WidgetState> states) {
-                          if (states.contains(WidgetState.hovered)) {
-                            return Colors.white.withValues(alpha: 0.1);
-                          }
-                          return Colors.transparent;
-                        },
-                      ),
-                      padding: WidgetStateProperty.all(const EdgeInsets.all(8)),
-                    ),
-                    icon: Row(
-                      children: const [
-                        Icon(Icons.chevron_left, color: Colors.white),
-                        SizedBox(width: 4),
-                        Icon(Icons.home, color: Colors.white),
-                      ],
-                    ),
-                    label: const SizedBox.shrink(),
-                    onPressed: () => context.go('/'),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'Hedge Fund Wizard',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const Spacer(),
-                  if (_isMenuCollapsed)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Credits Button
-                        if (_userCredits != null)
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: _buildCreditsButton(),
-                          )
-                        else
-                          Padding(
-                            padding: const EdgeInsets.only(right: 8.0),
-                            child: ElevatedButton(
-                              onPressed: null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor:
-                                    Colors.black.withValues(alpha: 0.05),
-                                disabledBackgroundColor:
-                                    Colors.black.withValues(alpha: 0.03),
-                                foregroundColor: Colors.white70,
-                                disabledForegroundColor: Colors.white60,
-                                elevation: 0,
-                                side: BorderSide(
-                                    color: Colors.white.withValues(alpha: 0.05),
-                                    width: 1),
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 8),
-                              ),
-                              child: const Text(
-                                'Credits: N/A',
-                              ),
-                            ),
-                          ),
-                        // Vertical splitter
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 8),
-                          width: 1,
-                          height: 28,
-                          color: Colors.white.withValues(alpha: 0.05),
-                        ),
-                        TextButton.icon(
-                          style: ButtonStyle(
-                            backgroundColor:
-                                WidgetStateProperty.resolveWith<Color>(
-                              (Set<WidgetState> states) {
-                                if (states.contains(WidgetState.hovered)) {
-                                  return Colors.white.withValues(alpha: 0.1);
-                                }
-                                return Colors.transparent;
-                              },
-                            ),
-                            padding: WidgetStateProperty.all(
-                                const EdgeInsets.all(8)),
-                          ),
-                          icon: const Icon(Icons.history, color: Colors.white),
-                          label: const Text(
-                            'History',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _isMenuCollapsed = false;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                ]),
+                HedgeFundWizardNavBar(
+                  isMenuCollapsed: _isMenuCollapsed,
+                  userCredits: _userCredits,
+                  isStarterPlan: _isStarterPlan,
+                  onMenuToggle: () {
+                    setState(() {
+                      _isMenuCollapsed = false;
+                    });
+                  },
+                  flashAnimation: _flashAnimation,
+                ),
                 Expanded(
                   child: Center(
                     child: _messages.isEmpty
-                        ? _buildInitialView()
-                        : _buildChatView(),
+                        ? HedgeFundWizardInitialView(
+                            messageController: _messageController,
+                            isProcessing: _isProcessing,
+                            onSubmitted: _handleSubmitted,
+                          )
+                        : HedgeFundWizardChatView(
+                            messages: _messages,
+                            isProcessing: _isProcessing,
+                            showInsufficientBalance: _showInsufficientBalance,
+                            lastMessageCount: _lastMessageCount,
+                            messageController: _messageController,
+                            onSubmitted: _handleSubmitted,
+                            questionHistory: _questionHistory,
+                            currentUuid: _currentUuid,
+                          ),
                   ),
                 ),
               ],
@@ -549,316 +490,5 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
     } else {
       return 'Just now';
     }
-  }
-
-  Widget _buildInitialView() {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 800),
-      transitionBuilder: (Widget child, Animation<double> animation) {
-        return FadeTransition(
-          opacity: CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOut,
-          ),
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 0.2),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
-            child: child,
-          ),
-        );
-      },
-      child: _showInitialCard
-          ? ConstrainedBox(
-              key: const ValueKey('initial_card'),
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: GradientBorder(
-                borderRadius: BorderRadius.circular(16.0),
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.red.withValues(alpha: 0.6),
-                    Colors.orange.withValues(alpha: 0.6),
-                    Colors.yellow.withValues(alpha: 0.6),
-                    Colors.green.withValues(alpha: 0.6),
-                    Colors.blue.withValues(alpha: 0.6),
-                    Colors.indigo.withValues(alpha: 0.6),
-                    Colors.purple.withValues(alpha: 0.6),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(32.0),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        const Color(0xFF1E293B).withValues(alpha: 0.95),
-                        const Color(0xFF0F172A).withValues(alpha: 0.95),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16.0),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.1),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const SystemLightBulbWithRays(
-                        size: 56,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Ask Hedge Fund Wizard Anything',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 0.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'Examples:',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.7),
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildExampleButton(
-                        'Given the context of US Tariffs chaos, what assets should I buy or sell?',
-                      ),
-                      const SizedBox(height: 10),
-                      _buildExampleButton(
-                        'Considering Nvidia\'s recent performance, what are your outlooks on the stock?',
-                      ),
-                      const SizedBox(height: 10),
-                      _buildExampleButton(
-                        'With China\'s focus on domestic tech, how might that impact semiconductor investments?',
-                      ),
-                      const SizedBox(height: 28),
-                      ChatInputField(
-                        controller: _messageController,
-                        isProcessing: _isProcessing,
-                        onSubmitted: _handleSubmitted,
-                        onSendPressed: () =>
-                            _handleSubmitted(_messageController.text),
-                      ),
-                      const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Text(
-                          'For optimal results, please structure your queries with relevant context or hypothesis followed by your specific question.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 14,
-                            letterSpacing: 0.3,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          : const SizedBox.shrink(),
-    );
-  }
-
-  Widget _buildExampleButton(String text) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        foregroundColor: Colors.white.withValues(alpha: 0.9),
-        backgroundColor: Colors.white.withValues(alpha: 0.1),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        elevation: 0,
-        minimumSize: const Size(double.infinity, 36),
-        side: BorderSide(
-          color: Colors.white.withValues(alpha: 0.1),
-          width: 1,
-        ),
-      ),
-      onPressed: () {
-        _messageController.text = text;
-        _messageController.selection = TextSelection.fromPosition(
-            TextPosition(offset: _messageController.text.length));
-      },
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontWeight: FontWeight.normal,
-          fontSize: 15,
-          letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildChatView() {
-    return Column(
-      children: [
-        Expanded(
-          child: ShaderMask(
-            shaderCallback: (Rect bounds) {
-              return LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFF0F172A).withValues(alpha: 0),
-                  const Color(0xFF0F172A).withValues(alpha: 0),
-                  const Color(0xFF0F172A).withValues(alpha: 0),
-                  const Color(0xFF0F172A),
-                ],
-                stops: const [0.0, 0.05, 0.95, 1.0],
-              ).createShader(bounds);
-            },
-            blendMode: BlendMode.dstOut,
-            child: SingleChildScrollView(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 800),
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.only(
-                        left: 8.0, right: 8.0, bottom: 32.0),
-                    itemCount: _messages.length +
-                        (_isProcessing ? 1 : 0) +
-                        (_showInsufficientBalance ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (index == _messages.length && _isProcessing) {
-                        return const TypingIndicator();
-                      }
-
-                      if (index == _messages.length + (_isProcessing ? 1 : 0) &&
-                          _showInsufficientBalance) {
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                              left: 16.0, right: 16.0, bottom: 16.0),
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: Text(
-                              'Insufficient balance. Please purchase more credits to continue.',
-                              style: TextStyle(
-                                color: Colors.red.withValues(alpha: 0.8),
-                                fontSize: 14,
-                                fontStyle: FontStyle.italic,
-                              ),
-                              textAlign: TextAlign.right,
-                            ),
-                          ),
-                        );
-                      }
-
-                      final message = _messages[index];
-                      final isNew = index >= _lastMessageCount - 1;
-
-                      final bool isShareableAiMessage =
-                          !message.isUser && message.isMarkdown;
-
-                      return AnimatedMessage(
-                        isNew: isNew,
-                        child: ChatMessage(
-                          key: message.key,
-                          text: message.text,
-                          isUser: message.isUser,
-                          isMarkdown: message.isMarkdown,
-                          onSharePressed: isShareableAiMessage
-                              ? () {
-                                  final historyItem =
-                                      _questionHistory.firstWhere(
-                                    (item) => item['sessionId'] == _currentUuid,
-                                  );
-
-                                  showDialog(
-                                    context: context,
-                                    builder: (context) => HistoryDialog(
-                                      question: historyItem['question'] ?? '',
-                                      answer: historyItem['result'] ?? '',
-                                      createdDate: (historyItem['createdDate']
-                                              as Timestamp)
-                                          .toDate(),
-                                      documentId: historyItem['id'] ?? '',
-                                    ),
-                                  );
-                                }
-                              : null,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-        Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 800),
-            child: ChatInputField(
-              controller: _messageController,
-              isProcessing: _isProcessing,
-              onSubmitted: _handleSubmitted,
-              onSendPressed: () => _handleSubmitted(_messageController.text),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCreditsButton() {
-    return AnimatedBuilder(
-      animation: _flashAnimation,
-      builder: (context, child) {
-        return Container(
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color:
-                    Colors.red.withValues(alpha: _flashAnimation.value * 0.5),
-                blurRadius: 10,
-                spreadRadius: 2,
-              ),
-            ],
-          ),
-          child: ElevatedButton(
-            onPressed: null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black.withValues(alpha: 0.05),
-              disabledBackgroundColor: Colors.black.withValues(alpha: 0.03),
-              foregroundColor: Colors.white70,
-              disabledForegroundColor: Colors.white60,
-              elevation: 0,
-              side: BorderSide(
-                color: Colors.white.withValues(alpha: 0.05),
-                width: 1,
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            ),
-            child: Text(
-              'Available credits: ${_userCredits?.toStringAsFixed(0)}',
-            ),
-          ),
-        );
-      },
-    );
   }
 }

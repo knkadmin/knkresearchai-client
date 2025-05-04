@@ -94,8 +94,10 @@ class SubscriptionCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        benefit,
+                      child: Text.rich(
+                        TextSpan(
+                          children: _parseTextWithBold(benefit),
+                        ),
                         style: const TextStyle(
                           fontSize: 14,
                           color: Color(0xFF1E293B),
@@ -108,5 +110,25 @@ class SubscriptionCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  List<TextSpan> _parseTextWithBold(String text) {
+    final List<TextSpan> spans = [];
+    final parts = text.split(RegExp(r'<b>|</b>'));
+
+    for (int i = 0; i < parts.length; i++) {
+      if (i % 2 == 0) {
+        // Regular text
+        spans.add(TextSpan(text: parts[i]));
+      } else {
+        // Bold text
+        spans.add(TextSpan(
+          text: parts[i],
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ));
+      }
+    }
+
+    return spans;
   }
 }
