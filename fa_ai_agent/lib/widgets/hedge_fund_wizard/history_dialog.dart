@@ -5,6 +5,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:fa_ai_agent/config/environment.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class HistoryDialog extends StatefulWidget {
   final String question;
@@ -29,6 +31,8 @@ class _HistoryDialogState extends State<HistoryDialog> {
   late final MarkdownStyleSheet _markdownStyleSheet;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -113,9 +117,26 @@ class _HistoryDialogState extends State<HistoryDialog> {
     );
   }
 
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   Future<void> _shareContent() async {
     try {
       final userId = _auth.currentUser?.uid ?? 'anonymous';
+
+      // Log analytics event for share initiation
+      await _analytics.logEvent(
+        name: 'hedge_fund_wizard_share_initiated',
+        parameters: {
+          'document_id': widget.documentId,
+          'question_length': widget.question.length,
+          'answer_length': widget.answer.length,
+          'user_id': userId,
+        },
+      );
 
       // Check if the document already exists
       final docSnapshot = await _firestore
@@ -141,11 +162,31 @@ class _HistoryDialogState extends State<HistoryDialog> {
         'createdAt': FieldValue.serverTimestamp(),
       });
 
+      // Log analytics event for successful share creation
+      await _analytics.logEvent(
+        name: 'hedge_fund_wizard_share_created',
+        parameters: {
+          'document_id': widget.documentId,
+          'question_length': widget.question.length,
+          'answer_length': widget.answer.length,
+          'user_id': userId,
+        },
+      );
+
       // Show success dialog with the share link
       if (mounted) {
         _showShareSuccessDialog(widget.documentId);
       }
     } catch (e) {
+      // Log analytics event for share error
+      await _analytics.logEvent(
+        name: 'hedge_fund_wizard_share_error',
+        parameters: {
+          'document_id': widget.documentId,
+          'error': e.toString(),
+        },
+      );
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -158,7 +199,11 @@ class _HistoryDialogState extends State<HistoryDialog> {
   }
 
   void _showShareSuccessDialog(String sharedContentId) {
-    final shareUrl = 'https://knkresearchai.com/share/$sharedContentId';
+    final baseUrl =
+        EnvironmentConfig.current.environment == Environment.production
+            ? 'https://knkresearchai.com'
+            : 'https://knkresearchai-staging.web.app';
+    final shareUrl = '$baseUrl/share/$sharedContentId';
     bool isCopied = false;
     final screenWidth = MediaQuery.of(context).size.width;
     final isSmallScreen = screenWidth < 700;
@@ -250,9 +295,17 @@ class _HistoryDialogState extends State<HistoryDialog> {
                         )
                       else
                         IconButton(
-                          onPressed: () {
-                            Clipboard.setData(ClipboardData(text: shareUrl));
+                          onPressed: () async {
+                            await Clipboard.setData(
+                                ClipboardData(text: shareUrl));
                             setState(() => isCopied = true);
+                            // Log analytics event for URL copy
+                            await _analytics.logEvent(
+                              name: 'hedge_fund_wizard_share_url_copied',
+                              parameters: {
+                                'document_id': sharedContentId,
+                              },
+                            );
                             Future.delayed(const Duration(seconds: 2), () {
                               if (mounted) {
                                 setState(() => isCopied = false);
@@ -276,8 +329,7 @@ class _HistoryDialogState extends State<HistoryDialog> {
                   children: [
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context)
-                            .pop(); // Only close the link ready popup
+                        Navigator.of(context).pop();
                       },
                       child: const Text(
                         'Close',
@@ -292,6 +344,13 @@ class _HistoryDialogState extends State<HistoryDialog> {
                       onPressed: () async {
                         final uri = Uri.parse(shareUrl);
                         if (await canLaunchUrl(uri)) {
+                          // Log analytics event for viewing shared page
+                          await _analytics.logEvent(
+                            name: 'hedge_fund_wizard_share_page_viewed',
+                            parameters: {
+                              'document_id': sharedContentId,
+                            },
+                          );
                           await launchUrl(
                             uri,
                             mode: LaunchMode.externalApplication,
@@ -327,6 +386,14 @@ class _HistoryDialogState extends State<HistoryDialog> {
   }
 
   void _showShareConfirmationDialog() async {
+    // Log analytics event for share confirmation dialog shown
+    await _analytics.logEvent(
+      name: 'hedge_fund_wizard_share_confirmation_shown',
+      parameters: {
+        'document_id': widget.documentId,
+      },
+    );
+
     // Check if the document already exists
     final docSnapshot = await _firestore
         .collection('sharedContent')
@@ -409,7 +476,9 @@ class _HistoryDialogState extends State<HistoryDialog> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
             child: const Text(
               'Cancel',
               style: TextStyle(
@@ -419,8 +488,15 @@ class _HistoryDialogState extends State<HistoryDialog> {
             ),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.of(context).pop();
+              // Log analytics event for share confirmed
+              await _analytics.logEvent(
+                name: 'hedge_fund_wizard_share_confirmed',
+                parameters: {
+                  'document_id': widget.documentId,
+                },
+              );
               _shareContent();
             },
             style: TextButton.styleFrom(
@@ -575,6 +651,8 @@ class _HistoryDialogState extends State<HistoryDialog> {
                   ),
                 ),
                 child: Scrollbar(
+                  controller: _scrollController,
+                  thumbVisibility: true,
                   child: ShaderMask(
                     shaderCallback: (Rect bounds) {
                       return LinearGradient(
@@ -590,6 +668,7 @@ class _HistoryDialogState extends State<HistoryDialog> {
                     },
                     blendMode: BlendMode.dstIn,
                     child: SingleChildScrollView(
+                      controller: _scrollController,
                       physics: const AlwaysScrollableScrollPhysics(),
                       child: Markdown(
                         shrinkWrap: true,

@@ -13,6 +13,7 @@ import '../widgets/hedge_fund_wizard/hedge_fund_wizard_nav_bar.dart';
 import '../widgets/hedge_fund_wizard/hedge_fund_wizard_initial_view.dart';
 import '../widgets/hedge_fund_wizard/hedge_fund_wizard_chat_view.dart';
 import '../widgets/hedge_fund_wizard/futuristic_mesh_background.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class HedgeFundWizardPage extends StatefulWidget {
   const HedgeFundWizardPage({super.key});
@@ -27,6 +28,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
   final List<ChatMessage> _messages = [];
   final HedgeFundWizardService _service = HedgeFundWizardService();
   final AuthService _authService = AuthService();
+  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
   bool _isProcessing = false;
   bool _showInsufficientBalance = false;
   String _currentUuid = const Uuid().v4();
@@ -69,6 +71,16 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
       });
       return;
     }
+
+    // Log analytics event for page open
+    _analytics.logEvent(
+      name: 'hedge_fund_wizard_page_open',
+      parameters: {
+        'user_id': user.uid,
+        'timestamp': DateTime.now().millisecondsSinceEpoch.toString(),
+      },
+    );
+
     _messageController.addListener(() {
       setState(() {});
     });
@@ -188,6 +200,13 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
           isUser: true,
         ));
       });
+      // Log analytics event for insufficient balance
+      await _analytics.logEvent(
+        name: 'hedge_fund_wizard_insufficient_balance',
+        parameters: {
+          'user_credits': _userCredits ?? 0.0,
+        },
+      );
       // Flash the credits button
       _flashController.forward().then((_) => _flashController.reverse());
       return;
@@ -267,11 +286,10 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
               children: [
                 HedgeFundWizardNavBar(
                   isMenuCollapsed: _isMenuCollapsed,
-                  userCredits: _userCredits,
                   isStarterPlan: _isStarterPlan,
-                  onMenuToggle: () {
+                  onMenuToggle: () async {
                     setState(() {
-                      _isMenuCollapsed = false;
+                      _isMenuCollapsed = !_isMenuCollapsed;
                     });
                   },
                   flashAnimation: _flashAnimation,
@@ -303,7 +321,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
           if (!_isMenuCollapsed)
             Positioned.fill(
               child: GestureDetector(
-                onTap: () {
+                onTap: () async {
                   setState(() {
                     _isMenuCollapsed = true;
                   });
@@ -430,7 +448,17 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
                                   child: Material(
                                     color: Colors.transparent,
                                     child: InkWell(
-                                      onTap: () {
+                                      onTap: () async {
+                                        // Log analytics event for history item view
+                                        await _analytics.logEvent(
+                                          name:
+                                              'hedge_fund_wizard_history_view',
+                                          parameters: {
+                                            'history_item_id': item['id'],
+                                            'question_length':
+                                                item['question'].length,
+                                          },
+                                        );
                                         showDialog(
                                           context: context,
                                           builder: (context) => HistoryDialog(

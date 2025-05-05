@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../hedge_fund_wizard/hedge_fund_wizard_nav_bar.dart';
 import '../hedge_fund_wizard/veritas_pricing_popup.dart';
+import '../../services/auth_service.dart';
 
 class HedgeFundWizardNavBar extends StatelessWidget {
   final bool isMenuCollapsed;
-  final double? userCredits;
   final bool isStarterPlan;
   final VoidCallback onMenuToggle;
   final Animation<double> flashAnimation;
@@ -13,7 +14,6 @@ class HedgeFundWizardNavBar extends StatelessWidget {
   const HedgeFundWizardNavBar({
     super.key,
     required this.isMenuCollapsed,
-    required this.userCredits,
     required this.isStarterPlan,
     required this.onMenuToggle,
     required this.flashAnimation,
@@ -63,33 +63,39 @@ class HedgeFundWizardNavBar extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             // Credits Button
-            if (userCredits != null)
-              Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: _buildCreditsButton(context),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: ElevatedButton(
-                  onPressed: null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black.withValues(alpha: 0.05),
-                    disabledBackgroundColor:
-                        Colors.black.withValues(alpha: 0.03),
-                    foregroundColor: Colors.white70,
-                    disabledForegroundColor: Colors.white60,
-                    elevation: 0,
-                    side: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.05), width: 1),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  ),
-                  child: const Text(
-                    'Veritas: 0',
-                  ),
-                ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: AuthService().userDocumentStream,
+                builder: (context, snapshot) {
+                  final data = snapshot.data?.data() as Map<String, dynamic>?;
+                  final credits = data?['credits'] as double?;
+                  if (credits != null) {
+                    return _buildCreditsButton(context, credits);
+                  } else {
+                    return ElevatedButton(
+                      onPressed: null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black.withValues(alpha: 0.05),
+                        disabledBackgroundColor:
+                            Colors.black.withValues(alpha: 0.03),
+                        foregroundColor: Colors.white70,
+                        disabledForegroundColor: Colors.white60,
+                        elevation: 0,
+                        side: BorderSide(
+                            color: Colors.white.withValues(alpha: 0.05),
+                            width: 1),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 8),
+                      ),
+                      child: const Text(
+                        'Available Veritas: 0',
+                      ),
+                    );
+                  }
+                },
               ),
+            ),
             // Vertical splitter
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -122,7 +128,7 @@ class HedgeFundWizardNavBar extends StatelessWidget {
     ]);
   }
 
-  Widget _buildCreditsButton(BuildContext context) {
+  Widget _buildCreditsButton(BuildContext context, double credits) {
     return AnimatedBuilder(
       animation: flashAnimation,
       builder: (context, child) {
@@ -259,7 +265,7 @@ class HedgeFundWizardNavBar extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   child: Text(
-                    'Available Veritas: ${userCredits?.toStringAsFixed(0)}',
+                    'Available Veritas: ${credits.toStringAsFixed(0)}',
                     style: const TextStyle(
                       color: Colors.white70,
                     ),

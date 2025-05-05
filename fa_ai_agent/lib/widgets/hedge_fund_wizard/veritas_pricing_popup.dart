@@ -4,6 +4,7 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:fa_ai_agent/services/payment_service.dart';
 import 'package:fa_ai_agent/services/firestore_service.dart';
 import 'package:fa_ai_agent/services/auth_service.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 class VeritasPricingPopup extends StatefulWidget {
   const VeritasPricingPopup({super.key});
@@ -17,6 +18,7 @@ class _VeritasPricingPopupState extends State<VeritasPricingPopup> {
   String? _selectedProductId;
   int? _selectedAmount;
   int? _selectedTotalValue;
+  final FirebaseAnalytics _analytics = FirebaseAnalytics.instance;
 
   @override
   Widget build(BuildContext context) {
@@ -434,15 +436,59 @@ class _VeritasPricingPopupState extends State<VeritasPricingPopup> {
                                     : () async {
                                         setState(() => _isProcessing = true);
                                         try {
+                                          // Log analytics event for purchase initiation
+                                          await _analytics.logEvent(
+                                            name:
+                                                'hedge_fund_wizard_purchase_initiated',
+                                            parameters: {
+                                              'product_id':
+                                                  _selectedProductId ?? '',
+                                              'amount_usd':
+                                                  (_selectedAmount ?? 0) / 100,
+                                              'total_value':
+                                                  _selectedTotalValue ?? 0,
+                                            },
+                                          );
+
                                           await PaymentService
                                               .initiateVeritasPurchase(
                                             _selectedProductId!,
                                             _selectedAmount!,
                                           );
+
+                                          // Log analytics event for successful purchase
+                                          await _analytics.logEvent(
+                                            name:
+                                                'hedge_fund_wizard_purchase_success',
+                                            parameters: {
+                                              'product_id':
+                                                  _selectedProductId ?? '',
+                                              'amount_usd':
+                                                  (_selectedAmount ?? 0) / 100,
+                                              'total_value':
+                                                  _selectedTotalValue ?? 0,
+                                            },
+                                          );
+
                                           if (mounted) {
                                             Navigator.of(context).pop();
                                           }
                                         } catch (e) {
+                                          // Log analytics event for failed purchase
+                                          await _analytics.logEvent(
+                                            name:
+                                                'hedge_fund_wizard_purchase_failed',
+                                            parameters: {
+                                              'product_id':
+                                                  _selectedProductId ?? '',
+                                              'amount_usd':
+                                                  (_selectedAmount ?? 0) / 100,
+                                              'total_value':
+                                                  _selectedTotalValue ?? 0,
+                                              'error': e.toString(),
+                                            },
+                                          );
+
                                           if (mounted) {
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(
@@ -454,7 +500,7 @@ class _VeritasPricingPopupState extends State<VeritasPricingPopup> {
                                               ),
                                             );
                                           }
-                                        } finally {
+
                                           if (mounted) {
                                             setState(
                                                 () => _isProcessing = false);
@@ -515,7 +561,22 @@ class _VeritasPricingPopupState extends State<VeritasPricingPopup> {
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () async {
+          onTap();
+          // Log analytics event for pricing card selection
+          await _analytics.logEvent(
+            name: 'hedge_fund_wizard_pricing_card_selected',
+            parameters: {
+              'product_id': stripeProductId,
+              'amount_usd': amount / 100,
+              'base_value': baseValue,
+              'bonus_value': bonusValue,
+              'total_value': baseValue + bonusValue,
+              'is_popular': isPopular,
+              'is_best_value': isBestValue,
+            },
+          );
+        },
         child: Container(
           width: 160,
           padding: const EdgeInsets.all(12),
