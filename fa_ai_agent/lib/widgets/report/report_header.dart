@@ -69,8 +69,8 @@ class _ReportHeaderState extends State<ReportHeader> {
             companySnapshot.data?['quotes'] != null &&
             (companySnapshot.data!['quotes'] as List).isNotEmpty) {
           final quote = (companySnapshot.data!['quotes'] as List).first;
-          companyName = quote['shortname'] ?? quote['longname'] ?? 'N/A';
-          sector = quote['sector'] ?? 'N/A';
+          companyName = quote['name'] ?? 'N/A';
+          sector = quote['stockExchange'] ?? 'N/A';
           profileWidget = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

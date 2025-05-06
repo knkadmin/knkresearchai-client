@@ -502,24 +502,15 @@ class _DashboardPageState extends State<DashboardPage>
       setState(() {
         searchResults = (data["quotes"] as List)
             .where((item) =>
-                item.containsKey("shortname") &&
+                item.containsKey("name") &&
                 item.containsKey("symbol") &&
-                item.containsKey("exchange") &&
-                validExchanges.contains(item["exchange"]))
+                item.containsKey("stockExchange") &&
+                item.containsKey("exchangeShortName") &&
+                validExchanges.contains(item["exchangeShortName"]))
             .map((item) => {
-                  "name": item["shortname"],
+                  "name": item["name"],
                   "symbol": item["symbol"],
-                  "sector": item["sector"] ?? "",
-                  "exchange": item["exchange"] ?? "",
-                  "marketCap": item["marketCap"] ?? 0,
-                  "regularMarketPrice":
-                      item["regularMarketPrice"] ?? item["currentPrice"] ?? 0,
-                  "regularMarketChange":
-                      item["regularMarketChange"] ?? item["change"] ?? 0,
-                  "regularMarketChangePercent":
-                      item["regularMarketChangePercent"] ??
-                          item["changePercent"] ??
-                          0,
+                  "exchange": item["stockExchange"] ?? "",
                 })
             .toList();
       });
@@ -575,8 +566,8 @@ class _DashboardPageState extends State<DashboardPage>
       final data = await service.searchTickerSymbol(symbol);
       if (data["quotes"] != null && (data["quotes"] as List).isNotEmpty) {
         final quote = (data["quotes"] as List).first;
-        final companyName = quote["shortname"] ?? symbol;
-        final sector = quote["sector"];
+        final companyName = quote["name"] ?? symbol;
+        final sector = quote["stockExchange"];
         if (mounted) {
           setState(() {
             _reportPage = ResultAdvancedPage(
