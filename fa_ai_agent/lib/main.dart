@@ -130,7 +130,10 @@ void main() async {
 
           // Create or update user profile in Firestore
           final firestoreService = FirestoreService();
-          await firestoreService.createOrUpdateUserProfile();
+          await firestoreService.createOrUpdateUserProfile(
+              // Assuming redirect result is from Google.
+              // If other providers are used, this needs to be determined dynamically.
+              signInMethod: 'google');
         }
       } catch (e) {
         print("Error handling redirect result: $e");

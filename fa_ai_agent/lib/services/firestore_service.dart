@@ -47,6 +47,7 @@ class FirestoreService {
     String? displayName,
     String? email,
     String? photoURL,
+    required String signInMethod,
   }) async {
     try {
       // Check authentication first
@@ -61,11 +62,15 @@ class FirestoreService {
       final userDocRef = _firestore.collection('users').doc(user.uid);
       final userDoc = await userDocRef.get();
 
+      final now = DateTime.now();
+
       if (userDoc.exists) {
-        print('User profile already exists, updating lastUpdated');
-        // Optionally update other fields if needed, for now just lastUpdated
+        print(
+            'User profile already exists, updating lastUpdated and signInMethod');
+        // Optionally update other fields if needed
         await userDocRef.update({
           'lastUpdated': FieldValue.serverTimestamp(),
+          'signInMethod': signInMethod,
         });
         return;
       }
@@ -73,7 +78,6 @@ class FirestoreService {
       print('User profile does not exist, creating new profile');
       print('Writing to document path: ${userDocRef.path}');
 
-      final now = DateTime.now();
       final trialEndDateDateTime = now.add(const Duration(days: 7));
 
       await userDocRef.set(
@@ -90,6 +94,7 @@ class FirestoreService {
             'hasUsedFreeTrial': false, // Explicitly set for new user
             'trialEndDate':
                 trialEndDateDateTime, // Store as DateTime, Firestore converts to Timestamp
+            'signInMethod': signInMethod,
           },
           SetOptions(
               merge:

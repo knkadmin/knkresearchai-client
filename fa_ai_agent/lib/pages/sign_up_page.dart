@@ -77,7 +77,8 @@ class _SignUpPageState extends State<SignUpPage> {
       final firestoreService = FirestoreService();
       await firestoreService.createOrUpdateUserProfile(
           email: _emailController.text,
-          displayName: _emailController.text.split('@')[0]);
+          displayName: _emailController.text.split('@')[0],
+          signInMethod: 'email');
       await firestoreService.updateUserToken(idToken ?? '');
 
       if (mounted) {
@@ -131,7 +132,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
       // Save token to Firestore
       final firestoreService = FirestoreService();
-      await firestoreService.createOrUpdateUserProfile();
+      await firestoreService.createOrUpdateUserProfile(signInMethod: 'google');
       await firestoreService.updateUserToken(idToken ?? '');
 
       if (mounted) {

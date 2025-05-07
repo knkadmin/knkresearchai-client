@@ -63,8 +63,13 @@ class _SignInPageState extends State<SignInPage> {
       // Get the ID token
       final idToken = await userCredential.user?.getIdToken();
 
-      // Save token to Firestore
+      // Save token and update profile to Firestore
       final firestoreService = FirestoreService();
+      await firestoreService.createOrUpdateUserProfile(
+          email: _emailController
+              .text, // Provide email for potential profile creation/update
+          signInMethod: 'email' // Added signInMethod
+          );
       await firestoreService.updateUserToken(idToken ?? '');
 
       if (mounted) {
@@ -93,9 +98,11 @@ class _SignInPageState extends State<SignInPage> {
       // Get the ID token
       final idToken = await userCredential?.user?.getIdToken();
 
-      // Save token to Firestore
+      // Save token and update profile to Firestore
       final firestoreService = FirestoreService();
-      await firestoreService.createOrUpdateUserProfile();
+      await firestoreService.createOrUpdateUserProfile(
+          signInMethod: 'google' // Added signInMethod
+          );
       await firestoreService.updateUserToken(idToken ?? '');
 
       if (mounted) {

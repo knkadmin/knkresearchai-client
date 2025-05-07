@@ -83,6 +83,7 @@ class User {
   final String? stripeCustomerId;
   final bool hasUsedFreeTrial;
   final DateTime? trialEndDate;
+  final String signInMethod;
 
   const User({
     required this.uid,
@@ -94,6 +95,7 @@ class User {
     this.stripeCustomerId,
     this.hasUsedFreeTrial = false,
     this.trialEndDate,
+    required this.signInMethod,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -117,6 +119,7 @@ class User {
           : json['trialEndDate'] != null
               ? DateTime.parse(json['trialEndDate'])
               : null,
+      signInMethod: json['signInMethod'] ?? 'unknown',
     );
   }
 
@@ -132,6 +135,7 @@ class User {
       'hasUsedFreeTrial': hasUsedFreeTrial,
       if (trialEndDate != null)
         'trialEndDate': Timestamp.fromDate(trialEndDate!),
+      'signInMethod': signInMethod,
     };
   }
 
@@ -145,6 +149,7 @@ class User {
     String? stripeCustomerId,
     bool? hasUsedFreeTrial,
     DateTime? trialEndDate,
+    String? signInMethod,
   }) {
     return User(
       uid: uid ?? this.uid,
@@ -156,6 +161,7 @@ class User {
       stripeCustomerId: stripeCustomerId ?? this.stripeCustomerId,
       hasUsedFreeTrial: hasUsedFreeTrial ?? this.hasUsedFreeTrial,
       trialEndDate: trialEndDate ?? this.trialEndDate,
+      signInMethod: signInMethod ?? this.signInMethod,
     );
   }
 }
