@@ -79,11 +79,12 @@ class PaymentService {
       throw Exception('User not authenticated');
     }
 
-    // Get current user data to check if they've used free trial
-    final userData = await FirestoreService().getUserData(user.uid);
-    final trialDays = userData?.hasUsedFreeTrial == true
-        ? 0
-        : SubscriptionConstants.freeTrialDays;
+    // Get current user data
+    // final userData = await FirestoreService().getUserData(user.uid);
+    // The trial is now handled by trialEndDate in Firestore, so trialDays parameter is not sent to Stripe.
+    // final trialDays = userData?.hasUsedFreeTrial == true
+    //     ? 0
+    //     : SubscriptionConstants.freeTrialDays;
 
     final url = Uri.parse('$paymentBaseUrl/create-checkout-session');
     final response = await http.post(
@@ -96,7 +97,7 @@ class PaymentService {
         'mode': 'subscription',
         'successUrl': Uri.base.origin,
         'cancelUrl': Uri.base.origin,
-        'trialDays': trialDays,
+        // 'trialDays': trialDays, // Removed: Trial handled by Firestore
       }),
     );
 

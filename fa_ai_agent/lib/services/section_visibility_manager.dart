@@ -5,6 +5,7 @@ import 'package:fa_ai_agent/services/auth_service.dart';
 import '../services/firestore_service.dart';
 
 import '../services/premium_section_manager.dart';
+import '../models/user.dart'; // Ensure User model is imported
 
 class SectionVisibilityManager {
   static final List<String> freeSections = [
@@ -23,9 +24,11 @@ class SectionVisibilityManager {
     // For non-authenticated users, return false
     if (userId == null) return false;
 
-    // For authenticated users, check subscription
-    final user = await FirestoreService().getUserData(userId);
-    return user?.subscription.type.isPaid ?? false;
+    // For authenticated users, check subscription or active trial
+    final userData = await FirestoreService().getUserData(userId);
+    if (userData == null) return false;
+
+    return userData.subscription.type.isPaid || userData.isInActiveTrial;
   }
 
   static Future<List<Section>> filterSections(
@@ -40,7 +43,7 @@ class SectionVisibilityManager {
       return sections;
     }
 
-    // For both non-authenticated and free users, show free sections and preview sections
+    // For users without full access (non-authenticated, free users not in trial)
     return sections.where((section) {
       if (freeSections.contains(section.title)) return true;
       return _premiumSectionManager.isPreviewSection(section.title);
@@ -59,7 +62,7 @@ class SectionVisibilityManager {
       return true;
     }
 
-    // For both non-authenticated and free users, check if section is free or preview
+    // For users without full access
     return freeSections.contains(sectionTitle) ||
         _premiumSectionManager.isPreviewSection(sectionTitle);
   }
@@ -73,16 +76,22 @@ class SectionVisibilityManager {
     // If it's a Mag 7 company, always return true regardless of user status
     if (isMag7Company) return Stream.value(true);
 
-    final user = AuthService().currentUser;
-    if (user == null) {
+    final authUser = AuthService().currentUser;
+    if (authUser == null) {
+      // Non-authenticated user
       return Stream.value(freeSections.contains(sectionTitle) ||
           _premiumSectionManager.isPreviewSection(sectionTitle));
     }
 
-    return FirestoreService().streamUserData(user.uid).map((user) {
-      if (user == null) return false;
-      if (user.subscription.type.isPaid) return true;
+    return FirestoreService().streamUserData(authUser.uid).map((userData) {
+      if (userData == null)
+        return false; // Should ideally not happen if authUser is not null
 
+      if (userData.subscription.type.isPaid || userData.isInActiveTrial) {
+        return true; // Paid user or active trial user has full access
+      }
+
+      // Free user (trial expired or not applicable)
       return freeSections.contains(sectionTitle) ||
           _premiumSectionManager.isPreviewSection(sectionTitle);
     });

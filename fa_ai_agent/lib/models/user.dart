@@ -82,6 +82,7 @@ class User {
   final DateTime lastLoginAt;
   final String? stripeCustomerId;
   final bool hasUsedFreeTrial;
+  final DateTime? trialEndDate;
 
   const User({
     required this.uid,
@@ -92,6 +93,7 @@ class User {
     required this.lastLoginAt,
     this.stripeCustomerId,
     this.hasUsedFreeTrial = false,
+    this.trialEndDate,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -110,6 +112,11 @@ class User {
               json['lastLoginAt'] ?? DateTime.now().toIso8601String()),
       stripeCustomerId: json['stripeCustomerId'],
       hasUsedFreeTrial: json['hasUsedFreeTrial'] ?? false,
+      trialEndDate: json['trialEndDate'] is Timestamp
+          ? (json['trialEndDate'] as Timestamp).toDate()
+          : json['trialEndDate'] != null
+              ? DateTime.parse(json['trialEndDate'])
+              : null,
     );
   }
 
@@ -123,6 +130,8 @@ class User {
       'lastLoginAt': lastLoginAt.toIso8601String(),
       if (stripeCustomerId != null) 'stripeCustomerId': stripeCustomerId,
       'hasUsedFreeTrial': hasUsedFreeTrial,
+      if (trialEndDate != null)
+        'trialEndDate': Timestamp.fromDate(trialEndDate!),
     };
   }
 
@@ -135,6 +144,7 @@ class User {
     DateTime? lastLoginAt,
     String? stripeCustomerId,
     bool? hasUsedFreeTrial,
+    DateTime? trialEndDate,
   }) {
     return User(
       uid: uid ?? this.uid,
@@ -145,6 +155,16 @@ class User {
       lastLoginAt: lastLoginAt ?? this.lastLoginAt,
       stripeCustomerId: stripeCustomerId ?? this.stripeCustomerId,
       hasUsedFreeTrial: hasUsedFreeTrial ?? this.hasUsedFreeTrial,
+      trialEndDate: trialEndDate ?? this.trialEndDate,
     );
+  }
+}
+
+extension UserTrialExtension on User {
+  bool get isInActiveTrial {
+    // Check for active trial period
+    return trialEndDate != null &&
+        trialEndDate!.isAfter(DateTime.now()) &&
+        !hasUsedFreeTrial;
   }
 }

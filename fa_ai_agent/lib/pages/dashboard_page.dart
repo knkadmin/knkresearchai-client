@@ -19,7 +19,7 @@ import 'package:quickalert/quickalert.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fa_ai_agent/constants/company_data.dart';
 import '../services/public_user_last_viewed_report_tracker.dart';
-import '../models/user.dart';
+import '../models/user.dart' as model_user;
 import '../services/subscription_service.dart';
 import '../models/subscription_type.dart';
 import 'package:fa_ai_agent/widgets/feedback_popup.dart';
@@ -33,6 +33,7 @@ import 'package:fa_ai_agent/pages/dashboard/components/feedback_section.dart';
 import 'package:fa_ai_agent/pages/dashboard/components/footer_section.dart';
 import 'package:fa_ai_agent/pages/dashboard/components/authenticated_search_section.dart';
 import 'package:fa_ai_agent/pages/dashboard/components/side_menu_section.dart';
+import 'package:intl/intl.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -64,7 +65,10 @@ class _DashboardPageState extends State<DashboardPage>
   List<Map<String, String>> _mega7Companies = [];
   late final StreamSubscription<auth.User?> _authStateSubscription;
   late final StreamSubscription<SubscriptionType> _subscriptionSubscription;
+  late StreamSubscription<model_user.User?> _userDataSubscription;
   SubscriptionType _currentSubscription = SubscriptionType.free;
+  bool _isTrialActive = false;
+  String _trialEndDateString = "";
   double _opacity = 0.0;
   double _lastWidth = 0;
 
@@ -100,6 +104,43 @@ class _DashboardPageState extends State<DashboardPage>
       if (user != null && _cacheManager.pendingWatchlistAddition) {
         print('Handling post-registration');
         _handlePostRegistration();
+      }
+      // Listen to user data for trial status when auth state changes
+      if (user != null) {
+        _userDataSubscription =
+            FirestoreService().streamUserData(user.uid).listen((userData) {
+          if (mounted && userData != null) {
+            final now = DateTime.now();
+            final trialEnds = userData.trialEndDate;
+            bool trialCurrentlyActive = trialEnds != null &&
+                trialEnds.isAfter(now) &&
+                !userData.hasUsedFreeTrial;
+
+            setState(() {
+              _isTrialActive = trialCurrentlyActive;
+              if (trialCurrentlyActive && trialEnds != null) {
+                _trialEndDateString =
+                    DateFormat('MMM dd, yyyy').format(trialEnds);
+              } else {
+                _trialEndDateString = "";
+              }
+            });
+          } else if (mounted) {
+            setState(() {
+              _isTrialActive = false;
+              _trialEndDateString = "";
+            });
+          }
+        });
+      } else {
+        // User logged out, reset trial state
+        if (mounted) {
+          setState(() {
+            _isTrialActive = false;
+            _trialEndDateString = "";
+          });
+        }
+        _userDataSubscription.cancel(); // Cancel subscription if user logs out
       }
     });
 
@@ -213,6 +254,7 @@ class _DashboardPageState extends State<DashboardPage>
     RawKeyboard.instance.removeListener(_handleKeyEvent);
     _authStateSubscription.cancel();
     _subscriptionSubscription.cancel();
+    _userDataSubscription.cancel();
     super.dispose();
   }
 
@@ -639,6 +681,7 @@ class _DashboardPageState extends State<DashboardPage>
       // Cancel all user-related listeners
       _authStateSubscription.cancel();
       _subscriptionSubscription.cancel();
+      _userDataSubscription.cancel();
       _browseHistory = []; // Clear browse history
 
       // Sign out from Auth
@@ -705,6 +748,8 @@ class _DashboardPageState extends State<DashboardPage>
                           : 0),
                   child: Column(
                     children: [
+                      if (_isTrialActive && user != null)
+                        TrialBanner(trialEndDateString: _trialEndDateString),
                       TopNavigationBar(
                         user: user,
                         isMenuCollapsed: _isMenuCollapsed,
@@ -927,6 +972,51 @@ class _DashboardPageState extends State<DashboardPage>
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class TrialBanner extends StatelessWidget {
+  final String trialEndDateString;
+
+  const TrialBanner({Key? key, required this.trialEndDateString})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.black,
+            Colors.grey[850]!, // Lighter grey for the shine
+            Colors.black,
+          ],
+          stops: const [0.0, 0.5, 1.0], // Center stop for the shine
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Center(
+        child: Text(
+          'You are currently on a 7-day free trial of the Starter Plan, ending on $trialEndDateString. Enjoy full access!',
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+          ),
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }

@@ -62,21 +62,40 @@ class FirestoreService {
       final userDoc = await userDocRef.get();
 
       if (userDoc.exists) {
-        print('User profile already exists, skipping creation');
+        print('User profile already exists, updating lastUpdated');
+        // Optionally update other fields if needed, for now just lastUpdated
+        await userDocRef.update({
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
         return;
       }
 
       print('User profile does not exist, creating new profile');
       print('Writing to document path: ${userDocRef.path}');
 
-      await userDocRef.set({
-        'displayName': displayName ?? user.displayName,
-        'email': email ?? user.email,
-        'photoURL': photoURL ?? user.photoURL,
-        'lastUpdated': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      final now = DateTime.now();
+      final trialEndDateDateTime = now.add(const Duration(days: 7));
 
-      print('User profile created successfully');
+      await userDocRef.set(
+          {
+            'displayName': displayName ?? user.displayName,
+            'email': email ?? user.email,
+            'photoURL': photoURL ?? user.photoURL,
+            'createdAt': FieldValue
+                .serverTimestamp(), // Ensure createdAt is set for new users
+            'lastUpdated': FieldValue.serverTimestamp(),
+            'subscription':
+                Subscription(type: SubscriptionType.free, updatedAt: now)
+                    .toJson(), // Default to free subscription
+            'hasUsedFreeTrial': false, // Explicitly set for new user
+            'trialEndDate':
+                trialEndDateDateTime, // Store as DateTime, Firestore converts to Timestamp
+          },
+          SetOptions(
+              merge:
+                  true)); // merge: true is good practice but for new doc, set is fine
+
+      print('User profile created successfully with trial period');
     } catch (e) {
       print('Error creating/updating user profile: $e');
       print('Error type: ${e.runtimeType}');
