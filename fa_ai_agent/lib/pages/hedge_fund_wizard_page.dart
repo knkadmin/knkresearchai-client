@@ -14,6 +14,8 @@ import '../widgets/hedge_fund_wizard/hedge_fund_wizard_initial_view.dart';
 import '../widgets/hedge_fund_wizard/hedge_fund_wizard_chat_view.dart';
 import '../widgets/hedge_fund_wizard/futuristic_mesh_background.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import '../pages/pending_verification_page.dart';
+import '../models/user.dart' as model_user;
 
 class HedgeFundWizardPage extends StatefulWidget {
   const HedgeFundWizardPage({super.key});
@@ -46,7 +48,9 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
   List<Map<String, dynamic>> _questionHistory = [];
   StreamSubscription? _historySubscription;
   bool _isStarterPlan = false;
-  StreamSubscription? _subscriptionSubscription;
+  StreamSubscription<model_user.User?>? _subscriptionSubscription;
+
+  bool _isVerificationDialogShowing = false;
 
   @override
   void initState() {
@@ -176,6 +180,7 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
     final user = AuthService().currentUser;
     if (user == null) return;
 
+    _subscriptionSubscription?.cancel();
     _subscriptionSubscription =
         FirestoreService().streamUserData(user.uid).listen((userData) {
       if (mounted) {
@@ -183,8 +188,90 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
           _isStarterPlan =
               userData?.subscription.type == SubscriptionType.starter;
         });
+
+        if (userData != null && !userData.verified) {
+          print(
+              'HFW Page: User data from Firestore indicates email not verified. Attempting to show dialog.');
+          _showPendingVerificationDialogIfNeeded();
+        } else if (userData != null &&
+            userData.verified &&
+            _isVerificationDialogShowing) {
+          print(
+              'HFW Page: User data from Firestore indicates email verified. Ensuring dialog flag is false.');
+          setState(() {
+            _isVerificationDialogShowing = false;
+          });
+        }
       }
+    }, onError: (error) {
+      print('HFW Page: Error in user data subscription: $error');
     });
+  }
+
+  Future<void> _showPendingVerificationDialogIfNeeded() async {
+    if (!mounted || _isVerificationDialogShowing) {
+      print(
+          'HFW Page: Verification dialog not shown (not mounted or already showing). Mounted: $mounted, Showing: $_isVerificationDialogShowing');
+      return;
+    }
+
+    final authUser = AuthService().currentUser;
+    if (authUser != null) {
+      print('HFW Page: Current auth user: ${authUser.uid}. Reloading...');
+      try {
+        await authUser.reload();
+      } catch (e) {
+        print(
+            'HFW Page: Error reloading auth user: $e. Proceeding with current state.');
+      }
+      final refreshedUser = AuthService().currentUser;
+
+      if (refreshedUser != null && !refreshedUser.emailVerified) {
+        print(
+            'HFW Page: Firebase Auth confirms email not verified. Setting flag and showing dialog.');
+        setState(() {
+          _isVerificationDialogShowing = true;
+        });
+
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            return PendingVerificationDialog(
+              onVerified: () {
+                print(
+                    'HFW Page: Verification successful callback triggered from dialog.');
+                if (mounted) {
+                  setState(() {
+                    _isVerificationDialogShowing = false;
+                  });
+                }
+              },
+            );
+          },
+        ).then((_) {
+          if (mounted) {
+            print('HFW Page: Verification dialog closed.');
+            setState(() {
+              _isVerificationDialogShowing = false;
+            });
+          }
+        });
+      } else if (refreshedUser != null && refreshedUser.emailVerified) {
+        print(
+            'HFW Page: Firebase Auth says email IS verified. Dialog should not be shown or should be closed if open.');
+        if (_isVerificationDialogShowing) {
+          setState(() {
+            _isVerificationDialogShowing = false;
+          });
+        }
+      } else {
+        print(
+            'HFW Page: Refreshed user is null after reload. Cannot determine verification status from Auth.');
+      }
+    } else {
+      print('HFW Page: Auth user is null. Cannot show verification dialog.');
+    }
   }
 
   Future<void> _handleSubmitted(String text) async {

@@ -1,3 +1,4 @@
+import 'package:fa_ai_agent/config/environment.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fa_ai_agent/services/auth_service.dart';
@@ -70,8 +71,23 @@ class _SignUpPageState extends State<SignUpPage> {
         _passwordController.text,
       );
 
+      final user = userCredential.user;
+      if (user == null) {
+        throw Exception("User registration failed, user is null.");
+      }
+
+      final actionCodeSettings = ActionCodeSettings(
+        url: EnvironmentConfig.current.environment == Environment.staging ||
+                EnvironmentConfig.current.environment == Environment.development
+            ? 'https://knkresearchai-staging.web.app/verify-email?email=${user.email}'
+            : 'https://knkresearchai.com/verify-email?email=${user.email}', // Replace with your app's deep link
+        handleCodeInApp: false,
+      );
+
+      await user.sendEmailVerification(actionCodeSettings);
+
       // Get the ID token
-      final idToken = await userCredential.user?.getIdToken();
+      final idToken = await user.getIdToken();
 
       // Save token to Firestore
       final firestoreService = FirestoreService();
@@ -82,7 +98,18 @@ class _SignUpPageState extends State<SignUpPage> {
       await firestoreService.updateUserToken(idToken ?? '');
 
       if (mounted) {
-        context.go('/');
+        // Navigate to verification page
+        print(
+            "Navigating to verification page for email: ${_emailController.text}");
+        // Example: context.go('/verify-email?email=${_emailController.text}');
+        // For now, show a message and then go home, replace with actual navigation
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(
+                  'A verification email has been sent to ${_emailController.text}. Please check your inbox.')),
+        );
+        context
+            .go('/'); // Replace this with navigation to your verification page
       }
     } catch (e) {
       if (mounted) {
@@ -126,13 +153,23 @@ class _SignUpPageState extends State<SignUpPage> {
     setState(() => _isLoading = true);
     try {
       final userCredential = await _authService.signInWithGoogle();
+      final user = userCredential?.user;
+
+      if (user == null) {
+        throw Exception("Google Sign-In failed, user is null.");
+      }
 
       // Get the ID token
-      final idToken = await userCredential?.user?.getIdToken();
+      final idToken = await user.getIdToken();
 
       // Save token to Firestore
       final firestoreService = FirestoreService();
-      await firestoreService.createOrUpdateUserProfile(signInMethod: 'google');
+      // signInMethod: 'google' will ensure 'verified' is set to true by FirestoreService
+      await firestoreService.createOrUpdateUserProfile(
+          email: user.email, // Make sure to pass email and displayName
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          signInMethod: 'google');
       await firestoreService.updateUserToken(idToken ?? '');
 
       if (mounted) {

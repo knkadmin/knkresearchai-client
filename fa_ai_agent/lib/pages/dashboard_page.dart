@@ -34,6 +34,7 @@ import 'package:fa_ai_agent/pages/dashboard/components/footer_section.dart';
 import 'package:fa_ai_agent/pages/dashboard/components/authenticated_search_section.dart';
 import 'package:fa_ai_agent/pages/dashboard/components/side_menu_section.dart';
 import 'package:intl/intl.dart';
+import 'package:fa_ai_agent/pages/pending_verification_page.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -71,6 +72,7 @@ class _DashboardPageState extends State<DashboardPage>
   String _trialEndDateString = "";
   double _opacity = 0.0;
   double _lastWidth = 0;
+  bool _isVerificationDialogShowing = false;
 
   static const String _disclaimerText = LegalTexts.disclaimer;
   static const String _termsAndConditionsText = LegalTexts.termsAndConditions;
@@ -104,6 +106,17 @@ class _DashboardPageState extends State<DashboardPage>
       if (user != null && _cacheManager.pendingWatchlistAddition) {
         print('Handling post-registration');
         _handlePostRegistration();
+      }
+
+      if (user != null && !user.emailVerified) {
+        print(
+            'User signed in but email not verified, showing dialog from authStateChanges.');
+        _showPendingVerificationDialogIfNeeded();
+      } else {
+        setState(() {
+          _isVerificationDialogShowing = false;
+        });
+        print('User email verified, no verification dialog needed.');
       }
       // Listen to user data for trial status when auth state changes
       if (user != null) {
@@ -158,24 +171,80 @@ class _DashboardPageState extends State<DashboardPage>
     });
   }
 
+  Future<void> _showPendingVerificationDialogIfNeeded() async {
+    if (!mounted || _isVerificationDialogShowing) return;
+
+    final authUser = AuthService().currentUser;
+    if (authUser != null && !authUser.emailVerified) {
+      // Additionally, check Firestore document as a secondary source of truth if necessary
+      // For now, relying on authUser.emailVerified directly after reload from Firebase Auth
+      // final firestoreService = FirestoreService();
+      // final userData = await firestoreService.getUserData(authUser.uid);
+      // bool isFirestoreVerified = userData?.verified ?? false;
+      // if(isFirestoreVerified) { /* User is verified in Firestore, maybe a delay in Firebase Auth update? */ return; }
+
+      setState(() {
+        _isVerificationDialogShowing = true;
+      });
+      print('Showing pending verification dialog.');
+      showDialog(
+        context: context,
+        barrierDismissible: false, // User must interact with the dialog
+        builder: (BuildContext dialogContext) {
+          return PendingVerificationDialog(
+            onVerified: () {
+              print('Verification successful callback triggered from dialog.');
+              // Reload auth state / user data or navigate as needed
+              // For now, just close dialog and let auth listeners handle the rest
+              if (mounted) {
+                // Navigator.pop(dialogContext); // Dialog pops itself on success now
+                _checkAuth(); // Re-check auth to update UI or navigate
+                setState(() {
+                  _isVerificationDialogShowing = false;
+                });
+              }
+            },
+          );
+        },
+      ).then((_) {
+        // This .then() is called when the dialog is popped.
+        if (mounted) {
+          print('Verification dialog closed.');
+          setState(() {
+            _isVerificationDialogShowing = false;
+          });
+          // Re-check auth status after dialog is closed, in case verification happened or user signed out
+          _checkAuth();
+        }
+      });
+    }
+  }
+
   Future<void> _checkAuth() async {
     final user = AuthService().currentUser;
     if (user != null) {
+      await user.reload(); // Ensure fresh user state from Firebase Auth
+      final refreshedUser = AuthService().currentUser; // Get reloaded user
+
+      final firestoreService = FirestoreService();
       try {
-        // Get the user's ID token
-        final idToken = await user.getIdToken();
-
+        final idToken = await refreshedUser?.getIdToken(true);
         if (idToken != null) {
-          // Update token in Firestore
-          final firestoreService = FirestoreService();
           await firestoreService.updateUserToken(idToken);
-
           print('User token updated successfully in Firestore');
         } else {
           print('Failed to get user ID token');
         }
       } catch (e) {
         print('Error updating user token: $e');
+      }
+    } else {
+      // User is null (not logged in)
+      print('_checkAuth: User is null.');
+      // Ensure dialog isn't showing if user somehow becomes null while it was up
+      if (_isVerificationDialogShowing && mounted) {
+        // Consider Navigator.of(context, rootNavigator: true).pop(); if dialog needs explicit closing
+        print('User became null, verification dialog should close if open.');
       }
     }
   }
@@ -679,9 +748,22 @@ class _DashboardPageState extends State<DashboardPage>
   Future<void> _handleSignOut() async {
     try {
       // Cancel all user-related listeners
-      _authStateSubscription.cancel();
-      _subscriptionSubscription.cancel();
-      _userDataSubscription.cancel();
+      // Ensure _authStateSubscription, _subscriptionSubscription, and _userDataSubscription are accessible
+      // and cancel them if they are not null and have not been cancelled already.
+      await _authStateSubscription.cancel();
+      await _subscriptionSubscription.cancel();
+      // _userDataSubscription might be null if user was never fully logged in or data stream failed
+      // so check before cancelling.
+      // Note: The previous logic for _userDataSubscription.cancel() was inside the authStateChanges listener's else block.
+      // It should be robustly handled here during a manual sign-out.
+      // However, direct re-cancellation might throw if already cancelled.
+      // A common pattern is to use a flag or check if the subscription is paused/cancelled.
+      // For simplicity here, we assume they are active or cancellation is idempotent.
+      // Proper state management of subscriptions is crucial in complex apps.
+
+      // It's good practice to nullify subscriptions after cancelling if they might be checked elsewhere
+      // e.g., if ( _userDataSubscription != null ) { await _userDataSubscription.cancel(); _userDataSubscription = null; }
+
       _browseHistory = []; // Clear browse history
 
       // Sign out from Auth
@@ -693,6 +775,9 @@ class _DashboardPageState extends State<DashboardPage>
           searchController.clear();
           searchResults = [];
           _isMenuCollapsed = true;
+          _isTrialActive = false; // Reset trial status on sign out
+          _trialEndDateString = "";
+          _isVerificationDialogShowing = false; // Ensure dialog flag is reset
         });
         // Clear the route and go to home
         context.go('/');

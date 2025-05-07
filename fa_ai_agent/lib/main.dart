@@ -11,6 +11,7 @@ import 'package:fa_ai_agent/pages/dashboard_page.dart';
 import 'package:fa_ai_agent/pages/pricing_page.dart';
 import 'package:fa_ai_agent/pages/hedge_fund_wizard_page.dart';
 import 'package:fa_ai_agent/pages/share_content_page.dart';
+import 'package:fa_ai_agent/pages/pending_verification_page.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart' show HiveWebStorage;
 import 'package:firebase_core/firebase_core.dart';
@@ -23,6 +24,7 @@ import 'package:fa_ai_agent/pages/payment_success_page.dart';
 import 'package:fa_ai_agent/pages/payment_cancel_page.dart';
 import 'package:fa_ai_agent/config/environment.dart';
 import 'package:fa_ai_agent/config/environments.dart';
+import 'package:fa_ai_agent/pages/email_verification_status_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -127,13 +129,6 @@ void main() async {
 
           // Wait for auth state to be ready
           await Future.delayed(const Duration(milliseconds: 500));
-
-          // Create or update user profile in Firestore
-          final firestoreService = FirestoreService();
-          await firestoreService.createOrUpdateUserProfile(
-              // Assuming redirect result is from Google.
-              // If other providers are used, this needs to be determined dynamically.
-              signInMethod: 'google');
         }
       } catch (e) {
         print("Error handling redirect result: $e");
@@ -206,6 +201,12 @@ class MyApp extends StatelessWidget {
             path: '/signup',
             pageBuilder: (context, state) => NoTransitionPage<void>(
               child: const SignUpPage(),
+            ),
+          ),
+          GoRoute(
+            path: '/verify-email',
+            pageBuilder: (context, state) => NoTransitionPage<void>(
+              child: const EmailVerificationStatusPage(),
             ),
           ),
           GoRoute(

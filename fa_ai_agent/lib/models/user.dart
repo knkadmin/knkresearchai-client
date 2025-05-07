@@ -84,6 +84,7 @@ class User {
   final bool hasUsedFreeTrial;
   final DateTime? trialEndDate;
   final String signInMethod;
+  final bool verified;
 
   const User({
     required this.uid,
@@ -96,6 +97,7 @@ class User {
     this.hasUsedFreeTrial = false,
     this.trialEndDate,
     required this.signInMethod,
+    this.verified = false,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -120,6 +122,7 @@ class User {
               ? DateTime.parse(json['trialEndDate'])
               : null,
       signInMethod: json['signInMethod'] ?? 'unknown',
+      verified: json['verified'] ?? false,
     );
   }
 
@@ -136,6 +139,7 @@ class User {
       if (trialEndDate != null)
         'trialEndDate': Timestamp.fromDate(trialEndDate!),
       'signInMethod': signInMethod,
+      'verified': verified,
     };
   }
 
@@ -150,6 +154,7 @@ class User {
     bool? hasUsedFreeTrial,
     DateTime? trialEndDate,
     String? signInMethod,
+    bool? verified,
   }) {
     return User(
       uid: uid ?? this.uid,
@@ -162,6 +167,7 @@ class User {
       hasUsedFreeTrial: hasUsedFreeTrial ?? this.hasUsedFreeTrial,
       trialEndDate: trialEndDate ?? this.trialEndDate,
       signInMethod: signInMethod ?? this.signInMethod,
+      verified: verified ?? this.verified,
     );
   }
 }
@@ -172,5 +178,11 @@ extension UserTrialExtension on User {
     return trialEndDate != null &&
         trialEndDate!.isAfter(DateTime.now()) &&
         !hasUsedFreeTrial;
+  }
+}
+
+extension UserVerifiedExtension on User {
+  bool get signedInWithEmail {
+    return signInMethod == 'email';
   }
 }

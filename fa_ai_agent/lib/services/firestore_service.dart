@@ -63,15 +63,25 @@ class FirestoreService {
       final userDoc = await userDocRef.get();
 
       final now = DateTime.now();
+      final bool isVerified =
+          signInMethod == 'google'; // Auto-verify Google sign-ins
 
       if (userDoc.exists) {
         print(
-            'User profile already exists, updating lastUpdated and signInMethod');
+            'User profile already exists, updating lastUpdated, signInMethod, and verified status');
         // Optionally update other fields if needed
-        await userDocRef.update({
+        Map<String, dynamic> updates = {
           'lastUpdated': FieldValue.serverTimestamp(),
           'signInMethod': signInMethod,
-        });
+        };
+        if (signInMethod == 'google') {
+          updates['verified'] = true;
+        }
+        // For email sign-in, 'verified' might already be true from a previous session,
+        // or false if they signed up but didn't verify.
+        // We don't automatically set it to false here for existing email users,
+        // that will be handled by the verification flow if needed.
+        await userDocRef.update(updates);
         return;
       }
 
@@ -95,12 +105,14 @@ class FirestoreService {
             'trialEndDate':
                 trialEndDateDateTime, // Store as DateTime, Firestore converts to Timestamp
             'signInMethod': signInMethod,
+            'verified': isVerified, // Set initial verification status
           },
           SetOptions(
               merge:
                   true)); // merge: true is good practice but for new doc, set is fine
 
-      print('User profile created successfully with trial period');
+      print(
+          'User profile created successfully with trial period and verification status');
     } catch (e) {
       print('Error creating/updating user profile: $e');
       print('Error type: ${e.runtimeType}');
@@ -325,6 +337,56 @@ class FirestoreService {
       // Log the error but don't rethrow, as failing to update the requested field
       // shouldn't block the user from viewing the report.
       print('Error updating requested field for ticker $ticker: $e');
+    }
+  }
+
+  Future<bool> getUserVerificationStatus(String userId) async {
+    try {
+      final doc = await _firestore.collection('users').doc(userId).get();
+      if (doc.exists && doc.data() != null) {
+        return doc.data()!['verified'] as bool? ?? false;
+      }
+      return false; // Default to false if not found or field missing
+    } catch (e) {
+      print('Error getting user verification status: $e');
+      return false; // Default to false on error
+    }
+  }
+
+  Future<void> storeVerificationCode(String userId, String code) async {
+    try {
+      await _firestore.collection('pendingUserVerifications').doc(userId).set({
+        'code': code,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      print('Verification code stored for user: $userId');
+    } catch (e) {
+      print('Error storing verification code for user $userId: $e');
+      rethrow;
+    }
+  }
+
+  Future<bool> verifyCodeAndUpdateUser(String userId, String code) async {
+    try {
+      final verificationDocRef =
+          _firestore.collection('pendingVerifications').doc(userId);
+      final verificationDoc = await verificationDocRef.get();
+
+      if (verificationDoc.exists && verificationDoc.data()?['code'] == code) {
+        // Code matches, update user profile and delete verification entry
+        await _firestore.collection('users').doc(userId).update(
+            {'verified': true, 'lastUpdated': FieldValue.serverTimestamp()});
+        await verificationDocRef.delete();
+        print('User $userId verified successfully.');
+        return true;
+      } else {
+        print(
+            'Verification failed for user $userId: Code mismatch or document does not exist.');
+        return false;
+      }
+    } catch (e) {
+      print('Error verifying code for user $userId: $e');
+      return false;
     }
   }
 }

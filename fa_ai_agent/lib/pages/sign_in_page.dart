@@ -60,18 +60,46 @@ class _SignInPageState extends State<SignInPage> {
         _passwordController.text,
       );
 
-      // Get the ID token
-      final idToken = await userCredential.user?.getIdToken();
+      final user = userCredential.user;
+      if (user == null) {
+        throw Exception("Email Sign-In failed, user is null.");
+      }
 
-      // Save token and update profile to Firestore
+      // Get the ID token
+      final idToken = await user.getIdToken();
+
       final firestoreService = FirestoreService();
+      // Ensure profile exists or is updated, signInMethod helps FirestoreService logic
       await firestoreService.createOrUpdateUserProfile(
-          email: _emailController
-              .text, // Provide email for potential profile creation/update
-          signInMethod: 'email' // Added signInMethod
-          );
+          email: _emailController.text, signInMethod: 'email');
       await firestoreService.updateUserToken(idToken ?? '');
 
+      // Check verification status
+      final isVerified =
+          await firestoreService.getUserVerificationStatus(user.uid);
+
+      if (!isVerified) {
+        // User is not verified, send new verification email
+        final verificationCode = _authService.generateVerificationCode();
+        await firestoreService.storeVerificationCode(
+            user.uid, verificationCode);
+        await _authService.sendVerificationEmail(
+            _emailController.text, verificationCode);
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'Your email is not verified. A new verification code has been sent. Please check your email.')),
+          );
+          // TODO: Navigate to a verification page instead of home
+          // For example: context.go('/verify-email?email=${_emailController.text}');
+          // For now, we'll allow proceeding to home, but ideally, unverified users should be prompted to verify.
+          print("User not verified. Should navigate to verification page.");
+        }
+      }
+      // Whether verified or not (for now), navigate to home.
+      // Ideally, if not verified, you would block access or redirect to verification.
       if (mounted) {
         context.go('/');
       }
@@ -94,15 +122,24 @@ class _SignInPageState extends State<SignInPage> {
     setState(() => _isLoading = true);
     try {
       final userCredential = await _authService.signInWithGoogle();
+      final user = userCredential?.user;
+
+      if (user == null) {
+        throw Exception("Google Sign-In failed, user is null.");
+      }
 
       // Get the ID token
-      final idToken = await userCredential?.user?.getIdToken();
+      final idToken = await user.getIdToken();
 
       // Save token and update profile to Firestore
       final firestoreService = FirestoreService();
+      // Pass all relevant user info. `createOrUpdateUserProfile` will handle
+      // setting 'verified' to true for 'google' signInMethod.
       await firestoreService.createOrUpdateUserProfile(
-          signInMethod: 'google' // Added signInMethod
-          );
+          email: user.email,
+          displayName: user.displayName,
+          photoURL: user.photoURL,
+          signInMethod: 'google');
       await firestoreService.updateUserToken(idToken ?? '');
 
       if (mounted) {

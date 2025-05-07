@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -10,7 +11,7 @@ class AuthService {
   User? get currentUser => _auth.currentUser;
 
   // Auth state changes stream
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<User?> get authStateChanges => _auth.userChanges();
 
   // Get redirect result (important to call when app initializes on web)
   Future<UserCredential?> getRedirectResult() async {
@@ -163,5 +164,25 @@ class AuthService {
       // Or: throw Exception("User not logged in");
     }
     return _firestore.collection('users').doc(user.uid).snapshots();
+  }
+
+  // Generate a 6-digit verification code
+  String generateVerificationCode() {
+    final random = Random();
+    String code = '';
+    for (int i = 0; i < 6; i++) {
+      code += random.nextInt(10).toString();
+    }
+    return code;
+  }
+
+  // Send verification email (placeholder)
+  Future<void> sendVerificationEmail(String email, String code) async {
+    // In a real application, you would integrate an email service here.
+    // For example, using a Firebase Function, SendGrid, AWS SES, etc.
+    print('Sending verification email to: $email with code: $code');
+    // Simulate network delay
+    await Future.delayed(const Duration(seconds: 1));
+    // For now, we just print it. You'll need to implement actual email sending.
   }
 }
