@@ -74,30 +74,6 @@ class _SignInPageState extends State<SignInPage> {
           email: _emailController.text, signInMethod: 'email');
       await firestoreService.updateUserToken(idToken ?? '');
 
-      // Check verification status
-      final isVerified =
-          await firestoreService.getUserVerificationStatus(user.uid);
-
-      if (!isVerified) {
-        // User is not verified, send new verification email
-        final verificationCode = _authService.generateVerificationCode();
-        await firestoreService.storeVerificationCode(
-            user.uid, verificationCode);
-        await _authService.sendVerificationEmail(
-            _emailController.text, verificationCode);
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    'Your email is not verified. A new verification code has been sent. Please check your email.')),
-          );
-          // TODO: Navigate to a verification page instead of home
-          // For example: context.go('/verify-email?email=${_emailController.text}');
-          // For now, we'll allow proceeding to home, but ideally, unverified users should be prompted to verify.
-          print("User not verified. Should navigate to verification page.");
-        }
-      }
       // Whether verified or not (for now), navigate to home.
       // Ideally, if not verified, you would block access or redirect to verification.
       if (mounted) {
