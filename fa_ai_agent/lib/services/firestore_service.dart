@@ -63,20 +63,20 @@ class FirestoreService {
       final userDoc = await userDocRef.get();
 
       final now = DateTime.now();
-      final bool isVerified =
-          signInMethod == 'google'; // Auto-verify Google sign-ins
+      // final bool isVerified =
+      //     signInMethod == 'google'; // Auto-verify Google sign-ins
 
       if (userDoc.exists) {
         print(
-            'User profile already exists, updating lastUpdated, signInMethod, and verified status');
+            'User profile already exists, updating lastUpdated and signInMethod');
         // Optionally update other fields if needed
         Map<String, dynamic> updates = {
           'lastUpdated': FieldValue.serverTimestamp(),
           'signInMethod': signInMethod,
         };
-        if (signInMethod == 'google') {
-          updates['verified'] = true;
-        }
+        // if (signInMethod == 'google') {
+        //   updates['verified'] = true;
+        // }
         // For email sign-in, 'verified' might already be true from a previous session,
         // or false if they signed up but didn't verify.
         // We don't automatically set it to false here for existing email users,
@@ -105,14 +105,13 @@ class FirestoreService {
             'trialEndDate':
                 trialEndDateDateTime, // Store as DateTime, Firestore converts to Timestamp
             'signInMethod': signInMethod,
-            'verified': isVerified, // Set initial verification status
+            // 'verified': isVerified, // Set initial verification status
           },
           SetOptions(
               merge:
                   true)); // merge: true is good practice but for new doc, set is fine
 
-      print(
-          'User profile created successfully with trial period and verification status');
+      print('User profile created successfully with trial period');
     } catch (e) {
       print('Error creating/updating user profile: $e');
       print('Error type: ${e.runtimeType}');

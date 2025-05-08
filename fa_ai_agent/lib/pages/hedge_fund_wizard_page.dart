@@ -189,12 +189,12 @@ class _HedgeFundWizardPageState extends State<HedgeFundWizardPage>
               userData?.subscription.type == SubscriptionType.starter;
         });
 
-        if (userData != null && !userData.verified) {
+        if (userData != null && !user.emailVerified) {
           print(
               'HFW Page: User data from Firestore indicates email not verified. Attempting to show dialog.');
           _showPendingVerificationDialogIfNeeded();
         } else if (userData != null &&
-            userData.verified &&
+            user.emailVerified &&
             _isVerificationDialogShowing) {
           print(
               'HFW Page: User data from Firestore indicates email verified. Ensuring dialog flag is false.');
