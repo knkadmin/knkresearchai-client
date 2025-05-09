@@ -784,23 +784,46 @@ class _CombinedSearchNewsCardState extends State<CombinedSearchNewsCard>
                         ),
                         if (article.symbol != null) ...[
                           const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: Colors.grey[300]!,
-                                width: 1,
+                          InkWell(
+                            onTap: () {
+                              // Navigate to company report when ticker is clicked
+                              widget.onNavigateToReport(
+                                article.symbol!,
+                                article.symbol!,
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color:
+                                    const Color(0xFF1E3A8A).withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color:
+                                      const Color(0xFF1E3A8A).withOpacity(0.3),
+                                  width: 1,
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              article.symbol!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[700],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    article.symbol!,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1E3A8A),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.open_in_new,
+                                    size: 10,
+                                    color: Color(0xFF1E3A8A),
+                                  ),
+                                ],
                               ),
                             ),
                           ),

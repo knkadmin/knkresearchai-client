@@ -67,6 +67,8 @@ void main() async {
   await Hive.openBox('settings');
   // Open the report section cache box
   await Hive.openBox<String>('report_section_cache');
+  // Open the news cache box
+  await Hive.openBox('news_cache');
 
   try {
     // Initialize Firebase with environment-specific options

@@ -833,6 +833,7 @@ class _DashboardPageState extends State<DashboardPage>
                 onClose: () {
                   Navigator.of(context).pop();
                 },
+                onNavigateToReport: _navigateToReport,
               ),
             ),
           ),

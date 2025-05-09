@@ -4,15 +4,18 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:fa_ai_agent/services/news_service.dart';
 import 'package:fa_ai_agent/models/news_article.dart';
 import 'package:fa_ai_agent/widgets/animations/thinking_animation.dart';
+import 'package:go_router/go_router.dart';
 
 class FullNewsView extends StatefulWidget {
   final VoidCallback onClose;
   final String initialNewsType;
+  final Function(String symbol, String name)? onNavigateToReport;
 
   const FullNewsView({
     Key? key,
     required this.onClose,
     this.initialNewsType = 'Market News',
+    this.onNavigateToReport,
   }) : super(key: key);
 
   @override
@@ -559,23 +562,51 @@ class _FullNewsViewState extends State<FullNewsView>
                         ),
                         if (article.symbol != null) ...[
                           const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[100],
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                color: Colors.grey[300]!,
-                                width: 1,
+                          InkWell(
+                            onTap: () {
+                              if (widget.onNavigateToReport != null) {
+                                widget.onNavigateToReport!(
+                                    article.symbol!, article.symbol!);
+                                widget
+                                    .onClose(); // Close the news view after navigating
+                              } else {
+                                // If no navigation callback is provided, navigate using GoRouter
+                                context.go('/report/${article.symbol!}');
+                                widget.onClose();
+                              }
+                            },
+                            borderRadius: BorderRadius.circular(6),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color:
+                                    const Color(0xFF1E3A8A).withOpacity(0.08),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                  color:
+                                      const Color(0xFF1E3A8A).withOpacity(0.3),
+                                  width: 1,
+                                ),
                               ),
-                            ),
-                            child: Text(
-                              article.symbol!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.grey[700],
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    article.symbol!,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1E3A8A),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  const Icon(
+                                    Icons.open_in_new,
+                                    size: 10,
+                                    color: Color(0xFF1E3A8A),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
