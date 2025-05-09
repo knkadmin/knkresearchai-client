@@ -9,12 +9,14 @@ enum Environment {
 class EnvironmentConfig {
   final Environment environment;
   final String baseUrl;
+  final String newsApiBaseUrl;
   final String appName;
   final bool enableLogging;
 
   const EnvironmentConfig({
     required this.environment,
     required this.baseUrl,
+    required this.newsApiBaseUrl,
     required this.appName,
     required this.enableLogging,
   });
@@ -35,4 +37,4 @@ class EnvironmentConfig {
         break;
     }
   }
-} 
+}

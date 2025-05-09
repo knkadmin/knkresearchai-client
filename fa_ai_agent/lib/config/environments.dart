@@ -4,6 +4,8 @@ const developmentConfig = EnvironmentConfig(
   environment: Environment.development,
   baseUrl:
       'https://knkresearchai-staging-server-594921144024.australia-southeast1.run.app', // Replace with your local development server
+  newsApiBaseUrl:
+      'https://knkresearchai-staging-server-news-594921144024.australia-southeast1.run.app',
   appName: 'KNK Research AI (Dev)',
   enableLogging: true,
 );
@@ -12,6 +14,8 @@ const stagingConfig = EnvironmentConfig(
   environment: Environment.staging,
   baseUrl:
       'https://knkresearchai-staging-server-594921144024.australia-southeast1.run.app', // Replace with your staging server
+  newsApiBaseUrl:
+      'https://knkresearchai-staging-server-news-594921144024.australia-southeast1.run.app',
   appName: 'KNK Research AI (Staging)',
   enableLogging: true,
 );
@@ -20,6 +24,8 @@ const productionConfig = EnvironmentConfig(
   environment: Environment.production,
   baseUrl:
       'https://knkresearchai-server-1067859590559.australia-southeast1.run.app',
+  newsApiBaseUrl:
+      'https://knkresearchai-server-news-1067859590559.australia-southeast1.run.app',
   appName: 'KNK Research AI',
   enableLogging: false,
 );
