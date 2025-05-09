@@ -41,6 +41,381 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:fa_ai_agent/services/news_service.dart';
 import 'package:fa_ai_agent/models/news_article.dart';
 
+// New CompanyPageView widget to hold the segmented control and views
+class CompanyPageView extends StatefulWidget {
+  final String tickerCode;
+  final String companyName;
+  final String sector;
+  final Language language;
+  final int selectedTabIndex;
+
+  const CompanyPageView({
+    Key? key,
+    required this.tickerCode,
+    required this.companyName,
+    required this.sector,
+    required this.language,
+    required this.selectedTabIndex,
+  }) : super(key: key);
+
+  @override
+  State<CompanyPageView> createState() => _CompanyPageViewState();
+}
+
+class _CompanyPageViewState extends State<CompanyPageView> {
+  final NewsService _newsService = NewsService();
+  final ScrollController _scrollController = ScrollController();
+  List<NewsArticle> _newsArticles = [];
+  bool _isLoadingNews = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStockNews();
+  }
+
+  Future<void> _fetchStockNews() async {
+    setState(() {
+      _isLoadingNews = true;
+    });
+
+    try {
+      final news = await _newsService.getStockNews(symbols: widget.tickerCode);
+      setState(() {
+        _newsArticles = news;
+        _isLoadingNews = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingNews = false;
+      });
+      print('Error fetching news: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Use the directly passed selectedTabIndex instead of trying to find parent state
+    return Column(
+      children: [
+        Expanded(
+          child: widget.selectedTabIndex == 0
+              ? _buildNewsView()
+              : ResultAdvancedPage(
+                  key: ValueKey(
+                      'report_${widget.tickerCode}_${DateTime.now().millisecondsSinceEpoch}'),
+                  tickerCode: widget.tickerCode,
+                  companyName: widget.companyName,
+                  language: widget.language,
+                  sector: widget.sector,
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNewsView() {
+    if (_isLoadingNews) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(height: 32),
+            const CircularProgressIndicator(
+              color: Color(0xFF1E3A8A),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Loading news for ${widget.companyName}...',
+              style: const TextStyle(
+                fontSize: 16,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_newsArticles.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.newspaper,
+              color: Color(0xFFCBD5E1),
+              size: 64,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No news available for ${widget.companyName}',
+              style: const TextStyle(
+                fontSize: 18,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _fetchStockNews,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E3A8A),
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Refresh',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 24),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Row(
+              children: [
+                Text(
+                  '${widget.companyName} News',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1E293B),
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                if (widget.tickerCode.isNotEmpty) ...[
+                  const SizedBox(width: 12),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E3A8A).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFF1E3A8A).withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Text(
+                      widget.tickerCode,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1E3A8A),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.separated(
+              controller: _scrollController,
+              padding: const EdgeInsets.only(bottom: 32),
+              itemCount: _newsArticles.length,
+              separatorBuilder: (context, index) => Divider(
+                color: Colors.grey[200],
+                height: 40,
+                thickness: 1,
+              ),
+              itemBuilder: (context, index) {
+                final article = _newsArticles[index];
+                return _buildNewsArticleItem(article);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNewsArticleItem(NewsArticle article) {
+    String formattedDate;
+    try {
+      final date = DateTime.parse(article.publishedDate);
+      formattedDate = DateFormat.yMMMd().format(date);
+    } catch (e) {
+      formattedDate = article.publishedDate;
+    }
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          if (article.url.isNotEmpty) {
+            launchUrl(Uri.parse(article.url));
+          }
+        },
+        borderRadius: BorderRadius.circular(16),
+        hoverColor: const Color(0xFF1E3A8A).withOpacity(0.05),
+        splashColor: const Color(0xFF1E3A8A).withOpacity(0.08),
+        highlightColor: const Color(0xFF1E3A8A).withOpacity(0.03),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (article.image != null && article.image!.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    width: 120,
+                    height: 120,
+                    decoration: BoxDecoration(
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Image.network(
+                      article.image!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[100],
+                          child: Icon(
+                            Icons.image_not_supported,
+                            color: Colors.grey[400],
+                            size: 32,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              if (article.image != null && article.image!.isNotEmpty)
+                const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A8A).withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        article.publisher,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                          color: Color(0xFF1E3A8A),
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      article.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Color(0xFF1E293B),
+                        height: 1.3,
+                        letterSpacing: -0.3,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      article.text,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[700],
+                        height: 1.5,
+                        letterSpacing: -0.2,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.access_time,
+                          size: 14,
+                          color: Colors.grey[500],
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          formattedDate,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1E3A8A).withOpacity(0.04),
+                            border: Border.all(
+                              color: const Color(0xFF1E3A8A).withOpacity(0.15),
+                              width: 1,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.launch,
+                                size: 12,
+                                color: Color(0xFF1E3A8A),
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'Read More',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1E3A8A),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
 
@@ -81,6 +456,7 @@ class _DashboardPageState extends State<DashboardPage>
   bool _isVerificationDialogShowing = false;
   bool _isShowingFullNews = false;
   String _currentNewsType = 'Market News';
+  int? _companyViewSelectedTab;
 
   static const String _disclaimerText = LegalTexts.disclaimer;
   static const String _termsAndConditionsText = LegalTexts.termsAndConditions;
@@ -639,8 +1015,8 @@ class _DashboardPageState extends State<DashboardPage>
   void _navigateToReport(String symbol, String name) async {
     try {
       // Check if we're already viewing this company's report
-      if (_reportPage is ResultAdvancedPage) {
-        final currentReport = _reportPage as ResultAdvancedPage;
+      if (_reportPage is CompanyPageView) {
+        final currentReport = _reportPage as CompanyPageView;
         if (currentReport.tickerCode.toUpperCase() == symbol.toUpperCase()) {
           return; // Already viewing this company's report
         }
@@ -653,6 +1029,7 @@ class _DashboardPageState extends State<DashboardPage>
         searchResults = [];
         searchController.text = "";
         _isSearchFocused = false;
+        _companyViewSelectedTab = 0; // Default to News tab
         _reportPage = const Scaffold(
           body: Center(
             child: ThinkingAnimation(
@@ -685,24 +1062,26 @@ class _DashboardPageState extends State<DashboardPage>
         final sector = quote["stockExchange"];
         if (mounted) {
           setState(() {
-            _reportPage = ResultAdvancedPage(
+            _reportPage = CompanyPageView(
               key: ValueKey(symbol),
               tickerCode: symbol.toUpperCase(),
               companyName: companyName,
               language: Language.english,
               sector: sector ?? '',
+              selectedTabIndex: _companyViewSelectedTab ?? 0,
             );
           });
         }
       } else {
         if (mounted) {
           setState(() {
-            _reportPage = ResultAdvancedPage(
+            _reportPage = CompanyPageView(
               key: ValueKey(symbol),
               tickerCode: symbol.toUpperCase(),
               companyName: symbol.toUpperCase(),
               language: Language.english,
               sector: '',
+              selectedTabIndex: _companyViewSelectedTab ?? 0,
             );
           });
         }
@@ -782,6 +1161,7 @@ class _DashboardPageState extends State<DashboardPage>
           _isTrialActive = false; // Reset trial status on sign out
           _trialEndDateString = "";
           _isVerificationDialogShowing = false; // Ensure dialog flag is reset
+          _companyViewSelectedTab = null;
         });
         // Clear the route and go to home
         context.go('/');
@@ -840,6 +1220,31 @@ class _DashboardPageState extends State<DashboardPage>
         );
       },
     );
+  }
+
+  void _handleTabChange(int index) {
+    // If the clicked tab is already selected, do nothing
+    if (_companyViewSelectedTab == index) {
+      return;
+    }
+
+    setState(() {
+      _companyViewSelectedTab = index;
+
+      // If we're viewing a company, recreate the view with the new tab index
+      if (_reportPage is CompanyPageView) {
+        final currentView = _reportPage as CompanyPageView;
+        _reportPage = CompanyPageView(
+          key: ValueKey(
+              '${currentView.tickerCode}_${index}_${DateTime.now().millisecondsSinceEpoch}'),
+          tickerCode: currentView.tickerCode,
+          companyName: currentView.companyName,
+          language: currentView.language,
+          sector: currentView.sector,
+          selectedTabIndex: index,
+        );
+      }
+    });
   }
 
   @override
@@ -906,8 +1311,11 @@ class _DashboardPageState extends State<DashboardPage>
                             _isShowingFullNews = false;
                             searchController.clear();
                             searchResults = [];
+                            _companyViewSelectedTab = null;
                           });
                         },
+                        selectedTabIndex: _companyViewSelectedTab,
+                        onTabChange: _handleTabChange,
                       ),
                       // Main Content
                       Expanded(

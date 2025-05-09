@@ -19,6 +19,8 @@ class TopNavigationBar extends StatelessWidget {
   final Function(String) onSearchChanged;
   final VoidCallback onClearSearch;
   final VoidCallback onClearReportView;
+  final int? selectedTabIndex;
+  final Function(int)? onTabChange;
 
   const TopNavigationBar({
     super.key,
@@ -34,6 +36,8 @@ class TopNavigationBar extends StatelessWidget {
     required this.onSearchChanged,
     required this.onClearSearch,
     required this.onClearReportView,
+    this.selectedTabIndex,
+    this.onTabChange,
   });
 
   @override
@@ -112,6 +116,8 @@ class TopNavigationBar extends StatelessWidget {
     final isSearchFocused = searchFocusNode.hasFocus;
     final shouldHideLabel =
         isNonAuthed && isSmallScreen && isSearchFocused && reportPage != null;
+    final showSegmentedControl =
+        reportPage != null && selectedTabIndex != null && onTabChange != null;
 
     return Row(
       children: [
@@ -140,7 +146,8 @@ class TopNavigationBar extends StatelessWidget {
             tooltip: 'Go to Home',
           ),
         if ((user == null || MediaQuery.of(context).size.width >= 850) &&
-            !shouldHideLabel)
+            !shouldHideLabel &&
+            !showSegmentedControl)
           const Padding(
             padding: EdgeInsets.only(left: 8),
             child: Text(
@@ -152,6 +159,7 @@ class TopNavigationBar extends StatelessWidget {
               ),
             ),
           ),
+        if (showSegmentedControl) _buildMinimalSegmentedControl(context),
       ],
     );
   }
@@ -558,6 +566,58 @@ class TopNavigationBar extends StatelessWidget {
             style: TextStyle(
               fontSize: 14,
               color: Color(0xFF1E293B),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMinimalSegmentedControl(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Row(
+        children: [
+          _buildMinimalTab('News', 0),
+          const SizedBox(width: 24),
+          _buildMinimalTab('Report', 1),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMinimalTab(String label, int index) {
+    final isSelected = selectedTabIndex == index;
+
+    return InkWell(
+      onTap: () {
+        if (onTabChange != null) {
+          onTabChange!(index);
+        }
+      },
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+            child: Text(
+              label,
+              style: TextStyle(
+                color: isSelected
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFF94A3B8),
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 2,
+            width: 42,
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFF1E293B) : Colors.transparent,
+              borderRadius: BorderRadius.circular(1),
             ),
           ),
         ],
