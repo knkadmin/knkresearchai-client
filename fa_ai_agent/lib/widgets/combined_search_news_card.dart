@@ -16,6 +16,7 @@ class CombinedSearchNewsCard extends StatefulWidget {
   final List<Map<String, dynamic>> searchResults;
   final Function() onHideSearchResults;
   final GlobalKey searchCardKey;
+  final Function(String)? onViewMoreNews;
 
   const CombinedSearchNewsCard({
     super.key,
@@ -26,6 +27,7 @@ class CombinedSearchNewsCard extends StatefulWidget {
     required this.searchResults,
     required this.onHideSearchResults,
     required this.searchCardKey,
+    this.onViewMoreNews,
   });
 
   @override
@@ -310,13 +312,14 @@ class _CombinedSearchNewsCardState extends State<CombinedSearchNewsCard>
               ),
             ),
           ),
-          _buildNewsContent(newsFuture),
+          _buildNewsContent(newsFuture, title),
         ],
       ),
     );
   }
 
-  Widget _buildNewsContent(Future<List<NewsArticle>> newsFuture) {
+  Widget _buildNewsContent(
+      Future<List<NewsArticle>> newsFuture, String sectionTitle) {
     return FutureBuilder<List<NewsArticle>>(
       future: newsFuture,
       builder: (context, snapshot) {
@@ -395,6 +398,9 @@ class _CombinedSearchNewsCardState extends State<CombinedSearchNewsCard>
               child: TextButton.icon(
                 onPressed: () {
                   // Action for viewing more news
+                  if (widget.onViewMoreNews != null) {
+                    widget.onViewMoreNews!(sectionTitle);
+                  }
                 },
                 icon: const Icon(
                   Icons.arrow_forward,

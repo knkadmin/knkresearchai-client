@@ -33,8 +33,13 @@ import 'package:fa_ai_agent/pages/dashboard/components/feedback_section.dart';
 import 'package:fa_ai_agent/pages/dashboard/components/footer_section.dart';
 import 'package:fa_ai_agent/pages/dashboard/components/authenticated_search_section.dart';
 import 'package:fa_ai_agent/pages/dashboard/components/side_menu_section.dart';
+import 'package:fa_ai_agent/pages/dashboard/components/full_news_view.dart';
 import 'package:intl/intl.dart';
 import 'package:fa_ai_agent/pages/pending_verification_page.dart';
+import 'package:fa_ai_agent/widgets/combined_search_news_card.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:fa_ai_agent/services/news_service.dart';
+import 'package:fa_ai_agent/models/news_article.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -74,6 +79,8 @@ class _DashboardPageState extends State<DashboardPage>
   double _opacity = 0.0;
   double _lastWidth = 0;
   bool _isVerificationDialogShowing = false;
+  bool _isShowingFullNews = false;
+  String _currentNewsType = 'Market News';
 
   static const String _disclaimerText = LegalTexts.disclaimer;
   static const String _termsAndConditionsText = LegalTexts.termsAndConditions;
@@ -795,6 +802,45 @@ class _DashboardPageState extends State<DashboardPage>
     // Handle scroll events here
   }
 
+  void _showFullNewsView(String newsType) {
+    showGeneralDialog(
+      context: context,
+      barrierColor: Colors.black54,
+      barrierDismissible: true,
+      barrierLabel: "Dismiss",
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation1, animation2) => const SizedBox.shrink(),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeInOut,
+        );
+
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 0.1),
+            end: Offset.zero,
+          ).animate(curvedAnimation),
+          child: ScaleTransition(
+            scale: Tween<double>(
+              begin: 0.98,
+              end: 1.0,
+            ).animate(curvedAnimation),
+            child: FadeTransition(
+              opacity: animation,
+              child: FullNewsView(
+                initialNewsType: newsType,
+                onClose: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
@@ -856,6 +902,7 @@ class _DashboardPageState extends State<DashboardPage>
                         onClearReportView: () {
                           setState(() {
                             _reportPage = null;
+                            _isShowingFullNews = false;
                             searchController.clear();
                             searchResults = [];
                           });
@@ -865,21 +912,19 @@ class _DashboardPageState extends State<DashboardPage>
                       Expanded(
                         child: Stack(
                           children: [
-                            _reportPage ??
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: SingleChildScrollView(
-                                    controller: _scrollController,
-                                    child: Center(
-                                      child: ConstrainedBox(
-                                        constraints: const BoxConstraints(
-                                          maxWidth: 1200,
-                                        ),
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            if (user == null) ...[
+                            if (_reportPage != null)
+                              _reportPage!
+                            else
+                              SizedBox(
+                                width: double.infinity,
+                                child: SingleChildScrollView(
+                                  controller: _scrollController,
+                                  child: Center(
+                                    child: user == null
+                                        ? Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
                                               HeroSection(
                                                 searchController:
                                                     searchController,
@@ -995,29 +1040,40 @@ class _DashboardPageState extends State<DashboardPage>
                                                 privacyPolicyText:
                                                     _privacyPolicyText,
                                               ),
-                                            ] else ...[
-                                              AuthenticatedSearchSection(
-                                                searchController:
-                                                    searchController,
-                                                searchFocusNode:
-                                                    _searchFocusNode,
-                                                onSearchChanged:
-                                                    _onSearchChanged,
-                                                onNavigateToReport:
-                                                    _navigateToReport,
-                                                searchResults: searchResults,
-                                                onHideSearchResults:
-                                                    _hideSearchResults,
-                                                searchCardKey: _searchCardKey,
-                                                disclaimerText: _disclaimerText,
-                                              ),
                                             ],
-                                          ],
-                                        ),
-                                      ),
-                                    ),
+                                          )
+                                        : ConstrainedBox(
+                                            constraints: const BoxConstraints(
+                                              maxWidth: 1200,
+                                            ),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                AuthenticatedSearchSection(
+                                                  searchController:
+                                                      searchController,
+                                                  searchFocusNode:
+                                                      _searchFocusNode,
+                                                  onSearchChanged:
+                                                      _onSearchChanged,
+                                                  onNavigateToReport:
+                                                      _navigateToReport,
+                                                  searchResults: searchResults,
+                                                  onHideSearchResults:
+                                                      _hideSearchResults,
+                                                  searchCardKey: _searchCardKey,
+                                                  disclaimerText:
+                                                      _disclaimerText,
+                                                  onViewMoreNews:
+                                                      _showFullNewsView,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
                                   ),
                                 ),
+                              ),
                             // Conditional Dimming Overlay with Animation
                             IgnorePointer(
                               ignoring: !_isSearchFocused ||

@@ -7,9 +7,10 @@ class AuthenticatedSearchSection extends StatefulWidget {
   final Function(String) onSearchChanged;
   final Function(String, String) onNavigateToReport;
   final List<Map<String, dynamic>> searchResults;
-  final VoidCallback onHideSearchResults;
+  final Function() onHideSearchResults;
   final GlobalKey searchCardKey;
   final String disclaimerText;
+  final Function(String)? onViewMoreNews;
 
   const AuthenticatedSearchSection({
     super.key,
@@ -21,6 +22,7 @@ class AuthenticatedSearchSection extends StatefulWidget {
     required this.onHideSearchResults,
     required this.searchCardKey,
     required this.disclaimerText,
+    this.onViewMoreNews,
   });
 
   @override
@@ -113,6 +115,7 @@ class _AuthenticatedSearchSectionState extends State<AuthenticatedSearchSection>
                         searchResults: widget.searchResults,
                         onHideSearchResults: widget.onHideSearchResults,
                         searchCardKey: widget.searchCardKey,
+                        onViewMoreNews: widget.onViewMoreNews,
                       ),
                     );
                   },
