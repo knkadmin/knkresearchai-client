@@ -47,6 +47,7 @@ class _DashboardPageState extends State<DashboardPage>
     with SingleTickerProviderStateMixin {
   final TextEditingController searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
+  final ScrollController _scrollController = ScrollController();
   bool _isSearchFocused = false;
   bool _isMenuCollapsed = false;
   List<Map<String, dynamic>> searchResults = [];
@@ -87,6 +88,8 @@ class _DashboardPageState extends State<DashboardPage>
     _loadMega7Companies();
     RawKeyboard.instance.addListener(_handleKeyEvent);
     _cacheManager.init();
+
+    _scrollController.addListener(_onScroll);
 
     // Set up subscription listener
     _subscriptionSubscription =
@@ -295,13 +298,6 @@ class _DashboardPageState extends State<DashboardPage>
       setState(() {
         _browseHistory = history;
       });
-
-      // If there's history and no report is currently being shown, navigate to the most recent report
-      if (history.isNotEmpty && _reportPage == null) {
-        final mostRecentReport = history.first;
-        _navigateToReport(
-            mostRecentReport.companyTicker, mostRecentReport.companyName);
-      }
     });
   }
 
@@ -324,6 +320,7 @@ class _DashboardPageState extends State<DashboardPage>
     _authStateSubscription.cancel();
     _subscriptionSubscription.cancel();
     _userDataSubscription.cancel();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -794,6 +791,10 @@ class _DashboardPageState extends State<DashboardPage>
     }
   }
 
+  void _onScroll() {
+    // Handle scroll events here
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = AuthService().currentUser;
@@ -865,132 +866,155 @@ class _DashboardPageState extends State<DashboardPage>
                         child: Stack(
                           children: [
                             _reportPage ??
-                                Center(
+                                SizedBox(
+                                  width: double.infinity,
                                   child: SingleChildScrollView(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        if (user == null) ...[
-                                          HeroSection(
-                                            searchController: searchController,
-                                            searchFocusNode: _searchFocusNode,
-                                            onSearchChanged: _onSearchChanged,
-                                            onNavigateToReport:
-                                                _navigateToReport,
-                                            searchResults: searchResults,
-                                            onHideSearchResults:
-                                                _hideSearchResults,
-                                            searchCardKey: _searchCardKey,
-                                            disclaimerText: _disclaimerText,
-                                          ),
-                                          Mega7Section(
-                                            mega7Companies: _mega7Companies,
-                                            onNavigateToReport:
-                                                _navigateToReport,
-                                          ),
-                                          const WhyChooseUsSection(),
-                                          FeedbackSection(
-                                            feedbackController:
-                                                feedbackController,
-                                            emailController: emailController,
-                                            onSendFeedback: () async {
-                                              if (feedbackController
-                                                  .text.isEmpty) {
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: const Text(
-                                                        'Please describe your issue in the description field.'),
-                                                    backgroundColor: Colors.red,
-                                                    behavior: SnackBarBehavior
-                                                        .floating,
-                                                    margin:
-                                                        const EdgeInsets.all(
-                                                            16),
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8),
-                                                    ),
-                                                  ),
-                                                );
-                                                return;
-                                              }
+                                    controller: _scrollController,
+                                    child: Center(
+                                      child: ConstrainedBox(
+                                        constraints: const BoxConstraints(
+                                          maxWidth: 1200,
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            if (user == null) ...[
+                                              HeroSection(
+                                                searchController:
+                                                    searchController,
+                                                searchFocusNode:
+                                                    _searchFocusNode,
+                                                onSearchChanged:
+                                                    _onSearchChanged,
+                                                onNavigateToReport:
+                                                    _navigateToReport,
+                                                searchResults: searchResults,
+                                                onHideSearchResults:
+                                                    _hideSearchResults,
+                                                searchCardKey: _searchCardKey,
+                                                disclaimerText: _disclaimerText,
+                                              ),
+                                              Mega7Section(
+                                                mega7Companies: _mega7Companies,
+                                                onNavigateToReport:
+                                                    _navigateToReport,
+                                              ),
+                                              const WhyChooseUsSection(),
+                                              FeedbackSection(
+                                                feedbackController:
+                                                    feedbackController,
+                                                emailController:
+                                                    emailController,
+                                                onSendFeedback: () async {
+                                                  if (feedbackController
+                                                      .text.isEmpty) {
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: const Text(
+                                                            'Please describe your issue in the description field.'),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                        behavior:
+                                                            SnackBarBehavior
+                                                                .floating,
+                                                        margin: const EdgeInsets
+                                                            .all(16),
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(8),
+                                                        ),
+                                                      ),
+                                                    );
+                                                    return;
+                                                  }
 
-                                              try {
-                                                service.sendFeedback(
-                                                    emailController.text,
-                                                    feedbackController.text);
-                                                emailController.text = "";
-                                                feedbackController.text = "";
+                                                  try {
+                                                    service.sendFeedback(
+                                                        emailController.text,
+                                                        feedbackController
+                                                            .text);
+                                                    emailController.text = "";
+                                                    feedbackController.text =
+                                                        "";
 
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: const Text(
-                                                        'Thank you for your feedback!'),
-                                                    backgroundColor:
-                                                        Colors.green,
-                                                    behavior: SnackBarBehavior
-                                                        .floating,
-                                                    margin:
-                                                        const EdgeInsets.all(
-                                                            16),
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8),
-                                                    ),
-                                                  ),
-                                                );
-                                              } catch (e) {
-                                                Navigator.pop(context);
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(
-                                                  SnackBar(
-                                                    content: const Text(
-                                                        'Failed to send feedback. Please try again later.'),
-                                                    backgroundColor: Colors.red,
-                                                    behavior: SnackBarBehavior
-                                                        .floating,
-                                                    margin:
-                                                        const EdgeInsets.all(
-                                                            16),
-                                                    shape:
-                                                        RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              8),
-                                                    ),
-                                                  ),
-                                                );
-                                              }
-                                            },
-                                          ),
-                                          FooterSection(
-                                            termsAndConditionsText:
-                                                _termsAndConditionsText,
-                                            privacyPolicyText:
-                                                _privacyPolicyText,
-                                          ),
-                                        ] else ...[
-                                          AuthenticatedSearchSection(
-                                            searchController: searchController,
-                                            searchFocusNode: _searchFocusNode,
-                                            onSearchChanged: _onSearchChanged,
-                                            onNavigateToReport:
-                                                _navigateToReport,
-                                            searchResults: searchResults,
-                                            onHideSearchResults:
-                                                _hideSearchResults,
-                                            searchCardKey: _searchCardKey,
-                                            disclaimerText: _disclaimerText,
-                                          ),
-                                        ],
-                                      ],
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: const Text(
+                                                            'Thank you for your feedback!'),
+                                                        backgroundColor:
+                                                            Colors.green,
+                                                        behavior:
+                                                            SnackBarBehavior
+                                                                .floating,
+                                                        margin: const EdgeInsets
+                                                            .all(16),
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(8),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  } catch (e) {
+                                                    Navigator.pop(context);
+                                                    ScaffoldMessenger.of(
+                                                            context)
+                                                        .showSnackBar(
+                                                      SnackBar(
+                                                        content: const Text(
+                                                            'Failed to send feedback. Please try again later.'),
+                                                        backgroundColor:
+                                                            Colors.red,
+                                                        behavior:
+                                                            SnackBarBehavior
+                                                                .floating,
+                                                        margin: const EdgeInsets
+                                                            .all(16),
+                                                        shape:
+                                                            RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(8),
+                                                        ),
+                                                      ),
+                                                    );
+                                                  }
+                                                },
+                                              ),
+                                              FooterSection(
+                                                termsAndConditionsText:
+                                                    _termsAndConditionsText,
+                                                privacyPolicyText:
+                                                    _privacyPolicyText,
+                                              ),
+                                            ] else ...[
+                                              AuthenticatedSearchSection(
+                                                searchController:
+                                                    searchController,
+                                                searchFocusNode:
+                                                    _searchFocusNode,
+                                                onSearchChanged:
+                                                    _onSearchChanged,
+                                                onNavigateToReport:
+                                                    _navigateToReport,
+                                                searchResults: searchResults,
+                                                onHideSearchResults:
+                                                    _hideSearchResults,
+                                                searchCardKey: _searchCardKey,
+                                                disclaimerText: _disclaimerText,
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1046,6 +1070,8 @@ class _DashboardPageState extends State<DashboardPage>
                         searchResults = [];
                       });
                       _hideSearchResults();
+                      // Navigate to root route
+                      context.go('/');
                     },
                     onNavigateToReport: _navigateToReport,
                     browseHistory: _browseHistory,

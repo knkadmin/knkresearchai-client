@@ -6,7 +6,7 @@ import 'package:fa_ai_agent/models/news_article.dart';
 class NewsService {
   final String _baseUrl = EnvironmentConfig.current.newsApiBaseUrl;
 
-  Future<List<NewsArticle>> getGeneralNews({int page = 1}) async {
+  Future<List<NewsArticle>> getGeneralNews({int page = 0}) async {
     final response =
         await http.get(Uri.parse('$_baseUrl/general-news?page=$page'));
     if (response.statusCode == 200) {
@@ -22,7 +22,7 @@ class NewsService {
     }
   }
 
-  Future<List<NewsArticle>> getPressReleasesLatest({int page = 1}) async {
+  Future<List<NewsArticle>> getPressReleasesLatest({int page = 0}) async {
     final response =
         await http.get(Uri.parse('$_baseUrl/press-releases-latest?page=$page'));
     if (response.statusCode == 200) {
@@ -39,7 +39,7 @@ class NewsService {
     }
   }
 
-  Future<List<NewsArticle>> getStockLatestNews({int page = 1}) async {
+  Future<List<NewsArticle>> getStockLatestNews({int page = 0}) async {
     final response =
         await http.get(Uri.parse('$_baseUrl/stock-latest-news?page=$page'));
     if (response.statusCode == 200) {
@@ -56,7 +56,7 @@ class NewsService {
   }
 
   Future<List<NewsArticle>> getStockNews(
-      {required String symbols, int page = 1}) async {
+      {required String symbols, int page = 0}) async {
     final response =
         await http.get(Uri.parse('$_baseUrl/stock-news/$symbols?page=$page'));
     if (response.statusCode == 200) {

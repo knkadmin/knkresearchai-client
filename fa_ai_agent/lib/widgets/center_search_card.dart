@@ -52,47 +52,66 @@ class _CenterSearchCardState extends State<CenterSearchCard>
   Widget build(BuildContext context) {
     return Container(
       width: 600,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 40),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 30,
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 24,
             offset: const Offset(0, 8),
-            spreadRadius: 2,
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: const Color(0xFF1E3A8A).withOpacity(0.03),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+            spreadRadius: 0,
           ),
         ],
+        border: Border.all(
+          color: Colors.grey.shade100,
+          width: 1,
+        ),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(
-            Icons.analytics_outlined,
-            size: 48,
-            color: Color(0xFF1E293B),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E3A8A).withOpacity(0.05),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Icon(
+              Icons.analytics_outlined,
+              size: 42,
+              color: Color(0xFF1E3A8A),
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 28),
           const Text(
             'Search for a US-listed Company',
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 26,
               fontWeight: FontWeight.bold,
               color: Color(0xFF1E293B),
+              letterSpacing: -0.5,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           Text(
             'Enter a company name or ticker symbol to get started',
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey[600],
+              height: 1.4,
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 36),
           // Search Field in Main Card
           CustomSearchBar(
             key: widget.searchCardKey,
@@ -109,12 +128,12 @@ class _CenterSearchCardState extends State<CenterSearchCard>
             showShadow: false,
           ),
           if (AuthService().currentUser != null) ...[
-            const SizedBox(height: 32),
+            const SizedBox(height: 36),
             Row(
               children: [
                 Expanded(
                   child: Divider(
-                    color: Colors.grey[300],
+                    color: Colors.grey[200],
                     thickness: 1,
                   ),
                 ),
@@ -124,33 +143,60 @@ class _CenterSearchCardState extends State<CenterSearchCard>
                     'or',
                     style: TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
                 Expanded(
                   child: Divider(
-                    color: Colors.grey[300],
+                    color: Colors.grey[200],
                     thickness: 1,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 32),
-            const Text(
-              'Quick Start with Mag 7 Companies',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF1E293B),
-              ),
+            const SizedBox(height: 36),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 4,
+                  height: 22,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF1E3A8A),
+                    borderRadius: BorderRadius.all(Radius.circular(4)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Text(
+                  'Popular Companies',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF1E293B),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             StreamBuilder<List<Map<String, String>>>(
               stream: CompanyData.streamMega7CompaniesForButtons(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: Color(0xFF1E3A8A),
+                        ),
+                      ),
+                    ),
+                  );
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {

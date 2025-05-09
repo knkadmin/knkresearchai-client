@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:fa_ai_agent/widgets/center_search_card.dart';
+import 'package:fa_ai_agent/widgets/combined_search_news_card.dart';
 
 class AuthenticatedSearchSection extends StatefulWidget {
   final TextEditingController searchController;
@@ -91,24 +91,31 @@ class _AuthenticatedSearchSectionState extends State<AuthenticatedSearchSection>
       child: SlideTransition(
         position: _slideAnimation,
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(12.0),
           child: Column(
             children: [
               ScaleTransition(
                 scale: _scaleAnimation,
-                child: Container(
-                  constraints: const BoxConstraints(maxWidth: 800),
-                  child: Container(
-                    child: CenterSearchCard(
-                      searchController: widget.searchController,
-                      searchFocusNode: widget.searchFocusNode,
-                      onSearchChanged: widget.onSearchChanged,
-                      onNavigateToReport: widget.onNavigateToReport,
-                      searchResults: widget.searchResults,
-                      onHideSearchResults: widget.onHideSearchResults,
-                      searchCardKey: widget.searchCardKey,
-                    ),
-                  ),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final bool isWideScreen = constraints.maxWidth > 1000;
+
+                    return Container(
+                      width: double.infinity,
+                      constraints: BoxConstraints(
+                        maxWidth: isWideScreen ? 1400 : 1100,
+                      ),
+                      child: CombinedSearchNewsCard(
+                        searchController: widget.searchController,
+                        searchFocusNode: widget.searchFocusNode,
+                        onSearchChanged: widget.onSearchChanged,
+                        onNavigateToReport: widget.onNavigateToReport,
+                        searchResults: widget.searchResults,
+                        onHideSearchResults: widget.onHideSearchResults,
+                        searchCardKey: widget.searchCardKey,
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 24),
