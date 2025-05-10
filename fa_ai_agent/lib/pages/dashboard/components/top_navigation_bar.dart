@@ -578,9 +578,9 @@ class TopNavigationBar extends StatelessWidget {
       padding: const EdgeInsets.only(left: 8),
       child: Row(
         children: [
-          _buildMinimalTab('News', 0),
+          _buildMinimalTab('Overview', 0),
           const SizedBox(width: 24),
-          _buildMinimalTab('Report', 1),
+          _buildMinimalTab('Analysis', 1),
         ],
       ),
     );
